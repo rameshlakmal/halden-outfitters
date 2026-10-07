@@ -107,6 +107,7 @@ export function productCard(p) {
       <div class="media">
         <img src="${esc(p.image)}" alt="" loading="lazy" width="600" height="600">
         ${p.stock <= 5 ? `<span class="stock-note">${stockBadge(p.stock)}</span>` : ''}
+        ${p.stock > 0 ? `<button class="btn btn-sm quick-add" type="button" data-add="${esc(p.id)}" aria-label="Add ${esc(p.name)} to cart">${icon('plus')} Add</button>` : ''}
       </div>
       <div class="info">
         <div class="meta">
@@ -115,7 +116,6 @@ export function productCard(p) {
         </div>
         <span class="muted small">${esc(p.categoryName)}</span>
       </div>
-      ${p.stock > 0 ? `<button class="btn btn-sm quick-add" type="button" data-add="${esc(p.id)}" aria-label="Add ${esc(p.name)} to cart">${icon('plus')} Add</button>` : ''}
     </article>`;
 }
 
