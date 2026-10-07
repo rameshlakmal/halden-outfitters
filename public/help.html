@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Help · Halden Outfitters</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="/fonts/geist-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/assets/css/app.css">
+  <script type="module">import { initPage } from '/assets/js/core.js'; initPage();</script>
+</head>
+<body>
+<main class="wrap" style="max-width:820px">
+  <div class="page-head"><h1>Help</h1><p class="lead">How shipping, cancelling and testing work here.</p></div>
+
+  <section class="section" id="shipping" style="padding-bottom:0">
+    <h2 style="font-size:1.4rem;margin-bottom:12px">Shipping</h2>
+    <p style="color:var(--ink-2)">Orders of $75 or more, after any discount, ship free. Smaller orders pay a flat $7.95. Tax is 8% of the order after the discount, rounded to the nearest cent.</p>
+  </section>
+
+  <section class="section" id="returns" style="padding-bottom:0">
+    <h2 style="font-size:1.4rem;margin-bottom:12px">Cancelling and refunds</h2>
+    <p style="color:var(--ink-2)">You can cancel an order from Your orders until it ships. The payment is refunded in full and the items go back into stock. Once an order has shipped it can no longer be cancelled.</p>
+  </section>
+
+  <section class="section" id="testing">
+    <h2 style="font-size:1.4rem;margin-bottom:12px">Testing this shop</h2>
+    <div style="display:grid;gap:14px;color:var(--ink-2)">
+      <p>Halden Outfitters is a practice target for testing web shops and their databases. Every rule on this page is a business rule you can test: totals, discounts, shipping, stock and refunds.</p>
+      <p>Pay with the test card <code>4242 4242 4242 4242</code>. The card <code>4000 0000 0000 0002</code> is always declined. Discount codes to try: <code>WELCOME10</code>, <code>SAVE20</code> (orders over $150), <code>TRAILHEAD15</code> (used up) and <code>SPRING5</code> (expired).</p>
+      <p>Shop staff can switch on planted bugs in the admin's QA lab. Each one breaks a rule above in a way the database shows, for example a payment that doesn't match its order. The project's <code>qa/rules.sql</code> checks every rule after a test run.</p>
+    </div>
+  </section>
+</main>
+</body>
+</html>

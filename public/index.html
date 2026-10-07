@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Halden Outfitters: camping gear for long trips</title>
+  <meta name="description" content="Tents, sleeping bags, stoves and packs. A demo outdoor-gear shop for software testing.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="/fonts/geist-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/images/banners/hero.jpg" as="image">
+  <link rel="stylesheet" href="/assets/css/app.css">
+  <script type="module" src="/assets/js/pages/home.js"></script>
+</head>
+<body>
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <div class="hero-copy">
+        <h1>Gear for nights under open sky.</h1>
+        <p class="lead">Tents, sleeping bags and camp kitchens chosen for long trips. Free shipping on orders over $75.</p>
+        <div class="hero-actions">
+          <a class="btn" href="/shop">Shop all gear <svg class="i" aria-hidden="true"><use href="/icons.svg#arrow"></use></svg></a>
+          <a class="btn btn-secondary" href="/shop?category=shelter">Browse shelter</a>
+        </div>
+      </div>
+      <div class="hero-media">
+        <img src="/images/banners/hero.jpg" alt="A small tent pitched on a ridge at dusk" width="2400" height="1200" fetchpriority="high">
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="cats-title">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="cats-title">Shop by trip</h2>
+        <a href="/shop">All products <svg class="i" aria-hidden="true"><use href="/icons.svg#arrow"></use></svg></a>
+      </div>
+      <div class="cat-grid" data-categories></div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="featured-title" style="padding-top:0">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="featured-title">Packed for the weekend</h2>
+      </div>
+      <div class="product-grid" data-featured></div>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:0">
+    <div class="wrap">
+      <div class="story" data-reveal>
+        <img src="/images/banners/kitchen.jpg" alt="Breakfast cooking on a camp stove beside a lake" loading="lazy" width="2400" height="1200">
+        <div class="story-card">
+          <h2>Hot food, three minutes from the pack.</h2>
+          <p class="muted">A light stove, a titanium pot and a filter for clean water. Everything nests together in one bag.</p>
+          <a class="btn" href="/shop?category=kitchen">Shop camp kitchen</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:0" aria-label="Our promises">
+    <div class="wrap">
+      <div class="promises" data-reveal>
+        <div class="promise"><svg class="i" aria-hidden="true"><use href="/icons.svg#truck"></use></svg><div><strong>Free shipping over $75</strong><span>Otherwise a flat $7.95 to anywhere.</span></div></div>
+        <div class="promise"><svg class="i" aria-hidden="true"><use href="/icons.svg#return"></use></svg><div><strong>Cancel any time before it ships</strong><span>Refunded in full, straight away.</span></div></div>
+        <div class="promise"><svg class="i" aria-hidden="true"><use href="/icons.svg#lock"></use></svg><div><strong>Test checkout only</strong><span>No real payment is ever taken.</span></div></div>
+      </div>
+    </div>
+  </section>
+</main>
+</body>
+</html>

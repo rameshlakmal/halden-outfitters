@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin · Halden Outfitters</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="/fonts/geist-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/assets/css/app.css">
+  <script type="module" src="/assets/js/pages/admin.js"></script>
+</head>
+<body>
+<main class="wrap">
+  <div class="admin">
+    <nav class="admin-nav" aria-label="Admin">
+      <a href="#overview" data-tab="overview"><svg class="i" aria-hidden="true"><use href="/icons.svg#gauge"></use></svg> Overview</a>
+      <a href="#orders" data-tab="orders"><svg class="i" aria-hidden="true"><use href="/icons.svg#receipt"></use></svg> Orders</a>
+      <a href="#products" data-tab="products"><svg class="i" aria-hidden="true"><use href="/icons.svg#package"></use></svg> Products</a>
+      <a href="#coupons" data-tab="coupons"><svg class="i" aria-hidden="true"><use href="/icons.svg#ticket"></use></svg> Coupons</a>
+      <a href="#qa" data-tab="qa"><svg class="i" aria-hidden="true"><use href="/icons.svg#bug"></use></svg> QA lab <span class="count" data-bug-count></span></a>
+    </nav>
+    <div data-view>
+      <div class="skeleton line" style="height:120px;border-radius:16px"></div>
+    </div>
+  </div>
+</main>
+<dialog data-confirm aria-labelledby="confirm-title">
+  <h2 id="confirm-title" style="font-size:1.25rem">Cancel this order?</h2>
+  <p class="muted" style="margin-top:10px">The customer is refunded in full and the items go back into stock. This can’t be undone.</p>
+  <div class="actions">
+    <button class="btn btn-secondary" type="button" data-keep>Keep order</button>
+    <button class="btn btn-danger" type="button" data-cancel-confirm>Cancel order</button>
+  </div>
+</dialog>
+</body>
+</html>
