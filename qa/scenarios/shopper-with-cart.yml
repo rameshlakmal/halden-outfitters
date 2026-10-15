@@ -1,0 +1,18 @@
+# A signed-in shopper with two products in the cart, ready for checkout. Password: Halden-Test-1
+name: Shopper with a full cart
+description: A Trail Tarp (89.00) and Camp Pillows (32.00 each) in the cart, over 75.00 so shipping is free.
+tags: [customers, cart, checkout]
+params:
+  pillows: { type: int, default: 1, description: How many Camp Pillows (1-20) }
+
+seed:
+  customers:
+    email: cart-{{unique}}@test.halden.dev
+    name: Cart Shopper
+    password_hash: scrypt$s+Uyg7ypWuOuZyIuO0aywA==$EM7ORT/kuhjAVsOWApPfnYNBh4LjWy+gBtWZ4xVPoR0=
+    carts:
+      cart_items:
+        - product_id: 2          # Trail Tarp, 89.00
+          qty: 1
+        - product_id: 7          # Camp Pillow, 32.00
+          qty: "{{pillows}}"

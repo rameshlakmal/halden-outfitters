@@ -4,6 +4,7 @@
 --
 -- Each recipe is one SELECT. Parameters (:name) are declared with "-- param:" and sent as bind values.
 -- "-- claim: <table>" lets testers claim a row so nobody else uses it while they test.
+-- "-- seed: <scenario>" names the scenario (qa/scenarios) that creates such data: find ... --seed.
 -- Status columns are Postgres enums, so they are compared as text (status::text = :status).
 
 -- ─── Shoppers ────────────────────────────────────────────────────────────────
@@ -12,6 +13,7 @@
 -- A brand-new account, for first-purchase, empty order history and WELCOME10 tests.
 -- tags: customers, checkout, new-user
 -- claim: customers
+-- seed: new-shopper
 SELECT c.id, c.email, c.name, c.created_at
   FROM customers c
  WHERE NOT c.is_admin
@@ -23,6 +25,7 @@ SELECT c.id, c.email, c.name, c.created_at
 -- tags: customers, orders, returning
 -- param: min_orders int = 2 | At least this many orders
 -- claim: customers via customer_id
+-- seed: shopper-with-history
 SELECT c.id AS customer_id, c.email, c.name, count(o.id) AS orders, sum(o.total) AS spent, max(o.created_at) AS last_order
   FROM customers c
   JOIN orders o ON o.customer_id = c.id
@@ -35,6 +38,7 @@ HAVING count(o.id) >= :min_orders
 -- A signed-in shopper whose cart is not empty, for cart, merge-on-login and checkout tests.
 -- tags: customers, cart, checkout
 -- claim: customers via customer_id
+-- seed: shopper-with-cart
 SELECT c.id AS customer_id, c.email, count(ci.product_id) AS lines, sum(ci.qty) AS items,
        sum(ci.qty * p.price) AS cart_value, ca.coupon_code
   FROM carts ca
@@ -69,6 +73,7 @@ SELECT o.id, o.status, o.total, c.email AS customer, o.created_at
 -- Paid but not shipped, with its payment captured: for cancel, refund and stock-return tests.
 -- tags: orders, cancel, refund, payments, inventory
 -- claim: orders
+-- seed: paid-order
 SELECT o.id, o.total, p.amount AS paid, p.card_last4, c.email AS customer, o.created_at
   FROM orders o
   JOIN customers c ON c.id = o.customer_id
@@ -80,6 +85,7 @@ SELECT o.id, o.total, p.amount AS paid, p.card_last4, c.email AS customer, o.cre
 -- For refund display, order history and "cancelled orders are refunded" checks.
 -- tags: orders, cancel, refund, payments
 -- claim: orders
+-- seed: cancelled-order
 SELECT o.id, o.total, p.amount AS refunded, p.status AS payment, c.email AS customer, o.updated_at
   FROM orders o
   JOIN customers c ON c.id = o.customer_id
@@ -92,6 +98,7 @@ SELECT o.id, o.total, p.amount AS refunded, p.status AS payment, c.email AS cust
 -- tags: orders, coupons, discount
 -- param: code text = '' | A coupon code such as WELCOME10, or empty for any coupon
 -- claim: orders
+-- seed: coupon-order
 SELECT o.id, o.coupon_code, o.subtotal, o.discount, o.total, o.status, c.email AS customer
   FROM orders o
   JOIN customers c ON c.id = o.customer_id
@@ -103,6 +110,7 @@ SELECT o.id, o.coupon_code, o.subtotal, o.discount, o.total, o.status, c.email A
 -- Under 75.00 after discount, so it paid 7.95 shipping: for shipping-threshold tests.
 -- tags: orders, shipping
 -- claim: orders
+-- seed: small-order
 SELECT o.id, o.subtotal - o.discount AS after_discount, o.shipping, o.total, c.email AS customer
   FROM orders o
   JOIN customers c ON c.id = o.customer_id
@@ -155,6 +163,7 @@ SELECT p.id, p.slug, p.name, p.price, i.stock, cat.slug AS category
 -- tags: products, inventory, stock, boundary
 -- param: max_stock int = 5 | At most this many in stock
 -- claim: products
+-- seed: low-stock-product
 SELECT p.id, p.slug, p.name, p.price, i.stock
   FROM products p
   JOIN inventory i ON i.product_id = p.id
@@ -165,6 +174,7 @@ SELECT p.id, p.slug, p.name, p.price, i.stock
 -- Active but with no stock: the product page should block "Add to cart".
 -- tags: products, inventory, stock, negative
 -- claim: products
+-- seed: out-of-stock-product
 SELECT p.id, p.slug, p.name, p.price
   FROM products p
   JOIN inventory i ON i.product_id = p.id
@@ -175,6 +185,7 @@ SELECT p.id, p.slug, p.name, p.price
 -- Not active: it must not show in the shop or search, and a direct link should not sell it.
 -- tags: products, negative, admin
 -- claim: products
+-- seed: hidden-product
 SELECT p.id, p.slug, p.name, p.price
   FROM products p
  WHERE NOT p.active
@@ -208,6 +219,7 @@ HAVING i.stock <> coalesce(sum(m.change), 0)
 -- tags: coupons, discount, checkout
 -- param: kind text = '' | percent, fixed, or empty for either
 -- claim: coupons
+-- seed: test-coupons
 SELECT c.code, c.kind, c.value, c.min_subtotal,
        CASE WHEN c.max_uses IS NULL THEN 'unlimited' ELSE (c.max_uses - c.used_count)::text END AS uses_left
   FROM coupons c
@@ -221,6 +233,7 @@ SELECT c.code, c.kind, c.value, c.min_subtotal,
 -- Works only above a subtotal: test just below and just above min_subtotal.
 -- tags: coupons, discount, boundary
 -- claim: coupons
+-- seed: test-coupons
 SELECT c.code, c.kind, c.value, c.min_subtotal,
        c.min_subtotal - 0.01 AS try_rejected_at, c.min_subtotal AS try_accepted_at
   FROM coupons c
@@ -233,6 +246,7 @@ SELECT c.code, c.kind, c.value, c.min_subtotal,
 -- Inactive, expired or used up: checkout must reject it with a clear message.
 -- tags: coupons, negative
 -- claim: coupons
+-- seed: test-coupons
 SELECT c.code, c.kind, c.value,
        CASE WHEN NOT c.active THEN 'inactive'
             WHEN c.expires_at <= now() THEN 'expired'

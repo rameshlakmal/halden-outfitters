@@ -1,0 +1,22 @@
+# An active product with no stock: Add to cart must be blocked.
+name: Out-of-stock product
+description: An active product whose 5 units were written off, so stock is 0 and the movements add up.
+tags: [products, inventory, stock, negative]
+
+seed:
+  products:
+    slug: sold-out-lantern-{{unique}}
+    category_id: 1
+    name: Sold Out Lantern {{run}}
+    summary: A test product with no stock.
+    description: Seeded for a test. Remove it with propmaster clean.
+    price: 35.00
+    image: /images/products/headlamp-400.jpg
+    inventory:
+      stock: 0
+    stock_movements:
+      - change: 5
+        reason: initial
+      - change: -5
+        reason: adjustment
+        note: Written off for a test

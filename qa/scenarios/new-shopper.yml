@@ -1,0 +1,14 @@
+# A shopper who has signed up but never ordered. Password: Halden-Test-1
+name: New shopper
+description: A signed-up shopper with no orders and an empty cart, for first-purchase, sign-in and WELCOME10 tests.
+tags: [customers, new-user, checkout]
+params:
+  name:  { type: text, default: Test Shopper, description: The shopper's name }
+  admin: { type: boolean, default: false, description: Make an admin instead }
+
+seed:
+  customers:
+    email: shopper-{{unique}}@test.halden.dev
+    name: "{{name}}"
+    password_hash: scrypt$s+Uyg7ypWuOuZyIuO0aywA==$EM7ORT/kuhjAVsOWApPfnYNBh4LjWy+gBtWZ4xVPoR0=
+    is_admin: "{{admin}}"

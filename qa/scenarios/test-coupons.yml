@@ -1,0 +1,26 @@
+# One coupon of each kind a checkout test needs. Codes end in the run id, e.g. PCT42; the seed output lists them.
+name: Test coupons
+description: A working 15% coupon, 25.00 off from 100.00, a single-use coupon, an expired one and an inactive one.
+tags: [coupons, discount, checkout, negative, boundary]
+
+seed:
+  coupons:
+    - code: PCT{{run}}           # works: 15% off anything
+      kind: percent
+      value: 15
+    - code: OFF{{run}}           # works from 100.00: try 99.99 and 100.00
+      kind: fixed
+      value: 25
+      min_subtotal: 100
+    - code: ONCE{{run}}          # works once, then must be refused
+      kind: fixed
+      value: 5
+      max_uses: 1
+    - code: OLD{{run}}           # expired: must be refused
+      kind: percent
+      value: 10
+      expires_at: 2026-01-01T00:00:00Z
+    - code: OFFLINE{{run}}       # switched off: must be refused
+      kind: percent
+      value: 10
+      active: false

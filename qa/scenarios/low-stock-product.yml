@@ -1,0 +1,21 @@
+# A product that is almost sold out, for "only N left" badges and buying more than is in stock.
+name: Low-stock product
+description: An active product with only a few units left (its stock movement matches).
+tags: [products, inventory, stock, boundary]
+params:
+  stock: { type: int, default: 2, description: Units left (1 or more; for 0 use out-of-stock-product) }
+
+seed:
+  products:
+    slug: last-few-lanterns-{{unique}}
+    category_id: 1
+    name: Last Few Lanterns {{run}}
+    summary: A test product with low stock.
+    description: Seeded for a test. Remove it with propmaster clean.
+    price: 35.00
+    image: /images/products/headlamp-400.jpg
+    inventory:
+      stock: "{{stock}}"
+    stock_movements:
+      change: "{{stock}}"
+      reason: initial

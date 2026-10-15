@@ -1,0 +1,64 @@
+# An order that used a 10% coupon: 3 x 40.00 = 120.00 - 12.00 = 108.00, free shipping, tax 8.64 = 116.64.
+# The coupon is made with it (used once), so coupon use counts stay right. Password: Halden-Test-1
+name: Order with a coupon
+description: A paid order with a 10% discount from its own coupon, for discount display and coupon tests.
+tags: [orders, coupons, discount, payments]
+
+seed:
+  coupons:
+    $as: coupon
+    code: TEN{{run}}
+    kind: percent
+    value: 10
+    used_count: 1
+
+  products:
+    $as: lantern
+    slug: test-lantern-{{unique}}
+    category_id: 1
+    name: Test Lantern {{run}}
+    summary: A test product made by Propmaster.
+    description: Seeded for a test. Remove it with propmaster clean.
+    price: 40.00
+    image: /images/products/headlamp-400.jpg
+    inventory:
+      stock: 7                   # 10 in, 3 sold
+    stock_movements:
+      change: 10
+      reason: initial
+
+  customers:
+    email: coupon-{{unique}}@test.halden.dev
+    name: Coupon Shopper
+    password_hash: scrypt$s+Uyg7ypWuOuZyIuO0aywA==$EM7ORT/kuhjAVsOWApPfnYNBh4LjWy+gBtWZ4xVPoR0=
+    orders:
+      $as: order
+      coupon_code: { $ref: coupon }
+      subtotal: 120.00
+      discount: 12.00
+      shipping: 0
+      tax: 8.64
+      total: 116.64
+      ship_name: Coupon Shopper
+      ship_line1: 21 Pine Close
+      ship_city: Stavanger
+      ship_postcode: "4006"
+      ship_country: Norway
+      order_items:
+        product_id: { $ref: lantern }
+        name: Test Lantern {{run}}
+        unit_price: 40.00
+        qty: 3
+        line_total: 120.00
+      payments:
+        amount: 116.64
+        card_last4: "4242"
+      order_events:
+        status: paid
+        note: Seeded by Propmaster
+
+  stock_movements:
+    product_id: { $ref: lantern }
+    order_id: { $ref: order }
+    change: -3
+    reason: sale
