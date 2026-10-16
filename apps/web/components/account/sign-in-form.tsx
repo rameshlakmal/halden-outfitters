@@ -65,7 +65,7 @@ export function SignInForm() {
           error={errors.password?.message}
           {...register('password')}
         />
-        <Link href="/forgot-password" className="justify-self-end text-sm text-forest hover:underline">
+        <Link href="/forgot-password" className="justify-self-end text-sm text-brand hover:underline">
           Forgot your password?
         </Link>
       </div>
@@ -74,7 +74,7 @@ export function SignInForm() {
       </Button>
       <p className="text-sm text-ink-2">
         New to Halden?{' '}
-        <Link href={`/register${query}`} className="font-medium text-forest hover:underline">
+        <Link href={`/register${query}`} className="font-medium text-brand hover:underline">
           Create an account
         </Link>
       </p>

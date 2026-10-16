@@ -52,7 +52,7 @@ export function SearchButton() {
         onClose={() => setOpen(false)}
         onClick={(e) => e.target === ref.current && hide()}
         aria-label="Search"
-        className="pop mx-auto mt-[12vh] bg-surface w-[min(640px,calc(100vw-32px))] rounded-[16px] border border-line p-0 text-ink shadow-[var(--shadow-lift)]"
+        className="pop mx-auto mt-[12vh] bg-surface w-[min(640px,calc(100vw-32px))] rounded-[28px] border border-line p-0 text-ink shadow-[var(--shadow-lift)]"
       >
         {open && <Palette onDone={hide} />}
       </dialog>
@@ -140,7 +140,7 @@ function Palette({ onDone }: { onDone: () => void }) {
               type="button"
               onMouseEnter={() => setActive(i)}
               onClick={() => go(`/products/${p.slug}`)}
-              className={`flex w-full items-center gap-3 rounded-[12px] p-2 text-left ${i === active ? 'bg-surface-2' : ''}`}
+              className={`flex w-full items-center gap-3 rounded-[18px] p-2 text-left ${i === active ? 'bg-surface-2' : ''}`}
             >
               <Image
                 src={p.image.url}
@@ -148,7 +148,7 @@ function Palette({ onDone }: { onDone: () => void }) {
                 width={48}
                 height={48}
                 sizes="48px"
-                className="size-12 rounded-[10px] object-cover"
+                className="size-12 rounded-[14px] object-cover"
               />
               <span className="grid flex-1">
                 <span className="font-medium">{p.name}</span>
@@ -163,7 +163,7 @@ function Palette({ onDone }: { onDone: () => void }) {
             <button
               type="button"
               onClick={() => go(`/search?q=${encodeURIComponent(q.trim())}`)}
-              className="flex w-full items-center justify-between rounded-[12px] px-3 py-2.5 text-sm text-forest hover:bg-surface-2"
+              className="flex w-full items-center justify-between rounded-[18px] px-3 py-2.5 text-sm text-brand hover:bg-surface-2"
             >
               See all {results.total} results <ArrowRight className="size-4" />
             </button>

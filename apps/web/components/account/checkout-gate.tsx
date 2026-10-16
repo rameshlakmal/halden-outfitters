@@ -9,7 +9,7 @@ import { ResendLink } from './token-pages';
 function Panel({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
   return (
     <div className="rise grid max-w-xl justify-items-start gap-4">
-      <span className="grid size-12 place-items-center rounded-full bg-forest-soft text-forest">{icon}</span>
+      <span className="grid size-12 place-items-center rounded-full bg-brand-soft text-brand">{icon}</span>
       <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
       <div className="grid justify-items-start gap-5 leading-relaxed text-ink-2">{children}</div>
     </div>

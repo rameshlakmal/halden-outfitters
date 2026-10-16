@@ -33,7 +33,7 @@ export default async function ProductPage({ params }: Props) {
   const details = product.details;
 
   return (
-    <div className="mx-auto max-w-[1400px] px-4 pt-6 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-[1400px] px-4 pt-8 sm:px-6 lg:px-8">
       <nav aria-label="Breadcrumb" className="mb-6">
         <Link
           href={`/shop/${product.category.slug}`}
@@ -48,7 +48,7 @@ export default async function ProductPage({ params }: Props) {
         <Gallery product={product} />
 
         <ViewTransition enter={PAGE_ENTER} default="none">
-          <div className="lg:sticky lg:top-24 lg:self-start">
+          <div className="rounded-[28px] bg-surface-2 p-6 sm:p-8 lg:sticky lg:top-24 lg:self-start">
             <div className="grid gap-5">
               <div className="grid gap-3">
                 <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">{product.name}</h1>
@@ -62,11 +62,11 @@ export default async function ProductPage({ params }: Props) {
               <BuyBox product={product} />
               <ul className="grid gap-3 pt-2 text-sm text-ink-2">
                 <li className="flex items-center gap-3">
-                  <Truck className="size-5 text-forest" /> Free standard shipping on orders from 75.00
+                  <Truck className="size-5 text-brand" /> Free standard shipping on orders from 75.00
                 </li>
                 {product.returnable ? (
                   <li className="flex items-center gap-3">
-                    <ArrowUUpLeft className="size-5 text-forest" /> 30 days to return it, counted from delivery
+                    <ArrowUUpLeft className="size-5 text-brand" /> 30 days to return it, counted from delivery
                   </li>
                 ) : (
                   <li className="flex items-center gap-3">
@@ -95,7 +95,7 @@ export default async function ProductPage({ params }: Props) {
             {details.map(([label, value], i) => (
               <div
                 key={label}
-                className={`grid gap-1 rounded-[16px] p-5 ${i === 0 ? 'col-span-2 bg-forest text-forest-ink sm:col-span-1' : 'bg-surface-2'}`}
+                className={`grid gap-1 rounded-[28px] p-5 ${i === 0 ? 'col-span-2 bg-brand text-brand-ink sm:col-span-1' : 'bg-surface-2'}`}
               >
                 <dt className={`text-sm ${i === 0 ? 'opacity-80' : 'text-ink-3'}`}>{label}</dt>
                 <dd className="text-xl font-semibold tracking-tight">{value}</dd>
@@ -111,7 +111,7 @@ export default async function ProductPage({ params }: Props) {
             <h2 id="related" className="text-2xl font-semibold tracking-tight">
               More {product.category.name.toLowerCase()}
             </h2>
-            <Link href={`/shop/${product.category.slug}`} className="text-sm font-medium text-forest hover:underline">
+            <Link href={`/shop/${product.category.slug}`} className="text-sm font-medium text-brand hover:underline">
               See all
             </Link>
           </div>

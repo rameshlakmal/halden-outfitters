@@ -40,5 +40,5 @@ export function PolicySection({ title, children }: { title: string; children: Re
 }
 
 export function Notice({ children }: { children: ReactNode }) {
-  return <p className="rounded-[16px] bg-forest-soft px-5 py-4 text-[15px] text-forest">{children}</p>;
+  return <p className="rounded-[28px] bg-brand-soft px-5 py-4 text-[15px] text-brand">{children}</p>;
 }

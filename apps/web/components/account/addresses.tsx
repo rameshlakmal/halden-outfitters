@@ -63,7 +63,7 @@ export function AddressBook() {
       {list.isPending ? (
         <div className="grid gap-4 sm:grid-cols-2">
           {[0, 1].map((i) => (
-            <Skeleton key={i} className="h-44 rounded-[16px]" />
+            <Skeleton key={i} className="h-44 rounded-[28px]" />
           ))}
         </div>
       ) : list.isError ? (
@@ -74,7 +74,7 @@ export function AddressBook() {
           </button>
         </FormAlert>
       ) : items.length === 0 ? (
-        <div className="grid justify-items-start gap-3 rounded-[16px] border border-dashed border-line-strong px-6 py-10">
+        <div className="grid justify-items-start gap-3 rounded-[28px] border border-dashed border-line-strong px-6 py-10">
           <MapPin className="size-8 text-ink-3" weight="thin" />
           <p className="font-medium">No addresses yet</p>
           <p className="max-w-[44ch] text-sm text-ink-2">
@@ -122,13 +122,13 @@ function AddressTile({
   const [confirming, setConfirming] = useState(false);
   return (
     <div
-      className={`grid h-full content-between gap-5 rounded-[16px] border p-5 ${a.isDefault ? 'border-forest/40 bg-forest-soft/40' : 'border-line bg-surface'}`}
+      className={`grid h-full content-between gap-5 rounded-[28px] border p-5 ${a.isDefault ? 'border-brand/40 bg-brand-soft/40' : 'border-line bg-surface'}`}
     >
       <div className="grid gap-1 text-[15px] leading-relaxed">
         <div className="mb-1 flex items-center gap-2">
           <span className="font-semibold">{a.label ?? a.name}</span>
           {a.isDefault && (
-            <span className="rounded-full bg-forest px-2 py-0.5 text-xs font-medium text-forest-ink">Default</span>
+            <span className="rounded-full bg-brand px-2 py-0.5 text-xs font-medium text-brand-ink">Default</span>
           )}
         </div>
         {a.label && <span>{a.name}</span>}
@@ -229,7 +229,7 @@ function AddressDialog({
       onClose={onClose}
       onClick={(e) => e.target === ref.current && onClose()}
       aria-label={editing === 'new' ? 'Add an address' : 'Edit address'}
-      className="pop mx-auto mt-[6vh] max-h-[88dvh] w-[min(560px,calc(100vw-32px))] overflow-y-auto rounded-[16px] border border-line bg-surface p-0 text-ink shadow-[var(--shadow-lift)]"
+      className="pop mx-auto mt-[6vh] max-h-[88dvh] w-[min(560px,calc(100vw-32px))] overflow-y-auto rounded-[28px] border border-line bg-surface p-0 text-ink shadow-[var(--shadow-lift)]"
     >
       {editing && (
         <AddressFormLoader
@@ -368,7 +368,7 @@ function AddressForm({ address, onClose, onSaved, countries }: FormProps & { cou
         />
         {!address?.isDefault && (
           <label className="flex items-center gap-3 text-[15px]">
-            <input type="checkbox" className="size-5 rounded accent-[var(--forest)]" {...register('isDefault')} />
+            <input type="checkbox" className="size-5 rounded accent-[var(--brand)]" {...register('isDefault')} />
             Make this my default address
           </label>
         )}

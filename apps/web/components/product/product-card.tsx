@@ -22,7 +22,7 @@ export function ProductCard({
   const soldOut = product.availability.status === 'out_of_stock';
   return (
     <article className="group relative grid content-start gap-3" data-testid="product-card">
-      <div className="relative overflow-hidden rounded-[16px] bg-surface-2">
+      <div className="relative overflow-hidden rounded-[28px] bg-surface-2">
         <Link href={`/products/${product.slug}`} transitionTypes={['nav-forward']} className="block">
           <ViewTransition name={`product-${product.slug}`} share={PRODUCT_MORPH} default="none">
             <Image
@@ -38,7 +38,7 @@ export function ProductCard({
           </ViewTransition>
         </Link>
         {product.compareAtPrice && (
-          <span className="pointer-events-none absolute top-3 left-3 rounded-full bg-surface px-2.5 py-1 text-xs font-semibold text-forest shadow-[var(--shadow-soft)]">
+          <span className="pointer-events-none absolute top-3 left-3 rounded-full bg-accent px-2.5 py-1 text-xs font-semibold text-accent-ink shadow-[var(--shadow-soft)]">
             Sale
           </span>
         )}

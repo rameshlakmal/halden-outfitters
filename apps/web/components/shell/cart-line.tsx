@@ -41,7 +41,7 @@ export function DrawerLine({ line, onNavigate, list }: { line: CartLine; onNavig
           width={80}
           height={80}
           sizes="80px"
-          className="size-20 rounded-[12px] bg-surface-2 object-cover"
+          className="size-20 rounded-[18px] bg-surface-2 object-cover"
         />
       </Link>
       <div className="grid min-w-0 flex-1 gap-1">

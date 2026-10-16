@@ -43,7 +43,7 @@ export function CartDrawerProvider({ children }: { children: ReactNode }) {
         onClose={() => setOpen(false)}
         onClick={(e) => e.target === ref.current && close()}
         aria-label="Your cart"
-        className="drawer fixed inset-y-0 right-0 left-auto m-0 h-dvh max-h-dvh w-full max-w-[420px] bg-surface p-0 text-ink shadow-[var(--shadow-lift)] sm:rounded-l-[16px]"
+        className="drawer fixed inset-y-0 right-0 left-auto m-0 h-dvh max-h-dvh w-full max-w-[440px] overflow-hidden bg-surface p-0 text-ink shadow-[var(--shadow-lift)] sm:inset-y-3 sm:right-3 sm:h-[calc(100dvh-24px)] sm:max-h-[calc(100dvh-24px)] sm:rounded-[28px] sm:border sm:border-line"
       >
         {isOpen && (
           <Suspense fallback={<div className="skeleton h-full" aria-busy="true" />}>

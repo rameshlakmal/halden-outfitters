@@ -19,7 +19,7 @@ function Outcome({ tone, title, children }: { tone: 'success' | 'danger'; title:
   const Icon = tone === 'success' ? CheckCircle : WarningCircle;
   return (
     <div className="grid gap-4" role={tone === 'danger' ? 'alert' : 'status'}>
-      <Icon weight="fill" className={`size-10 ${tone === 'success' ? 'text-forest' : 'text-danger'}`} />
+      <Icon weight="fill" className={`size-10 ${tone === 'success' ? 'text-brand' : 'text-danger'}`} />
       <h2 className="text-xl font-semibold">{title}</h2>
       <div className="grid gap-4 leading-relaxed text-ink-2">{children}</div>
     </div>
@@ -82,7 +82,7 @@ export function VerifyEmail() {
         <ResendLink />
       ) : (
         <p>
-          <Link href="/sign-in?next=/account" className="font-medium text-forest hover:underline">
+          <Link href="/sign-in?next=/account" className="font-medium text-brand hover:underline">
             Sign in
           </Link>{' '}
           and ask for a new link from your account page.
@@ -110,7 +110,7 @@ export function ResendLink({ variant = 'outline' }: { variant?: 'outline' | 'pri
         {state.sent ? 'Send another link' : 'Send a new link'}
       </Button>
       {state.sent && (
-        <p className="text-sm text-forest" role="status">
+        <p className="text-sm text-brand" role="status">
           Sent. Check your inbox (or the{' '}
           <Link href="/qa/inbox" className="underline">
             fake inbox
@@ -157,7 +157,7 @@ export function ForgotPasswordForm() {
         </p>
         <p className="text-sm">
           Testing this demo? Open the{' '}
-          <Link href={`/qa/inbox?email=${encodeURIComponent(sentTo)}`} className="font-medium text-forest underline">
+          <Link href={`/qa/inbox?email=${encodeURIComponent(sentTo)}`} className="font-medium text-brand underline">
             fake inbox
           </Link>
           .
@@ -181,7 +181,7 @@ export function ForgotPasswordForm() {
       </Button>
       <p className="text-sm text-ink-2">
         Remembered it?{' '}
-        <Link href="/sign-in" className="font-medium text-forest hover:underline">
+        <Link href="/sign-in" className="font-medium text-brand hover:underline">
           Sign in
         </Link>
       </p>

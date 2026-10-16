@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test';
 test.describe('browsing', () => {
   test('home shows categories and featured gear, and links into the shop', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('Gear that earns its place');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Light enough to forget');
     await expect(page.getByRole('link', { name: /^Shelter/ }).first()).toBeVisible();
     await page.getByRole('link', { name: /Shop all gear/ }).click();
     await expect(page).toHaveURL(/\/shop$/);

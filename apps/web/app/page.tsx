@@ -1,4 +1,4 @@
-import { ArrowRight, ArrowUUpLeft, CreditCard, Medal, Truck } from '@phosphor-icons/react/dist/ssr';
+import { ArrowRight, ArrowUUpLeft, CaretRight, CreditCard, Medal, Truck } from '@phosphor-icons/react/dist/ssr';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ProductCard } from '@/components/product/product-card';
@@ -10,22 +10,10 @@ import kitchen from '@/public/images/banners/kitchen.jpg';
 export const revalidate = 60;
 
 const PROMISES = [
-  {
-    icon: Truck,
-    title: 'Free standard shipping from 75.00',
-    text: 'Counted after any discount. Europe ships free from 150.00.',
-  },
-  {
-    icon: ArrowUUpLeft,
-    title: '30 days to change your mind',
-    text: 'Counted from the day it arrives, not the day you order.',
-  },
-  {
-    icon: Medal,
-    title: 'Halden Points on every order',
-    text: 'One point for every 1.00 spent on gear, worth money off later.',
-  },
-  { icon: CreditCard, title: 'Test cards only', text: 'This is a demo shop for QA practice. Nothing is ever charged.' },
+  { icon: Truck, title: 'Free shipping from 75.00', text: 'Standard delivery, counted after any discount.' },
+  { icon: ArrowUUpLeft, title: '30 days to return', text: 'Counted from the day it arrives.' },
+  { icon: Medal, title: 'Halden Points', text: 'One point for every 1.00 spent on gear.' },
+  { icon: CreditCard, title: 'Test cards only', text: 'A demo shop for QA practice. Nothing is charged.' },
 ];
 
 export default async function Home() {
@@ -34,119 +22,150 @@ export default async function Home() {
     getProducts({ featured: 'true', limit: '8' }),
     getProducts({ onSale: 'true', limit: '3' }),
   ]);
-  const [big, wide, ...small] = categories;
 
   return (
     <>
-      {/* Hero: asymmetric split, the photo does the talking. */}
-      <section className="mx-auto grid max-w-[1400px] items-center gap-10 px-4 pt-8 pb-16 sm:px-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] md:pt-12 lg:gap-16 lg:px-8">
-        <div className="grid content-center gap-6">
-          <p className="rise text-sm font-medium text-forest" style={{ '--i': 0 } as React.CSSProperties}>
+      {/* Hero: one message, centred, then the photo as a large rounded tile. */}
+      <section className="mx-auto max-w-[1240px] px-4 pt-14 sm:px-6 md:pt-20 lg:px-8">
+        <div className="mx-auto grid max-w-3xl justify-items-center gap-5 text-center">
+          <p
+            className="rise rounded-full bg-brand-soft px-3.5 py-1 text-[13px] font-semibold text-accent"
+            style={{ '--i': 0 } as React.CSSProperties}
+          >
             Outdoor gear for nights out
           </p>
           <h1
-            className="rise max-w-[14ch] text-5xl leading-[1.04] font-semibold tracking-tight text-balance lg:text-6xl"
+            className="rise text-[44px] leading-[1.02] font-bold tracking-[-0.035em] text-balance sm:text-6xl lg:text-7xl"
             style={{ '--i': 1 } as React.CSSProperties}
           >
-            Gear that earns its place in your pack.
+            Light enough to forget.
           </h1>
           <p
-            className="rise max-w-[42ch] text-lg leading-relaxed text-ink-2"
+            className="rise max-w-[46ch] text-lg leading-relaxed text-ink-2 sm:text-xl"
             style={{ '--i': 2 } as React.CSSProperties}
           >
-            Tents, sleeping bags, stoves and packs, picked for long nights out and light enough to carry all day.
+            Tents, sleeping bags, stoves and packs that disappear into your pack and keep you warm all night.
           </p>
-          <div className="rise flex flex-wrap gap-3" style={{ '--i': 3 } as React.CSSProperties}>
+          <div className="rise mt-1 flex flex-wrap justify-center gap-3" style={{ '--i': 3 } as React.CSSProperties}>
             <LinkButton href="/shop" size="lg">
-              Shop all gear <ArrowRight className="size-5" />
+              Shop all gear
             </LinkButton>
-            <LinkButton href="/shop?onSale=true" variant="outline" size="lg">
-              See what's on sale
+            <LinkButton href="/shop?onSale=true" variant="ghost" size="lg" className="text-accent hover:text-accent">
+              See what's on sale <CaretRight weight="bold" className="size-4" />
             </LinkButton>
           </div>
         </div>
-        <div className="relative">
+        <div
+          className="rise mt-12 overflow-hidden rounded-[28px] bg-surface-2"
+          style={{ '--i': 4 } as React.CSSProperties}
+        >
           <Image
             src={hero}
             alt="A lit tent under a starry sky at dusk"
             preload
             placeholder="blur"
-            sizes="(min-width: 768px) 52vw, 100vw"
-            className="aspect-[4/3] w-full rounded-[16px] object-cover object-[22%_center] md:aspect-[5/6] lg:aspect-[4/4.2]"
+            sizes="(min-width: 1240px) 1176px, 100vw"
+            className="aspect-[4/3] w-full object-cover object-[30%_center] sm:aspect-[16/8] lg:aspect-[21/9]"
           />
         </div>
       </section>
 
-      {/* Categories: a bento with exactly one cell per category, each with its own photo. */}
-      {big && wide && (
-        <section className="below-fold reveal mx-auto max-w-[1400px] px-4 py-12 sm:px-6 lg:px-8" aria-labelledby="cats">
-          <h2 id="cats" className="mb-8 text-3xl font-semibold tracking-tight md:text-4xl">
+      {/* Categories: Apple-style tiles, words on top, the photo below. One tile per category. */}
+      {categories.length > 0 && (
+        <section className="below-fold reveal mx-auto max-w-[1240px] px-4 pt-24 sm:px-6 lg:px-8" aria-labelledby="cats">
+          <h2 id="cats" className="mb-8 text-center text-3xl font-bold tracking-[-0.03em] sm:text-4xl">
             Shop by what you're packing
           </h2>
-          <div className="grid gap-4 md:h-[640px] md:grid-cols-4 md:grid-rows-2">
-            <CategoryTile category={big} className="md:col-span-2 md:row-span-2" large />
-            <CategoryTile category={wide} className="md:col-span-2" />
-            {small.map((c) => (
-              <CategoryTile key={c.slug} category={c} className="md:col-span-1" />
+          <ul className="grid gap-4 sm:grid-cols-2">
+            {categories.map((c) => (
+              <li key={c.slug}>
+                <Link
+                  href={`/shop/${c.slug}`}
+                  className="group grid h-full content-between gap-6 overflow-hidden rounded-[28px] bg-surface-2 pt-9 text-center transition-colors hover:bg-surface-3"
+                >
+                  <div className="grid justify-items-center gap-2 px-6">
+                    <h3 className="text-2xl font-bold tracking-[-0.02em] sm:text-3xl">{c.name}</h3>
+                    <p className="max-w-[34ch] text-ink-2">{c.blurb}</p>
+                    <span className="mt-1 inline-flex items-center gap-1 text-[15px] font-semibold text-accent">
+                      Shop {c.productCount} products
+                      <CaretRight
+                        weight="bold"
+                        className="size-4 transition-transform duration-300 group-hover:translate-x-1"
+                      />
+                    </span>
+                  </div>
+                  <div className="mx-6 overflow-hidden rounded-t-[22px]">
+                    <Image
+                      src={c.image}
+                      alt=""
+                      width={1200}
+                      height={1200}
+                      sizes="(min-width: 640px) 46vw, 92vw"
+                      className="aspect-[16/10] w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.04]"
+                    />
+                  </div>
+                </Link>
+              </li>
             ))}
-          </div>
+          </ul>
         </section>
       )}
 
-      {/* Featured: a horizontal, snap-scrolling row. */}
-      <section className="below-fold reveal py-12" aria-labelledby="featured">
-        <div className="mx-auto mb-8 flex max-w-[1400px] items-end justify-between gap-4 px-4 sm:px-6 lg:px-8">
-          <h2 id="featured" className="text-3xl font-semibold tracking-tight md:text-4xl">
+      {/* Featured: a horizontal, snap-scrolling row of large tiles. */}
+      <section className="below-fold reveal pt-24" aria-labelledby="featured">
+        <div className="mx-auto mb-8 flex max-w-[1240px] items-end justify-between gap-4 px-4 sm:px-6 lg:px-8">
+          <h2 id="featured" className="text-3xl font-bold tracking-[-0.03em] sm:text-4xl">
             Trail favourites
           </h2>
-          <Link href="/shop" className="inline-flex items-center gap-1 text-sm font-medium text-forest hover:underline">
-            Shop all <ArrowRight className="size-4" />
+          <Link
+            href="/shop"
+            className="inline-flex items-center gap-1 text-[15px] font-semibold text-accent hover:underline"
+          >
+            Shop all <CaretRight weight="bold" className="size-4" />
           </Link>
         </div>
-        <ul className="mx-auto flex max-w-[1400px] snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 [scrollbar-width:thin] sm:px-6 lg:px-8">
+        <ul className="mx-auto flex max-w-[1240px] snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 [scrollbar-width:none] sm:px-6 lg:px-8 [&::-webkit-scrollbar]:hidden">
           {featured.items.map((p) => (
-            <li key={p.id} className="w-[68%] shrink-0 snap-start sm:w-[42%] md:w-[30%] xl:w-[23.5%]">
-              <ProductCard product={p} sizes="(min-width: 1280px) 24vw, (min-width: 768px) 30vw, 68vw" />
+            <li key={p.id} className="w-[72%] shrink-0 snap-start sm:w-[44%] md:w-[31%] lg:w-[24%]">
+              <ProductCard product={p} sizes="(min-width: 1024px) 24vw, (min-width: 768px) 31vw, 72vw" />
             </li>
           ))}
         </ul>
       </section>
 
-      {/* A full-bleed photo band for one story. */}
-      <section className="below-fold reveal mx-auto max-w-[1400px] px-4 py-12 sm:px-6 lg:px-8">
-        <div className="relative isolate overflow-hidden rounded-[16px]">
-          <Image
-            src={kitchen}
-            alt="A camp stove and pot on a rock at the edge of a lake"
-            placeholder="blur"
-            sizes="(min-width: 1400px) 1340px, 100vw"
-            className="absolute inset-0 -z-10 h-full w-full object-cover"
-          />
-          <div className="absolute inset-0 -z-10 bg-gradient-to-r from-[oklch(0.18_0.02_160/0.82)] via-[oklch(0.18_0.02_160/0.45)] to-transparent" />
-          <div className="grid max-w-xl gap-4 px-6 py-16 text-[oklch(0.97_0.005_150)] sm:px-12 md:py-24">
-            <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">Hot food, wherever you stop</h2>
-            <p className="text-lg text-[oklch(0.9_0.01_150)]">
+      {/* One story: words and photo side by side inside a single tile. */}
+      <section className="below-fold reveal mx-auto max-w-[1240px] px-4 pt-20 sm:px-6 lg:px-8">
+        <div className="grid overflow-hidden rounded-[28px] bg-brand text-brand-ink md:grid-cols-2">
+          <div className="grid content-center gap-4 p-8 sm:p-12 lg:p-16">
+            <h2 className="text-3xl font-bold tracking-[-0.03em] sm:text-4xl">Hot food, wherever you stop.</h2>
+            <p className="max-w-[40ch] text-lg opacity-80">
               A stove that boils a litre in three minutes, a pot it fits inside, and a mug that keeps coffee hot for an
               hour.
             </p>
-            <div>
+            <div className="mt-2">
               <LinkButton href="/shop/kitchen" size="lg">
                 Shop the camp kitchen
               </LinkButton>
             </div>
           </div>
+          <Image
+            src={kitchen}
+            alt="A camp stove and pot on a rock at the edge of a lake"
+            placeholder="blur"
+            sizes="(min-width: 768px) 620px, 100vw"
+            className="h-full min-h-[280px] w-full object-cover"
+          />
         </div>
       </section>
 
-      {/* Promises: a split list, not a row of identical cards. */}
-      <section className="below-fold reveal mx-auto grid max-w-[1400px] gap-10 px-4 py-16 sm:px-6 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:px-8">
-        <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">Buying here, simply put</h2>
-        <ul className="grid gap-x-10 gap-y-8 sm:grid-cols-2">
+      {/* Promises: one panel, four short facts. */}
+      <section className="below-fold reveal mx-auto max-w-[1240px] px-4 pt-20 sm:px-6 lg:px-8" aria-label="Buying here">
+        <ul className="grid divide-y divide-line rounded-[28px] bg-surface-2 sm:grid-cols-2 sm:divide-y-0 lg:grid-cols-4">
           {PROMISES.map(({ icon: Icon, title, text }) => (
-            <li key={title} className="grid content-start gap-2">
-              <Icon className="size-7 text-forest" />
+            <li key={title} className="grid content-start justify-items-center gap-2 px-6 py-8 text-center">
+              <Icon className="size-7 text-accent" />
               <h3 className="font-semibold">{title}</h3>
-              <p className="text-ink-2">{text}</p>
+              <p className="max-w-[26ch] text-sm text-ink-2">{text}</p>
             </li>
           ))}
         </ul>
@@ -154,14 +173,14 @@ export default async function Home() {
 
       {/* Sale picks: a plain grid. */}
       {sale.items.length > 0 && (
-        <section className="below-fold reveal mx-auto max-w-[1400px] px-4 py-12 sm:px-6 lg:px-8" aria-labelledby="sale">
+        <section className="below-fold reveal mx-auto max-w-[1240px] px-4 pt-24 sm:px-6 lg:px-8" aria-labelledby="sale">
           <div className="mb-8 flex items-end justify-between gap-4">
-            <h2 id="sale" className="text-3xl font-semibold tracking-tight md:text-4xl">
+            <h2 id="sale" className="text-3xl font-bold tracking-[-0.03em] sm:text-4xl">
               Marked down
             </h2>
             <Link
               href="/shop?onSale=true"
-              className="inline-flex items-center gap-1 text-sm font-medium text-forest hover:underline"
+              className="inline-flex items-center gap-1 text-[15px] font-semibold text-accent hover:underline"
             >
               All sale items <ArrowRight className="size-4" />
             </Link>
@@ -176,39 +195,5 @@ export default async function Home() {
         </section>
       )}
     </>
-  );
-}
-
-function CategoryTile({
-  category,
-  className,
-  large = false,
-}: {
-  category: { slug: string; name: string; blurb: string; image: string; productCount: number };
-  className: string;
-  large?: boolean;
-}) {
-  return (
-    <Link
-      href={`/shop/${category.slug}`}
-      className={`group relative isolate flex min-h-[220px] flex-col justify-end overflow-hidden rounded-[16px] p-6 text-[oklch(0.97_0.005_150)] ${className}`}
-    >
-      <Image
-        src={category.image}
-        alt=""
-        fill
-        sizes={large ? '(min-width: 768px) 50vw, 100vw' : '(min-width: 768px) 25vw, 100vw'}
-        className="-z-10 object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.05]"
-      />
-      <div className="absolute inset-0 -z-10 bg-gradient-to-t from-[oklch(0.16_0.02_160/0.85)] via-[oklch(0.16_0.02_160/0.25)] to-transparent" />
-      <h3 className={`font-semibold tracking-tight ${large ? 'text-3xl' : 'text-xl'}`}>{category.name}</h3>
-      <p className={`mt-1 max-w-[36ch] text-[oklch(0.9_0.01_150)] ${large ? 'text-base' : 'text-sm'}`}>
-        {category.blurb}
-      </p>
-      <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium">
-        {category.productCount} products{' '}
-        <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
-      </span>
-    </Link>
   );
 }

@@ -33,7 +33,7 @@ export default function DrawerBody({ onClose }: { onClose: () => void }) {
           <div className="grid gap-4 py-5">
             {[0, 1].map((i) => (
               <div key={i} className="flex gap-4">
-                <Skeleton className="size-20 rounded-[12px]" />
+                <Skeleton className="size-20 rounded-[18px]" />
                 <div className="grid flex-1 content-start gap-2">
                   <Skeleton className="h-4 w-3/4" />
                   <Skeleton className="h-4 w-1/3" />

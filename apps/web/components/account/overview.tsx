@@ -31,7 +31,7 @@ export function AccountOverview() {
       <EmailStatus me={me} />
       <ProfileForm me={me} />
       <Section title="Orders" description="Your orders will show here once checkout opens in the next release.">
-        <div className="flex items-center gap-3 rounded-[16px] border border-dashed border-line-strong px-5 py-6 text-sm text-ink-2">
+        <div className="flex items-center gap-3 rounded-[28px] border border-dashed border-line-strong px-5 py-6 text-sm text-ink-2">
           <Package className="size-6 text-ink-3" />
           No orders yet.
         </div>
@@ -44,7 +44,7 @@ export function AccountOverview() {
 function EmailStatus({ me }: { me: Me }) {
   if (me.emailVerified) {
     return (
-      <div className="flex items-start gap-3 rounded-[16px] bg-forest-soft px-5 py-4 text-forest">
+      <div className="flex items-start gap-3 rounded-[28px] bg-brand-soft px-5 py-4 text-brand">
         <CheckCircle weight="fill" className="mt-0.5 size-5 shrink-0" />
         <p className="text-sm">
           <span className="font-medium">{me.email}</span> is confirmed.
@@ -53,7 +53,7 @@ function EmailStatus({ me }: { me: Me }) {
     );
   }
   return (
-    <div className="grid gap-4 rounded-[16px] bg-warning-soft px-5 py-5">
+    <div className="grid gap-4 rounded-[28px] bg-warning-soft px-5 py-5">
       <div className="flex items-start gap-3">
         <WarningCircle weight="fill" className="mt-0.5 size-5 shrink-0 text-accent-ink" />
         <div className="grid gap-1 text-sm">
@@ -144,7 +144,7 @@ function OverviewSkeleton() {
   return (
     <div className="grid gap-8" aria-busy="true" aria-label="Loading your account">
       <Skeleton className="h-9 w-56" />
-      <Skeleton className="h-16 w-full rounded-[16px]" />
+      <Skeleton className="h-16 w-full rounded-[28px]" />
       <div className="grid max-w-md gap-3">
         <Skeleton className="h-5 w-24" />
         <Skeleton className="h-11 w-full" />

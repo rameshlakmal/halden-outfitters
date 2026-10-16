@@ -14,7 +14,7 @@ export function Price({
   const text = { sm: 'text-[15px]', md: 'text-base', lg: 'text-2xl' }[size];
   return (
     <span className={`inline-flex items-baseline gap-2 tabular-nums ${text}`}>
-      <span className={`font-semibold ${was ? 'text-forest' : 'text-ink'}`}>{formatAmount(amount)}</span>
+      <span className={`font-semibold ${was ? 'text-brand' : 'text-ink'}`}>{formatAmount(amount)}</span>
       {was && (
         <span className="text-[0.85em] text-ink-3 line-through decoration-1">
           <span className="sr-only">was </span>
@@ -50,5 +50,5 @@ export function AvailabilityNote({ availability }: { availability: ProductCard['
 }
 
 export function Skeleton({ className = '' }: { className?: string }) {
-  return <div className={`skeleton rounded-[10px] ${className}`} aria-hidden="true" />;
+  return <div className={`skeleton rounded-[14px] ${className}`} aria-hidden="true" />;
 }

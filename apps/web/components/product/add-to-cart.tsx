@@ -100,7 +100,7 @@ export function QuickAdd({ productId, name }: { productId: string; name: string 
       {state === 'busy' ? (
         <Spinner />
       ) : state === 'added' ? (
-        <Check weight="bold" className="size-5 text-forest" />
+        <Check weight="bold" className="size-5 text-brand" />
       ) : (
         <Plus weight="bold" className="size-5" />
       )}

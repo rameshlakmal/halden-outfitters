@@ -2,7 +2,7 @@ import { CircleNotch } from '@phosphor-icons/react/dist/ssr';
 import Link from 'next/link';
 import type { ComponentProps, ReactNode } from 'react';
 
-type Variant = 'primary' | 'forest' | 'outline' | 'ghost' | 'danger';
+type Variant = 'primary' | 'brand' | 'outline' | 'ghost' | 'danger';
 type Size = 'sm' | 'md' | 'lg';
 
 const base =
@@ -10,9 +10,9 @@ const base =
   'disabled:cursor-not-allowed disabled:opacity-55 focus-visible:outline-2';
 
 const variants: Record<Variant, string> = {
-  // Amber is the one accent: primary actions only. Dark ink on amber passes AA in both themes.
+  // Cobalt is the one accent: primary actions only. Its text colour passes AA in both themes.
   primary: 'bg-accent text-accent-ink hover:bg-accent-hover shadow-[inset_0_-1px_0_oklch(0_0_0/0.08)]',
-  forest: 'bg-forest text-forest-ink hover:opacity-92',
+  brand: 'bg-brand text-brand-ink hover:opacity-92',
   outline: 'border border-line-strong bg-surface text-ink hover:border-ink-3 hover:bg-surface-2',
   ghost: 'text-ink-2 hover:bg-surface-2 hover:text-ink',
   danger: 'border border-danger/40 text-danger hover:bg-danger-soft',

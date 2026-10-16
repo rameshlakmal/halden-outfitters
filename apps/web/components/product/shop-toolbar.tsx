@@ -104,7 +104,7 @@ function Chip({ href, active, children }: { href: string; active: boolean; child
       aria-current={active ? 'page' : undefined}
       className={`press shrink-0 rounded-full border px-4 py-2 text-sm whitespace-nowrap ${
         active
-          ? 'border-forest bg-forest text-forest-ink'
+          ? 'border-brand bg-brand text-brand-ink'
           : 'border-line-strong bg-surface text-ink-2 hover:border-ink-3 hover:text-ink'
       }`}
     >
@@ -121,7 +121,7 @@ function Toggle({ on, onClick, children }: { on: boolean; onClick: () => void; c
       onClick={onClick}
       className={`press h-9 rounded-full border px-4 text-sm ${
         on
-          ? 'border-forest bg-forest-soft font-medium text-forest'
+          ? 'border-brand bg-brand-soft font-medium text-brand'
           : 'border-line-strong bg-surface text-ink-2 hover:text-ink'
       }`}
     >

@@ -15,19 +15,19 @@ export function TopBar() {
   const menu = useRef<HTMLDialogElement>(null);
 
   return (
-    // The frosted background fades in as the page scrolls, driven by a CSS scroll timeline (no JS).
-    <header className="topbar sticky top-0 z-30">
-      <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-2 px-4 sm:px-6 lg:gap-6 lg:px-8">
+    // A floating glass pill: content scrolls underneath it, frosted (solid when transparency is reduced).
+    <header className="sticky top-0 z-30 px-3 pt-3 sm:px-4">
+      <div className="glass mx-auto flex h-14 max-w-[1120px] items-center gap-1 rounded-full border border-line/80 pr-1.5 pl-2 shadow-[var(--shadow-soft)] sm:pl-4 lg:gap-4">
         <button
           type="button"
-          className="press -ml-1 grid size-10 place-items-center rounded-full text-ink-2 hover:bg-surface-2 md:hidden"
+          className="press grid size-10 place-items-center rounded-full text-ink-2 hover:bg-surface-2 md:hidden"
           aria-label="Open menu"
           onClick={() => menu.current?.showModal()}
         >
           <List className="size-5" />
         </button>
         <Logo />
-        <nav aria-label="Main" className="ml-4 hidden items-center gap-1 md:flex">
+        <nav aria-label="Main" className="mx-auto hidden items-center gap-0.5 md:flex">
           {NAV.map((n) => {
             const current = n.href === '/shop' ? pathname === '/shop' : pathname.startsWith(n.href);
             return (
@@ -35,14 +35,14 @@ export function TopBar() {
                 key={n.href}
                 href={n.href}
                 aria-current={current ? 'page' : undefined}
-                className={`rounded-full px-3 py-2 text-[15px] transition-colors ${current ? 'bg-surface-2 text-ink' : 'text-ink-2 hover:text-ink'}`}
+                className={`rounded-full px-3.5 py-1.5 text-[14px] font-medium transition-colors ${current ? 'bg-brand text-brand-ink' : 'text-ink-2 hover:bg-surface-2 hover:text-ink'}`}
               >
                 {n.label}
               </Link>
             );
           })}
         </nav>
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ml-auto flex items-center gap-0.5 md:ml-0">
           <SearchButton />
           <ThemeToggle />
           <AccountLink />
@@ -73,7 +73,7 @@ export function TopBar() {
               key={n.href}
               href={n.href}
               onClick={() => menu.current?.close()}
-              className="rounded-[12px] px-3 py-3 text-lg hover:bg-surface-2"
+              className="rounded-[18px] px-3 py-3 text-lg hover:bg-surface-2"
             >
               {n.label}
             </Link>
@@ -82,7 +82,7 @@ export function TopBar() {
             href="/account"
             prefetch={false}
             onClick={() => menu.current?.close()}
-            className="rounded-[12px] px-3 py-3 text-lg hover:bg-surface-2"
+            className="rounded-[18px] px-3 py-3 text-lg hover:bg-surface-2"
           >
             Your account
           </Link>
@@ -108,7 +108,7 @@ function AccountLink() {
       aria-label={me ? `Your account (${me.name})` : 'Sign in'}
     >
       {me ? (
-        <span className="grid size-8 place-items-center rounded-full bg-forest-soft text-[13px] font-semibold text-forest">
+        <span className="grid size-8 place-items-center rounded-full bg-brand-soft text-[13px] font-semibold text-brand">
           {initials}
         </span>
       ) : (
