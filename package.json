@@ -1,28 +1,48 @@
 {
   "name": "halden-shop",
-  "version": "0.1.0",
+  "version": "2.0.0-dev",
   "private": true,
-  "description": "Halden Outfitters: a small outdoor-gear web shop with planted bugs, built as a test target for database QA.",
+  "description": "Halden Outfitters: an outdoor-gear web shop with real business rules and planted bugs, built as a test target for QA.",
   "type": "module",
   "engines": {
-    "node": ">=20.12"
+    "node": ">=22.12"
   },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "scripts": {
-    "dev": "node scripts/dev.js",
-    "db:setup": "node scripts/db-setup.js",
-    "test": "vitest run",
-    "typecheck": "tsc -p jsconfig.json",
+    "dev": "node scripts/dev-v2.js",
+    "build": "npm run build -w @halden/api && npm run build -w @halden/web",
+    "test": "npm run test -w @halden/money -w @halden/api",
+    "test:e2e": "npm run test:e2e -w @halden/web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:migrate": "npm run db:migrate -w @halden/api",
+    "db:seed": "npm run db:seed -w @halden/api",
+    "db:reset": "npm run db:reset -w @halden/api",
+    "v1:dev": "node scripts/dev.js",
+    "v1:db:setup": "node scripts/db-setup.js",
+    "v1:test": "vitest run --config vitest.config.js",
+    "v1:typecheck": "tsc -p jsconfig.json",
     "assets": "node scripts/build-assets.js"
   },
   "dependencies": {
     "pg": "^8.16.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.0",
     "@fontsource-variable/geist": "^5.3.0",
     "@phosphor-icons/core": "^2.1.1",
     "@types/node": "^24.0.0",
     "@types/pg": "^8.15.0",
-    "typescript": "^5.9.0",
+    "eslint": "^10.13.0",
+    "globals": "^16.0.0",
+    "prettier": "^3.6.0",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.71.2",
     "vitest": "^4.0.0"
   }
 }
