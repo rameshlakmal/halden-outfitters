@@ -374,20 +374,24 @@ The staff console is a work tool, not a showcase. It uses the same tokens, type 
 
 ### 5.3 Visual language
 
-- **Palette: "Forest".** Deep green and stone neutrals with **one** accent, a warm amber, used only for primary
-  actions and key highlights. No beige-and-brass, no AI purple. The palette is designed for light and dark
-  from the start, follows the system setting, and has a manual toggle. Both modes meet WCAG AA, and body text aims for AAA.
-- **Type:** Geist for UI and display, Geist Mono for order numbers, SKUs and money in the staff console.
-  Emphasis uses italic or bold of the same font, never a second family.
-- **Shape:** one radius system. Cards and images 16px, inputs 10px, buttons and chips full pill.
+Chosen on 2026-10-17 after the first pass ("Forest": green, amber, Geist) turned out too close to v1's look.
+
+- **Palette: "Glacier".** Cool ice-white and silver neutrals, a deep ink-blue brand colour (logo, active
+  chips, one story panel) and **one** accent, cobalt, for primary actions and links. A navy dark mode. No beige,
+  no AI purple. Follows the system setting and has a manual toggle. Both modes meet WCAG AA.
+- **Type:** Manrope (self-hosted with `next/font`), bold display headlines with tight tracking. A system
+  monospace for codes. Emphasis uses bold of the same font, never a second family.
+- **Shape:** one radius system. Tiles and images 28px, thumbnails 18px, inputs 14px, buttons and chips pills.
 - **Icons:** Phosphor only, one stroke weight.
 - **Layout:**
-  - An asymmetric split hero with a real photo.
-  - A bento grid for categories (each cell gets its own photo).
-  - An editorial product page with a sticky buy box.
+  - A floating glass navigation pill.
+  - A centred hero (one message) over a large rounded photo tile.
+  - Apple-style category tiles: words on top, the photo below, one tile per category.
+  - Products on tinted tiles; the product page has a sticky buy box on its own soft tile.
+  - The cart is a floating rounded panel, not an edge sheet.
   - No three-equal-cards rows, and no repeated section layouts.
-- **Surfaces:** frosted glass only where something floats over content (top bar on scroll, cart drawer,
-  command palette), with a solid fallback. Shadows are tinted to the background, never black.
+- **Surfaces:** frosted glass only where something floats over content (navigation, toasts), with a solid
+  fallback. Shadows are tinted to the background, never black.
 - **Every state is designed:** skeleton loaders shaped like the real content, empty states that say what to
   do next, inline form errors, and toasts only for short-lived messages.
 
