@@ -3,7 +3,7 @@ import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import { Providers } from '@/components/providers';
 import { Footer } from '@/components/shell/footer';
-import { THEME_SCRIPT } from '@/components/shell/theme';
+import { BOOT_SCRIPT } from '@/lib/boot-script';
 import { TopBar } from '@/components/shell/top-bar';
 import './globals.css';
 
@@ -28,7 +28,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={manrope.variable} suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: BOOT_SCRIPT }} />
       </head>
       <body className="min-h-dvh">
         <a
