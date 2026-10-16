@@ -9,7 +9,7 @@ import { ResendLink } from './token-pages';
 function Panel({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
   return (
     <div className="rise grid max-w-xl justify-items-start gap-4">
-      <span className="grid size-12 place-items-center rounded-full bg-brand-soft text-brand">{icon}</span>
+      <span className="grid size-12 place-items-center rounded-[2px] bg-brand-soft text-brand">{icon}</span>
       <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
       <div className="grid justify-items-start gap-5 leading-relaxed text-ink-2">{children}</div>
     </div>
@@ -22,7 +22,7 @@ export function CheckoutGate() {
   if (isPending) {
     return (
       <div className="grid max-w-xl gap-4" aria-busy="true">
-        <Skeleton className="size-12 rounded-full" />
+        <Skeleton className="size-12 rounded-[2px]" />
         <Skeleton className="h-9 w-72" />
         <Skeleton className="h-5 w-full" />
       </div>

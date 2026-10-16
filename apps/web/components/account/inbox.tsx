@@ -88,8 +88,8 @@ export function Inbox() {
         <Empty title="Type an address to read its mail" text="Use any address you registered with on this demo shop." />
       ) : inbox.isPending ? (
         <div className="grid gap-3 md:grid-cols-[320px_1fr]">
-          <Skeleton className="h-64 rounded-[28px]" />
-          <Skeleton className="h-64 rounded-[28px]" />
+          <Skeleton className="h-64 rounded-[2px]" />
+          <Skeleton className="h-64 rounded-[2px]" />
         </div>
       ) : inbox.isError ? (
         <FormAlert>{errorMessage(inbox.error)}</FormAlert>
@@ -108,7 +108,7 @@ export function Inbox() {
               <button
                 type="button"
                 onClick={() => inbox.refetch()}
-                className="press inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-sm text-ink-2 hover:bg-surface-2"
+                className="press inline-flex items-center gap-1.5 rounded-[2px] px-2 py-1 text-sm text-ink-2 hover:bg-surface-2"
               >
                 <ArrowClockwise className={`size-4 ${inbox.isFetching ? 'animate-spin' : ''}`} /> Refresh
               </button>
@@ -120,7 +120,7 @@ export function Inbox() {
                     type="button"
                     onClick={() => setOpenId(m.id)}
                     aria-current={shown === m.id ? 'true' : undefined}
-                    className={`grid w-full gap-0.5 rounded-[18px] px-4 py-3 text-left transition-colors ${
+                    className={`grid w-full gap-0.5 rounded-[2px] px-4 py-3 text-left transition-colors ${
                       shown === m.id ? 'bg-surface-2' : 'hover:bg-surface-2/60'
                     }`}
                   >
@@ -141,7 +141,7 @@ export function Inbox() {
           {items
             .filter((m) => m.id === shown)
             .map((m) => (
-              <article key={m.id} className="grid content-start gap-4 rounded-[28px] border border-line bg-surface p-6">
+              <article key={m.id} className="grid content-start gap-4 rounded-[2px] border border-line bg-surface p-6">
                 <header className="grid gap-1 border-b border-line pb-4">
                   <h2 className="text-lg font-semibold">{m.subject}</h2>
                   <p className="text-sm text-ink-3">
@@ -159,7 +159,7 @@ export function Inbox() {
 
 function Empty({ title, text }: { title: string; text: string }) {
   return (
-    <div className="grid justify-items-start gap-3 rounded-[28px] border border-dashed border-line-strong px-6 py-10">
+    <div className="grid justify-items-start gap-3 rounded-[2px] border border-dashed border-line-strong px-6 py-10">
       <EnvelopeSimple className="size-8 text-ink-3" weight="thin" />
       <p className="font-medium">{title}</p>
       <p className="max-w-[56ch] text-sm leading-relaxed text-ink-2">{text}</p>

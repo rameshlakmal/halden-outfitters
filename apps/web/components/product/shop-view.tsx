@@ -64,7 +64,7 @@ export async function ShopView({
         )}
         <div className="transition-opacity duration-200 group-has-[[data-pending]]/shop:opacity-55">
           {page.total === 0 ? (
-            <div className="grid justify-items-center gap-3 rounded-[28px] border border-dashed border-line-strong px-6 py-20 text-center">
+            <div className="grid justify-items-center gap-3 rounded-[2px] border border-dashed border-line-strong px-6 py-20 text-center">
               <MagnifyingGlass className="size-10 text-ink-3" weight="thin" />
               <p className="text-lg font-medium">
                 Nothing matches {searching ? `"${query.get('q')}"` : 'these filters'}

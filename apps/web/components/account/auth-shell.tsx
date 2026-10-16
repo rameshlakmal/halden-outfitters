@@ -26,7 +26,7 @@ export function AuthShell({
           {children}
         </div>
       </div>
-      <div className="relative hidden min-h-[560px] overflow-hidden rounded-[28px] bg-surface-2 md:block">
+      <div className="relative hidden min-h-[560px] overflow-hidden rounded-[2px] bg-surface-2 md:block">
         <Image
           src={photo.src}
           alt={photo.alt}

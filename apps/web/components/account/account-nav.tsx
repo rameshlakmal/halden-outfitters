@@ -22,7 +22,7 @@ export function AccountNav() {
               <Link
                 href={href}
                 aria-current={current ? 'page' : undefined}
-                className={`flex items-center gap-2.5 rounded-full px-4 py-2.5 text-[15px] whitespace-nowrap transition-colors ${
+                className={`flex items-center gap-2.5 rounded-[2px] px-4 py-2.5 text-[15px] whitespace-nowrap transition-colors ${
                   current ? 'bg-surface-2 font-medium text-ink' : 'text-ink-2 hover:bg-surface-2 hover:text-ink'
                 }`}
               >

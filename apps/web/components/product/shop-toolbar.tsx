@@ -78,7 +78,7 @@ export function ShopToolbar({
           <button
             type="button"
             onClick={() => set({ inStock: null, onSale: null, price: null })}
-            className="press inline-flex h-9 items-center gap-1 rounded-full px-3 text-sm text-ink-2 hover:text-ink"
+            className="press inline-flex h-9 items-center gap-1 rounded-[2px] px-3 text-sm text-ink-2 hover:text-ink"
           >
             <X className="size-4" /> Clear filters
           </button>
@@ -102,7 +102,7 @@ function Chip({ href, active, children }: { href: string; active: boolean; child
       href={href}
       scroll={false}
       aria-current={active ? 'page' : undefined}
-      className={`press shrink-0 rounded-full border px-4 py-2 text-sm whitespace-nowrap ${
+      className={`press shrink-0 rounded-[2px] border px-4 py-2 text-sm whitespace-nowrap ${
         active
           ? 'border-brand bg-brand text-brand-ink'
           : 'border-line-strong bg-surface text-ink-2 hover:border-ink-3 hover:text-ink'
@@ -119,7 +119,7 @@ function Toggle({ on, onClick, children }: { on: boolean; onClick: () => void; c
       type="button"
       aria-pressed={on}
       onClick={onClick}
-      className={`press h-9 rounded-full border px-4 text-sm ${
+      className={`press h-9 rounded-[2px] border px-4 text-sm ${
         on
           ? 'border-brand bg-brand-soft font-medium text-brand'
           : 'border-line-strong bg-surface text-ink-2 hover:text-ink'
@@ -142,7 +142,7 @@ function Dropdown({
   onChange: (v: string) => void;
 }) {
   return (
-    <label className="relative inline-flex h-9 items-center rounded-full border border-line-strong bg-surface pr-8 pl-4 text-sm text-ink-2 hover:text-ink">
+    <label className="relative inline-flex h-9 items-center rounded-[2px] border border-line-strong bg-surface pr-8 pl-4 text-sm text-ink-2 hover:text-ink">
       <span className="mr-1.5 text-ink-3">{label}:</span>
       <select
         value={value}

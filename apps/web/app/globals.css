@@ -1,89 +1,88 @@
 @import 'tailwindcss';
 
 /*
-  Halden design tokens. Palette "Glacier": cool ice white and silver, a deep ink-blue brand colour for the logo
-  and active states, and one cobalt accent for primary actions. Every colour is defined for light and dark;
-  components only use tokens. Shape: tiles and images 28px, thumbnails 18px, inputs 14px, buttons and chips pills.
+  Halden design tokens. Palette "Alpine editorial" (preview): paper white and near-black ink, one signal-orange
+  accent. Sharp: 2px corners everywhere. Condensed uppercase display type (Archivo at 72% width).
 */
 
 :root {
   color-scheme: light;
-  --bg: oklch(0.985 0.004 240);
-  --surface: oklch(0.997 0.002 240);
-  --surface-2: oklch(0.962 0.008 245);
-  --surface-3: oklch(0.928 0.012 248);
-  --ink: oklch(0.21 0.02 262);
-  --ink-2: oklch(0.43 0.02 258);
-  --ink-3: oklch(0.56 0.016 255);
-  --line: oklch(0.905 0.008 250);
-  --line-strong: oklch(0.83 0.012 252);
-  --brand: oklch(0.26 0.035 262);
-  --brand-ink: oklch(0.985 0.004 240);
-  --brand-soft: oklch(0.94 0.03 262);
-  --accent: oklch(0.52 0.2 262);
-  --accent-hover: oklch(0.47 0.2 263);
-  --accent-ink: oklch(0.99 0.003 240);
-  --danger: oklch(0.55 0.2 25);
-  --danger-soft: oklch(0.96 0.025 25);
-  --success: oklch(0.55 0.13 160);
-  --warning-soft: oklch(0.96 0.04 85);
-  --shadow: 230 35% 30%;
-  --scrim: oklch(0.25 0.03 262 / 0.32);
-  --glass: oklch(0.99 0.004 240 / 0.66);
+  --bg: oklch(0.975 0 0);
+  --surface: oklch(0.993 0 0);
+  --surface-2: oklch(0.94 0 0);
+  --surface-3: oklch(0.9 0 0);
+  --ink: oklch(0.16 0 0);
+  --ink-2: oklch(0.38 0 0);
+  --ink-3: oklch(0.52 0 0);
+  --line: oklch(0.86 0 0);
+  --line-strong: oklch(0.16 0 0);
+  --brand: oklch(0.16 0 0);
+  --brand-ink: oklch(0.975 0 0);
+  --brand-soft: oklch(0.93 0.03 45);
+  --accent: oklch(0.57 0.205 38);
+  --accent-hover: oklch(0.51 0.19 36);
+  --accent-ink: oklch(0.99 0 0);
+  --danger: oklch(0.52 0.2 25);
+  --danger-soft: oklch(0.95 0.03 25);
+  --success: oklch(0.5 0.12 155);
+  --warning-soft: oklch(0.95 0.05 85);
+  --shadow: 0 0% 0%;
+  --scrim: oklch(0.1 0 0 / 0.45);
+  --glass: oklch(0.975 0 0 / 0.86);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     color-scheme: dark;
-    --bg: oklch(0.165 0.018 262);
-    --surface: oklch(0.205 0.02 262);
-    --surface-2: oklch(0.245 0.022 262);
-    --surface-3: oklch(0.29 0.024 262);
-    --ink: oklch(0.96 0.006 245);
-    --ink-2: oklch(0.8 0.014 250);
-    --ink-3: oklch(0.67 0.016 252);
-    --line: oklch(0.3 0.02 262);
-    --line-strong: oklch(0.38 0.022 262);
-    --brand: oklch(0.93 0.01 245);
-    --brand-ink: oklch(0.18 0.02 262);
-    --brand-soft: oklch(0.3 0.06 262);
-    --accent: oklch(0.7 0.15 258);
-    --accent-hover: oklch(0.76 0.13 256);
-    --accent-ink: oklch(0.17 0.03 262);
-    --danger: oklch(0.72 0.15 25);
-    --danger-soft: oklch(0.29 0.06 25);
-    --success: oklch(0.75 0.12 160);
-    --warning-soft: oklch(0.31 0.05 85);
-    --shadow: 262 50% 4%;
-    --scrim: oklch(0.08 0.02 262 / 0.6);
-    --glass: oklch(0.21 0.02 262 / 0.68);
+    --bg: oklch(0.14 0 0);
+    --surface: oklch(0.18 0 0);
+    --surface-2: oklch(0.22 0 0);
+    --surface-3: oklch(0.27 0 0);
+    --ink: oklch(0.96 0 0);
+    --ink-2: oklch(0.78 0 0);
+    --ink-3: oklch(0.64 0 0);
+    --line: oklch(0.3 0 0);
+    --line-strong: oklch(0.96 0 0);
+    --brand: oklch(0.96 0 0);
+    --brand-ink: oklch(0.14 0 0);
+    --brand-soft: oklch(0.3 0.06 40);
+    --accent: oklch(0.7 0.19 42);
+    --accent-hover: oklch(0.76 0.17 45);
+    --accent-ink: oklch(0.14 0 0);
+    --danger: oklch(0.7 0.16 25);
+    --danger-soft: oklch(0.28 0.06 25);
+    --success: oklch(0.74 0.12 155);
+    --warning-soft: oklch(0.3 0.05 85);
+    --shadow: 0 0% 0%;
+    --scrim: oklch(0.05 0 0 / 0.65);
+    --glass: oklch(0.14 0 0 / 0.88);
   }
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg: oklch(0.165 0.018 262);
-  --surface: oklch(0.205 0.02 262);
-  --surface-2: oklch(0.245 0.022 262);
-  --surface-3: oklch(0.29 0.024 262);
-  --ink: oklch(0.96 0.006 245);
-  --ink-2: oklch(0.8 0.014 250);
-  --ink-3: oklch(0.67 0.016 252);
-  --line: oklch(0.3 0.02 262);
-  --line-strong: oklch(0.38 0.022 262);
-  --brand: oklch(0.93 0.01 245);
-  --brand-ink: oklch(0.18 0.02 262);
-  --brand-soft: oklch(0.3 0.06 262);
-  --accent: oklch(0.7 0.15 258);
-  --accent-hover: oklch(0.76 0.13 256);
-  --accent-ink: oklch(0.17 0.03 262);
-  --danger: oklch(0.72 0.15 25);
-  --danger-soft: oklch(0.29 0.06 25);
-  --success: oklch(0.75 0.12 160);
-  --warning-soft: oklch(0.31 0.05 85);
-  --shadow: 262 50% 4%;
-  --scrim: oklch(0.08 0.02 262 / 0.6);
-  --glass: oklch(0.21 0.02 262 / 0.68);
+  --bg: oklch(0.14 0 0);
+  --surface: oklch(0.18 0 0);
+  --surface-2: oklch(0.22 0 0);
+  --surface-3: oklch(0.27 0 0);
+  --ink: oklch(0.96 0 0);
+  --ink-2: oklch(0.78 0 0);
+  --ink-3: oklch(0.64 0 0);
+  --line: oklch(0.3 0 0);
+  --line-strong: oklch(0.96 0 0);
+  --brand: oklch(0.96 0 0);
+  --brand-ink: oklch(0.14 0 0);
+  --brand-soft: oklch(0.3 0.06 40);
+  --accent: oklch(0.7 0.19 42);
+  --accent-hover: oklch(0.76 0.17 45);
+  --accent-ink: oklch(0.14 0 0);
+  --danger: oklch(0.7 0.16 25);
+  --danger-soft: oklch(0.28 0.06 25);
+  --success: oklch(0.74 0.12 155);
+  --warning-soft: oklch(0.3 0.05 85);
+  --shadow: 0 0% 0%;
+  --scrim: oklch(0.05 0 0 / 0.65);
+  --glass: oklch(0.14 0 0 / 0.88);
 }
 
 @theme inline {
@@ -108,7 +107,7 @@
   --color-warning-soft: var(--warning-soft);
   --color-scrim: var(--scrim);
   --color-glass: var(--glass);
-  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --radius-card: 28px;
   --radius-field: 14px;
@@ -137,6 +136,18 @@
   ::selection {
     background: var(--accent);
     color: var(--accent-ink);
+  }
+  /* Editorial display type: condensed, heavy, uppercase. Body text stays at normal width. */
+  h1,
+  h2 {
+    font-stretch: 72%;
+    font-weight: 800;
+    text-transform: uppercase;
+    line-height: 0.92;
+  }
+  h3 {
+    font-stretch: 85%;
+    font-weight: 700;
   }
   [hidden] {
     display: none !important;

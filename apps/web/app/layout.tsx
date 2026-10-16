@@ -1,4 +1,4 @@
-import { Manrope } from 'next/font/google';
+import { Archivo } from 'next/font/google';
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import { Providers } from '@/components/providers';
@@ -8,7 +8,7 @@ import { TopBar } from '@/components/shell/top-bar';
 import './globals.css';
 
 // Self-hosted at build time (no request to Google at runtime). One variable file covers every weight.
-const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope', display: 'swap' });
+const archivo = Archivo({ subsets: ['latin'], variable: '--font-archivo', display: 'swap', axes: ['wdth'] });
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.APP_URL ?? 'http://localhost:3001'),
@@ -26,14 +26,14 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={manrope.variable} suppressHydrationWarning>
+    <html lang="en" className={archivo.variable} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body className="min-h-dvh">
         <a
           href="#main"
-          className="sr-only rounded-full bg-brand px-4 py-2 text-brand-ink focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[70]"
+          className="sr-only rounded-[2px] bg-brand px-4 py-2 text-brand-ink focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[70]"
         >
           Skip to content
         </a>

@@ -95,7 +95,7 @@ export function QuickAdd({ productId, name }: { productId: string; name: string 
       onClick={() => run(1)}
       disabled={state === 'busy'}
       aria-label={`Add ${name} to cart`}
-      className="press glass absolute right-3 bottom-3 grid size-11 place-items-center rounded-full border border-line text-ink opacity-100 shadow-[var(--shadow-soft)] transition-opacity duration-200 hover:bg-surface md:opacity-0 md:group-focus-within:opacity-100 md:group-hover:opacity-100"
+      className="press glass absolute right-3 bottom-3 grid size-11 place-items-center rounded-[2px] border border-line text-ink opacity-100 shadow-[var(--shadow-soft)] transition-opacity duration-200 hover:bg-surface md:opacity-0 md:group-focus-within:opacity-100 md:group-hover:opacity-100"
     >
       {state === 'busy' ? (
         <Spinner />

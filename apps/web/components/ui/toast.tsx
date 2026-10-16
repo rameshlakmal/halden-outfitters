@@ -40,7 +40,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <div
             key={t.id}
             role={t.tone === 'error' ? 'alert' : 'status'}
-            className={`enter glass pointer-events-auto flex max-w-md items-center gap-3 rounded-full border border-line py-2.5 pr-2.5 pl-4 text-sm text-ink shadow-[var(--shadow-lift)] transition-[opacity,transform] duration-200 ${
+            className={`enter glass pointer-events-auto flex max-w-md items-center gap-3 rounded-[2px] border border-line py-2.5 pr-2.5 pl-4 text-sm text-ink shadow-[var(--shadow-lift)] transition-[opacity,transform] duration-200 ${
               t.leaving ? 'translate-y-2 opacity-0' : ''
             }`}
           >
@@ -53,7 +53,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <button
               type="button"
               onClick={() => dismiss(t.id)}
-              className="press grid size-7 place-items-center rounded-full text-ink-3 hover:bg-surface-2 hover:text-ink"
+              className="press grid size-7 place-items-center rounded-[2px] text-ink-3 hover:bg-surface-2 hover:text-ink"
               aria-label="Dismiss"
             >
               <X className="size-4" />

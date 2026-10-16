@@ -20,7 +20,7 @@ export default function DrawerBody({ onClose }: { onClose: () => void }) {
         <button
           type="button"
           onClick={onClose}
-          className="press grid size-9 place-items-center rounded-full text-ink-2 hover:bg-surface-2"
+          className="press grid size-9 place-items-center rounded-[2px] text-ink-2 hover:bg-surface-2"
           aria-label="Close cart"
           autoFocus
         >
@@ -33,7 +33,7 @@ export default function DrawerBody({ onClose }: { onClose: () => void }) {
           <div className="grid gap-4 py-5">
             {[0, 1].map((i) => (
               <div key={i} className="flex gap-4">
-                <Skeleton className="size-20 rounded-[18px]" />
+                <Skeleton className="size-20 rounded-[2px]" />
                 <div className="grid flex-1 content-start gap-2">
                   <Skeleton className="h-4 w-3/4" />
                   <Skeleton className="h-4 w-1/3" />

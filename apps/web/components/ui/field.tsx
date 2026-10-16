@@ -1,7 +1,7 @@
 import { type ComponentProps, type ReactNode, useId } from 'react';
 
 const control =
-  'w-full rounded-[14px] border bg-surface px-3.5 text-[15px] text-ink placeholder:text-ink-3 ' +
+  'w-full rounded-[2px] border bg-surface px-3.5 text-[15px] text-ink placeholder:text-ink-3 ' +
   'transition-[border-color,box-shadow] duration-150 outline-none ' +
   'focus:border-brand focus:shadow-[0_0_0_3px_color-mix(in_oklch,var(--brand)_22%,transparent)] ' +
   'disabled:bg-surface-2 disabled:text-ink-3';
@@ -99,7 +99,7 @@ export function FormAlert({
   return (
     <div
       role={tone === 'danger' ? 'alert' : 'status'}
-      className={`rounded-[14px] border px-4 py-3 text-sm ${tones[tone]}`}
+      className={`rounded-[2px] border px-4 py-3 text-sm ${tones[tone]}`}
     >
       {children}
     </div>

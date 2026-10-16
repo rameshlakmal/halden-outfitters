@@ -38,7 +38,7 @@ export default async function ProductPage({ params }: Props) {
         <Link
           href={`/shop/${product.category.slug}`}
           transitionTypes={['nav-back']}
-          className="inline-flex items-center gap-1.5 rounded-full py-1 pr-3 text-sm text-ink-2 hover:text-ink"
+          className="inline-flex items-center gap-1.5 rounded-[2px] py-1 pr-3 text-sm text-ink-2 hover:text-ink"
         >
           <ArrowLeft className="size-4" /> {product.category.name}
         </Link>
@@ -48,7 +48,7 @@ export default async function ProductPage({ params }: Props) {
         <Gallery product={product} />
 
         <ViewTransition enter={PAGE_ENTER} default="none">
-          <div className="rounded-[28px] bg-surface-2 p-6 sm:p-8 lg:sticky lg:top-24 lg:self-start">
+          <div className="rounded-[2px] bg-surface-2 p-6 sm:p-8 lg:sticky lg:top-24 lg:self-start">
             <div className="grid gap-5">
               <div className="grid gap-3">
                 <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">{product.name}</h1>
@@ -95,7 +95,7 @@ export default async function ProductPage({ params }: Props) {
             {details.map(([label, value], i) => (
               <div
                 key={label}
-                className={`grid gap-1 rounded-[28px] p-5 ${i === 0 ? 'col-span-2 bg-brand text-brand-ink sm:col-span-1' : 'bg-surface-2'}`}
+                className={`grid gap-1 rounded-[2px] p-5 ${i === 0 ? 'col-span-2 bg-brand text-brand-ink sm:col-span-1' : 'bg-surface-2'}`}
               >
                 <dt className={`text-sm ${i === 0 ? 'opacity-80' : 'text-ink-3'}`}>{label}</dt>
                 <dd className="text-xl font-semibold tracking-tight">{value}</dd>

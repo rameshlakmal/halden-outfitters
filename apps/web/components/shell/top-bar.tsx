@@ -15,12 +15,12 @@ export function TopBar() {
   const menu = useRef<HTMLDialogElement>(null);
 
   return (
-    // A floating glass pill: content scrolls underneath it, frosted (solid when transparency is reduced).
-    <header className="sticky top-0 z-30 px-3 pt-3 sm:px-4">
-      <div className="glass mx-auto flex h-14 max-w-[1120px] items-center gap-1 rounded-full border border-line/80 pr-1.5 pl-2 shadow-[var(--shadow-soft)] sm:pl-4 lg:gap-4">
+    // A solid editorial bar with a hard rule underneath.
+    <header className="sticky top-0 z-30 border-b border-line-strong bg-bg">
+      <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-1 px-4 sm:px-6 lg:gap-6 lg:px-8">
         <button
           type="button"
-          className="press grid size-10 place-items-center rounded-full text-ink-2 hover:bg-surface-2 md:hidden"
+          className="press grid size-10 place-items-center rounded-[2px] text-ink-2 hover:bg-surface-2 md:hidden"
           aria-label="Open menu"
           onClick={() => menu.current?.showModal()}
         >
@@ -35,7 +35,7 @@ export function TopBar() {
                 key={n.href}
                 href={n.href}
                 aria-current={current ? 'page' : undefined}
-                className={`rounded-full px-3.5 py-1.5 text-[14px] font-medium transition-colors ${current ? 'bg-brand text-brand-ink' : 'text-ink-2 hover:bg-surface-2 hover:text-ink'}`}
+                className={`px-3 py-2 text-[13px] font-bold tracking-[0.08em] uppercase transition-colors ${current ? 'text-accent' : 'text-ink hover:text-accent'}`}
               >
                 {n.label}
               </Link>
@@ -60,7 +60,7 @@ export function TopBar() {
           <Logo />
           <button
             type="button"
-            className="press grid size-10 place-items-center rounded-full hover:bg-surface-2"
+            className="press grid size-10 place-items-center rounded-[2px] hover:bg-surface-2"
             aria-label="Close menu"
             onClick={() => menu.current?.close()}
           >
@@ -73,7 +73,7 @@ export function TopBar() {
               key={n.href}
               href={n.href}
               onClick={() => menu.current?.close()}
-              className="rounded-[18px] px-3 py-3 text-lg hover:bg-surface-2"
+              className="rounded-[2px] px-3 py-3 text-lg hover:bg-surface-2"
             >
               {n.label}
             </Link>
@@ -82,7 +82,7 @@ export function TopBar() {
             href="/account"
             prefetch={false}
             onClick={() => menu.current?.close()}
-            className="rounded-[18px] px-3 py-3 text-lg hover:bg-surface-2"
+            className="rounded-[2px] px-3 py-3 text-lg hover:bg-surface-2"
           >
             Your account
           </Link>
@@ -104,11 +104,11 @@ function AccountLink() {
     <Link
       href={me ? '/account' : '/sign-in'}
       prefetch={false}
-      className="press grid size-10 place-items-center rounded-full text-ink-2 hover:bg-surface-2 hover:text-ink"
+      className="press grid size-10 place-items-center rounded-[2px] text-ink-2 hover:bg-surface-2 hover:text-ink"
       aria-label={me ? `Your account (${me.name})` : 'Sign in'}
     >
       {me ? (
-        <span className="grid size-8 place-items-center rounded-full bg-brand-soft text-[13px] font-semibold text-brand">
+        <span className="grid size-8 place-items-center rounded-[2px] bg-brand-soft text-[13px] font-semibold text-brand">
           {initials}
         </span>
       ) : (
@@ -137,7 +137,7 @@ function CartButton() {
       onClick={open}
       onPointerEnter={preloadCartDrawer}
       onFocus={preloadCartDrawer}
-      className="press relative grid size-10 place-items-center rounded-full text-ink hover:bg-surface-2"
+      className="press relative grid size-10 place-items-center rounded-[2px] text-ink hover:bg-surface-2"
       aria-label={`Open cart, ${count} item${count === 1 ? '' : 's'}`}
       data-testid="cart-button"
     >
@@ -145,7 +145,7 @@ function CartButton() {
       {count > 0 && (
         <span
           ref={badge}
-          className="absolute -top-0.5 -right-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-accent px-1 text-[11px] font-bold text-accent-ink tabular-nums"
+          className="absolute -top-0.5 -right-0.5 grid h-5 min-w-5 place-items-center rounded-[2px] bg-accent px-1 text-[11px] font-bold text-accent-ink tabular-nums"
         >
           {count > 99 ? '99+' : count}
         </span>

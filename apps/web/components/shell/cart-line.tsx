@@ -41,7 +41,7 @@ export function DrawerLine({ line, onNavigate, list }: { line: CartLine; onNavig
           width={80}
           height={80}
           sizes="80px"
-          className="size-20 rounded-[18px] bg-surface-2 object-cover"
+          className="size-20 rounded-[2px] bg-surface-2 object-cover"
         />
       </Link>
       <div className="grid min-w-0 flex-1 gap-1">
@@ -80,7 +80,7 @@ export function DrawerLine({ line, onNavigate, list }: { line: CartLine; onNavig
               });
             }}
             disabled={busy}
-            className="press inline-flex items-center gap-1 rounded-full px-2 py-1 text-[13px] text-ink-3 hover:text-danger"
+            className="press inline-flex items-center gap-1 rounded-[2px] px-2 py-1 text-[13px] text-ink-3 hover:text-danger"
           >
             <Trash className="size-4" /> Remove
           </button>
