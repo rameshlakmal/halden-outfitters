@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Amount, Id, Page, Slug } from './common.js';
+import { Amount, Id, Page, Slug } from './common.ts';
 
 export const PRODUCT_SORTS = ['featured', 'price-asc', 'price-desc', 'newest', 'rating'] as const;
 export type ProductSort = (typeof PRODUCT_SORTS)[number];

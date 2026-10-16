@@ -5,3 +5,11 @@ node_modules/
 .vercel/
 TEST-ACCOUNTS.md
 *.log
+
+# v2 build and test output
+dist/
+.next/
+test-results/
+playwright-report/
+.lighthouseci/
+*.tsbuildinfo

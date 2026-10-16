@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { Amount, Id, Slug } from './common.js';
-import { Availability, Image } from './catalog.js';
+import { Amount, Id, Slug } from './common.ts';
+import { Availability, Image } from './catalog.ts';
 
 export const MAX_LINE_QTY = 20;
 

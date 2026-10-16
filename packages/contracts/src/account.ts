@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Email, Id, optionalText, text, Timestamp } from './common.js';
+import { Email, Id, optionalText, text, Timestamp } from './common.ts';
 
 export const ROLES = ['customer', 'support', 'warehouse', 'admin'] as const;
 export type Role = (typeof ROLES)[number];

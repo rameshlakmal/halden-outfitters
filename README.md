@@ -1,5 +1,7 @@
 # Halden Outfitters
 
+> **v2 is being built** on the `v2` branch: a Fastify + TypeScript API with real business rules and a new Next.js storefront. See [docs/DESIGN.md](docs/DESIGN.md) for the plan and [docs/DEVELOPING.md](docs/DEVELOPING.md) to run it. This README describes v1, which stays live until v2 reaches parity.
+
 A small outdoor-gear web shop, built as a **test target for database QA**. It looks and works like a real store (catalogue, cart, coupons, checkout, order history, cancellations, a staff admin), and it has **planted bugs** you can switch on to practise catching them.
 
 It is plain HTML, CSS and JavaScript on the front end, one Node function for the API, and PostgreSQL. It hosts free on Vercel with a Neon database.

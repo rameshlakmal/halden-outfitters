@@ -9,3 +9,10 @@ scripts
 test
 db/*.js
 *.md
+apps/web/.next
+apps/api/dist
+**/test-results
+**/playwright-report
+.lighthouseci
+apps/web/next-env.d.ts
+qa

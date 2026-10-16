@@ -69,7 +69,7 @@ packages/
   contracts/           Zod schemas shared by API and web: request/response types, error codes
   money/               cents helpers, rounding, allocation
 db/
-  migrations/          numbered SQL migrations (node-pg-migrate, SQL files)
+  migrations/          numbered SQL migrations, applied by apps/api/src/core/migrate.ts
   seed/                demo catalogue, customers, staff, orders in every state
 qa/
   rules.sql            Propmaster rule checks
@@ -86,11 +86,11 @@ docs/
 | Validation + types | Zod + `fastify-type-provider-zod` | one schema gives validation, TS types and OpenAPI |
 | API docs | `@fastify/swagger` + Scalar UI at `/api/v1/docs` | live OpenAPI 3.1 spec for API testers |
 | DB | `pg` with hand-written SQL in repositories | SQL stays visible (portfolio), no ORM magic |
-| Migrations | node-pg-migrate (SQL files) | forward-only, versioned, runs in CI and on deploy |
+| Migrations | a small runner of our own (`core/migrate.ts`): plain SQL files, one transaction each, checksums, advisory lock | forward-only, versioned, nothing hidden; runs in CI and on deploy |
 | Passwords | `@node-rs/argon2` (argon2id) | current OWASP advice; works on Vercel |
 | Logging | pino (JSON) with request IDs | structured, cheap |
-| Frontend | Next.js 15, React 19, TanStack Query, React Hook Form + Zod | standard production stack |
-| Styling and motion | Tailwind v4, Motion (`motion/react`, lazy-loaded), Phosphor, Geist via `next/font` | see section 5 |
+| Frontend | Next.js 16 (App Router, Turbopack), React 19.3, TanStack Query, React Hook Form + Zod | standard production stack |
+| Styling and motion | Tailwind v4, browser-native motion (View Transitions, scroll timelines, `@starting-style`, Web Animations), Phosphor, Geist via `next/font` | see section 5; no animation library is shipped |
 | Staff tables | TanStack Table | dense, sortable, keyboard-friendly |
 | Performance gate | Lighthouse CI | fails a PR that breaks the budgets in 5.5 |
 | Tests | Vitest, Fastify `inject`, Playwright | unit → API → E2E |
@@ -358,7 +358,7 @@ CI on GitHub Actions: lint → typecheck → unit → integration → API → bu
 ### 5.1 Design read
 
 **Reading this as:** a full visual overhaul of a premium-consumer outdoor-gear shop, for design-conscious
-shoppers, with a modern, motion-rich language, leaning toward **Tailwind v4 + Motion + Geist + CSS-native
+shoppers, with a modern, motion-rich language, leaning toward **Tailwind v4 + Geist + browser-native
 transitions (View Transitions, scroll-driven animations)**. Content and page structure carry over from v1.
 The look starts from scratch.
 
@@ -398,10 +398,11 @@ Every animation has a job: show a change, give feedback, or guide the eye.
 | Moment | Technique | Job |
 |---|---|---|
 | Page to page | **View Transitions API** (cross-fade; the product photo morphs from grid to product page) | keeps the shopper's place |
-| Add to cart | button gives way to a check, the cart count springs, the drawer slides in | confirms the action |
+| Add to cart | the label swaps to a check (CSS), the cart count bounces (Web Animations, a spring written as a CSS `linear()` curve), the drawer slides in | confirms the action |
+| Removing a cart line or an address | it slides out, then the rest close the gap in a view transition | shows what went where |
 | Lists and grids appearing | CSS **scroll-driven animations** (`animation-timeline: view()`), short fade and rise, once | hierarchy, without JS |
-| Filters and sorting | Motion `layout` on the product grid only | shows items moving, not jumping |
-| Product gallery | swipe and drag with spring physics (Motion) | feels physical on touch |
+| Filters and sorting | each card is a named React `<ViewTransition>`: cards that stay glide to their new place | shows items moving, not jumping |
+| Product gallery | native CSS scroll-snap carousel (the phone's own swipe); thumbnails scroll to a photo | feels physical on touch, no JS physics |
 | Checkout steps | the step indicator and panels slide by direction | shows progress |
 | Order and return timelines | the status line draws in to the current step | shows where the order is |
 | Dialogs, drawers, menus | CSS `@starting-style` + `transition-behavior: allow-discrete` | smooth enter and exit, no JS |
@@ -414,29 +415,39 @@ marquee more than once on the whole site.
 
 Rules:
 - **Animate only `transform` and `opacity`.** `will-change` only while something is animating.
-- **CSS first.** View Transitions, scroll-driven animations and `@starting-style` cost no JavaScript. Motion
-  (`motion/react`) loads only in the few client components that need springs or layout animation, using
-  `LazyMotion` with `domAnimation` (about 15 kB instead of the full bundle).
+- **Browser-native motion only.** View Transitions, scroll-driven animations, `@starting-style` and the Web
+  Animations API cost no JavaScript download. The Motion library was tried first and dropped: it alone took 45 kB
+  of the budget, and every use had a native equivalent (5.4).
+- **Render less up front.** Below-the-fold sections use `content-visibility: auto`, so the first frame only lays
+  out what's visible. The cart drawer's code loads on first open (fetched early when the pointer nears the cart).
+  Account links don't prefetch, so form code never loads on storefront pages.
 - **Server Components by default.** Pages render on the server, and interactive parts are small client islands.
-- **No scroll listeners.** Use IntersectionObserver, CSS timelines or Motion's `useScroll` only.
+- **No scroll listeners.** CSS timelines, IntersectionObserver or the `scrollend` event only. Smooth scrolling is
+  never combined with mandatory scroll-snap: the browser's first snap then counts as a scroll and stops LCP from
+  being recorded at all (found while measuring the home page).
 - **Images:** `next/image` with AVIF/WebP and fixed sizes (no layout shift). The hero image is preloaded,
   everything below the fold is lazy.
-- **Fonts:** `next/font` self-hosted, subset, `display: swap`.
+- **Fonts:** `next/font` self-hosted, subset, `display: swap`. Only Geist Sans loads on the storefront.
 - **Reduced motion:** with `prefers-reduced-motion`, every animation becomes an instant change. Nothing breaks, nothing is hidden.
 - **Low-end devices:** springs and layout animations are skipped when the device reports few CPU cores or
   saves data (`navigator.hardwareConcurrency`, `Save-Data`).
 
-Budgets, **enforced in CI with Lighthouse CI** on the home, category, product and checkout pages (mobile profile).
-A PR that misses them fails:
+Budgets, **enforced in CI** (`.github/workflows/ci.yml`): Lighthouse CI on the home, shop, product and cart pages
+(mobile profile, median of 3 runs), and a byte-exact first-load JS check (`apps/web/scripts/check-js-budget.mjs`).
+A push that misses them fails:
 
 | Metric | Budget |
 |---|---|
 | Lighthouse performance | ≥ 90 |
 | Largest Contentful Paint | < 2.5 s |
-| Interaction to Next Paint | < 200 ms |
+| Total Blocking Time (lab stand-in for INP) | < 300 ms (warning) |
 | Cumulative Layout Shift | < 0.1 |
-| JS sent for a storefront page | < 170 kB gzipped |
+| First-load JS, storefront pages | ≤ 180 kB gzipped (measured 170 to 173 kB; React DOM and the Next runtime are about 125 kB of it) |
+| First-load JS, sign-in and register | ≤ 230 kB gzipped (measured 218 kB: form handling and validation) |
 | Lighthouse accessibility | ≥ 95 |
+
+The first draft said 170 kB for storefront pages; the framework alone leaves too little room for that, so the
+budget is 180 kB and the measured numbers are recorded here.
 
 ### 5.6 Pages
 

@@ -13,4 +13,4 @@ const shutdown = async (signal: string) => {
 process.on('SIGINT', () => void shutdown('SIGINT'));
 process.on('SIGTERM', () => void shutdown('SIGTERM'));
 
-await app.listen({ port: config.PORT, host: '127.0.0.1' });
+await app.listen({ port: config.PORT, host: config.HOST });

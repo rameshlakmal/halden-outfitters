@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    branches: [main, v2]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: 24
+
+jobs:
+  quality:
+    name: Lint, format, typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '${{ env.NODE_VERSION }}', cache: npm }
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run typecheck
+
+  test:
+    name: Unit and API integration tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env: { POSTGRES_USER: halden, POSTGRES_PASSWORD: halden, POSTGRES_DB: halden_test }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U halden" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgres://halden:halden@localhost:5432/halden_test
+      DATABASE_URL: postgres://halden:halden@localhost:5432/halden_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '${{ env.NODE_VERSION }}', cache: npm }
+      - run: npm ci
+      - run: npm test
+
+  e2e:
+    name: End-to-end, performance budgets
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env: { POSTGRES_USER: halden, POSTGRES_PASSWORD: halden, POSTGRES_DB: halden_e2e }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U halden" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      NODE_ENV: production
+      DATABASE_URL: postgres://halden:halden@localhost:5432/halden_e2e
+      APP_URL: http://localhost:3001
+      API_URL: http://127.0.0.1:4000
+      RATE_LIMITS: 'false'
+      SEED_ADMIN_PASSWORD: ci-staff-password-1
+      SEED_SHOPPER_PASSWORD: ci-shopper-password-1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '${{ env.NODE_VERSION }}', cache: npm }
+      - run: npm ci
+      - name: Migrate and seed
+        run: npm run db:migrate && npm run db:seed
+      - name: Build
+        run: npm run build
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+        working-directory: apps/web
+      - name: End-to-end tests
+        run: npm run test:e2e
+      - name: Reseed (the e2e run changed carts and accounts)
+        run: npm run db:seed
+      - name: Start servers for the budgets
+        run: |
+          npm run start -w @halden/api &
+          npm run start -w @halden/web &
+          npx wait-on -t 60000 http://127.0.0.1:4000/api/v1/health http://localhost:3001/
+      - name: First-load JavaScript budget
+        run: node apps/web/scripts/check-js-budget.mjs http://localhost:3001
+      - name: Lighthouse budgets (mobile)
+        run: npx @lhci/cli@0.15.1 autorun --config=apps/web/lighthouserc.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reports
+          path: |
+            apps/web/playwright-report
+            .lighthouseci
+          retention-days: 14

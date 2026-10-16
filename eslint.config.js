@@ -32,7 +32,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['**/scripts/**', '**/test/**', '**/*.test.ts'],
+    files: ['**/scripts/**', '**/test/**', '**/e2e/**', 'tools/**', '**/*.test.ts'],
     rules: { 'no-console': 'off', '@typescript-eslint/no-non-null-assertion': 'off' },
   },
 );

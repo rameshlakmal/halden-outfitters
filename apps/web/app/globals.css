@@ -1,0 +1,477 @@
+@import 'tailwindcss';
+
+/*
+  Halden design tokens. Palette "Forest": deep green and stone neutrals, one warm amber accent used only for
+  primary actions and key highlights. Every colour is defined for light and dark; components only use tokens.
+  Shape: cards and images 16px, inputs 10px, buttons and chips full pill.
+*/
+
+:root {
+  color-scheme: light;
+  --bg: oklch(0.982 0.005 150);
+  --surface: oklch(0.995 0.003 150);
+  --surface-2: oklch(0.958 0.008 150);
+  --surface-3: oklch(0.925 0.011 150);
+  --ink: oklch(0.235 0.025 160);
+  --ink-2: oklch(0.42 0.022 160);
+  --ink-3: oklch(0.55 0.018 160);
+  --line: oklch(0.885 0.01 150);
+  --line-strong: oklch(0.8 0.014 150);
+  --forest: oklch(0.37 0.072 158);
+  --forest-ink: oklch(0.975 0.01 150);
+  --forest-soft: oklch(0.93 0.03 155);
+  --accent: oklch(0.8 0.145 72);
+  --accent-hover: oklch(0.76 0.15 68);
+  --accent-ink: oklch(0.24 0.04 60);
+  --danger: oklch(0.54 0.19 27);
+  --danger-soft: oklch(0.95 0.03 27);
+  --success: oklch(0.5 0.11 155);
+  --warning-soft: oklch(0.95 0.05 80);
+  --shadow: 160 30% 18%;
+  --scrim: oklch(0.2 0.02 160 / 0.42);
+  --glass: oklch(0.99 0.004 150 / 0.72);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --bg: oklch(0.175 0.014 160);
+    --surface: oklch(0.212 0.016 160);
+    --surface-2: oklch(0.25 0.017 160);
+    --surface-3: oklch(0.29 0.018 160);
+    --ink: oklch(0.955 0.006 150);
+    --ink-2: oklch(0.8 0.012 155);
+    --ink-3: oklch(0.68 0.014 155);
+    --line: oklch(0.3 0.015 160);
+    --line-strong: oklch(0.38 0.016 160);
+    --forest: oklch(0.74 0.1 155);
+    --forest-ink: oklch(0.18 0.02 160);
+    --forest-soft: oklch(0.28 0.04 158);
+    --accent: oklch(0.81 0.145 72);
+    --accent-hover: oklch(0.85 0.13 75);
+    --accent-ink: oklch(0.22 0.04 60);
+    --danger: oklch(0.7 0.16 27);
+    --danger-soft: oklch(0.28 0.06 27);
+    --success: oklch(0.74 0.12 155);
+    --warning-soft: oklch(0.3 0.05 80);
+    --shadow: 160 40% 4%;
+    --scrim: oklch(0.08 0.01 160 / 0.6);
+    --glass: oklch(0.21 0.016 160 / 0.74);
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: oklch(0.175 0.014 160);
+  --surface: oklch(0.212 0.016 160);
+  --surface-2: oklch(0.25 0.017 160);
+  --surface-3: oklch(0.29 0.018 160);
+  --ink: oklch(0.955 0.006 150);
+  --ink-2: oklch(0.8 0.012 155);
+  --ink-3: oklch(0.68 0.014 155);
+  --line: oklch(0.3 0.015 160);
+  --line-strong: oklch(0.38 0.016 160);
+  --forest: oklch(0.74 0.1 155);
+  --forest-ink: oklch(0.18 0.02 160);
+  --forest-soft: oklch(0.28 0.04 158);
+  --accent: oklch(0.81 0.145 72);
+  --accent-hover: oklch(0.85 0.13 75);
+  --accent-ink: oklch(0.22 0.04 60);
+  --danger: oklch(0.7 0.16 27);
+  --danger-soft: oklch(0.28 0.06 27);
+  --success: oklch(0.74 0.12 155);
+  --warning-soft: oklch(0.3 0.05 80);
+  --shadow: 160 40% 4%;
+  --scrim: oklch(0.08 0.01 160 / 0.6);
+  --glass: oklch(0.21 0.016 160 / 0.74);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-forest: var(--forest);
+  --color-forest-ink: var(--forest-ink);
+  --color-forest-soft: var(--forest-soft);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-ink: var(--accent-ink);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-success: var(--success);
+  --color-warning-soft: var(--warning-soft);
+  --color-scrim: var(--scrim);
+  --color-glass: var(--glass);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --radius-card: 16px;
+  --radius-field: 10px;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --shadow-soft: 0 1px 2px hsl(var(--shadow) / 0.06), 0 8px 24px -12px hsl(var(--shadow) / 0.18);
+  --shadow-lift: 0 2px 4px hsl(var(--shadow) / 0.06), 0 22px 48px -20px hsl(var(--shadow) / 0.32);
+}
+
+/* z-index scale: content 0, sticky bar 30, drawer/dialog 50, toast 60. */
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible {
+    outline: 2px solid var(--forest);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
+  [hidden] {
+    display: none !important;
+  }
+}
+
+@layer components {
+  /* Frosted surfaces only where something floats over content. Solid when transparency is reduced. */
+  .glass {
+    background: var(--glass);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.06);
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .glass {
+      background: var(--surface);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+  }
+
+  /* The top bar's frosted backdrop fades in over the first 64px of scroll (opacity only, CSS timeline).
+     Without scroll-timeline support it's simply always on. */
+  .topbar {
+    isolation: isolate;
+  }
+  .topbar::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--glass);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border-bottom: 1px solid var(--line);
+  }
+  @supports (animation-timeline: scroll()) {
+    .topbar::before {
+      animation: bar-in linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 64px;
+    }
+  }
+
+  /* Below-the-fold sections: the browser skips their layout and paint until they come near the viewport,
+     so the first frame only renders what's visible. The intrinsic size keeps the scrollbar honest. */
+  .below-fold {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 720px;
+  }
+
+  /* Pressable: a physical push on :active. */
+  .press {
+    transition:
+      transform 160ms var(--ease-out-expo),
+      background-color 160ms ease,
+      border-color 160ms ease,
+      color 160ms ease,
+      box-shadow 200ms ease;
+  }
+  .press:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  /* Skeleton shimmer: one gradient sweep, transform-only. */
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background: var(--surface-2);
+  }
+  .skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, oklch(1 0 0 / 0.35), transparent);
+    animation: shimmer 1.4s ease-in-out infinite;
+  }
+  :root[data-theme='dark'] .skeleton::after {
+    background: linear-gradient(90deg, transparent, oklch(1 0 0 / 0.06), transparent);
+  }
+}
+
+@keyframes bar-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/*
+  Scroll reveal with CSS scroll-driven animations: no JavaScript, runs off the main thread where supported.
+  Browsers without animation-timeline simply show the content.
+*/
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 55%;
+    }
+  }
+}
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* List items, toasts and swapped labels: they ease in when they first appear (@starting-style, no JS). */
+@media (prefers-reduced-motion: no-preference) {
+  .enter {
+    transition:
+      opacity 260ms ease,
+      transform 420ms var(--ease-spring);
+  }
+  @starting-style {
+    .enter {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+  }
+  .swap-in {
+    animation: swap-in 320ms var(--ease-spring) both;
+  }
+}
+@keyframes swap-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+:root {
+  --ease-spring: linear(
+    0,
+    0.009,
+    0.035 2.1%,
+    0.141 4.4%,
+    0.723 12.9%,
+    0.938 16.7%,
+    1.017 20.4%,
+    1.067 24.1%,
+    1.073 26.4%,
+    1.064 29.2%,
+    1.006 37.6%,
+    0.99 42.7%,
+    0.997 53.2%,
+    1.001 66.6%,
+    1
+  );
+}
+
+/* Grid reflow on filter changes: cards that stay glide to their new place (React <ViewTransition>). */
+::view-transition-group(.grid-move) {
+  animation-duration: 440ms;
+  animation-timing-function: var(--ease-out-expo);
+}
+::view-transition-new(.grid-enter) {
+  animation:
+    260ms ease 120ms both vt-fade,
+    420ms var(--ease-out-expo) 120ms both vt-scale-in;
+}
+::view-transition-old(.grid-exit) {
+  animation: 160ms ease both vt-fade reverse;
+}
+@keyframes vt-scale-in {
+  from {
+    transform: scale(0.96);
+  }
+}
+/* Lines in a list (cart, addresses) close the gap left by a removed one. */
+.vt-line {
+  view-transition-class: line;
+}
+::view-transition-group(*.line) {
+  animation-duration: 320ms;
+  animation-timing-function: var(--ease-out-expo);
+}
+
+/* Entrance on first paint (hero), transform and opacity only. */
+@media (prefers-reduced-motion: no-preference) {
+  .rise {
+    animation: rise 700ms var(--ease-out-expo) both;
+    animation-delay: calc(var(--i, 0) * 70ms);
+  }
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+/* Dialogs and drawers: enter and exit with @starting-style, no JavaScript timers. */
+.drawer {
+  transition:
+    transform 420ms var(--ease-out-expo),
+    opacity 300ms ease,
+    overlay 420ms allow-discrete,
+    display 420ms allow-discrete;
+  transform: translateX(0);
+  opacity: 1;
+}
+.drawer:not([open]) {
+  transform: translateX(104%);
+}
+@starting-style {
+  .drawer[open] {
+    transform: translateX(104%);
+  }
+}
+.drawer::backdrop {
+  background: var(--scrim);
+  transition:
+    opacity 300ms ease,
+    overlay 420ms allow-discrete,
+    display 420ms allow-discrete;
+  opacity: 1;
+}
+.drawer:not([open])::backdrop {
+  opacity: 0;
+}
+@starting-style {
+  .drawer[open]::backdrop {
+    opacity: 0;
+  }
+}
+
+.pop {
+  transition:
+    transform 260ms var(--ease-out-expo),
+    opacity 200ms ease,
+    overlay 260ms allow-discrete,
+    display 260ms allow-discrete;
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+.pop:not([open]) {
+  transform: translateY(-8px) scale(0.98);
+  opacity: 0;
+}
+@starting-style {
+  .pop[open] {
+    transform: translateY(-8px) scale(0.98);
+    opacity: 0;
+  }
+}
+.pop::backdrop {
+  background: var(--scrim);
+  transition:
+    opacity 200ms ease,
+    overlay 260ms allow-discrete,
+    display 260ms allow-discrete;
+}
+.pop:not([open])::backdrop {
+  opacity: 0;
+}
+@starting-style {
+  .pop[open]::backdrop {
+    opacity: 0;
+  }
+}
+
+/* ---------- View transitions (React <ViewTransition>) ---------- */
+:root {
+  --vt-exit: 150ms;
+  --vt-enter: 220ms;
+  --vt-move: 420ms;
+}
+::view-transition-group(.morph) {
+  animation-duration: var(--vt-move);
+  animation-timing-function: var(--ease-out-expo);
+}
+::view-transition-image-pair(.morph) {
+  animation-name: via-blur;
+}
+@keyframes via-blur {
+  30% {
+    filter: blur(3px);
+  }
+}
+::view-transition-old(.page) {
+  animation: var(--vt-exit) ease-out both vt-fade reverse;
+}
+::view-transition-new(.page) {
+  animation:
+    var(--vt-enter) ease-in var(--vt-exit) both vt-fade,
+    var(--vt-move) var(--ease-out-expo) both vt-slide-up;
+}
+::view-transition-old(.slide-down) {
+  animation: var(--vt-exit) ease-out both vt-fade reverse;
+}
+::view-transition-new(.slide-up) {
+  animation:
+    var(--vt-enter) ease-in both vt-fade,
+    var(--vt-move) var(--ease-out-expo) both vt-slide-up;
+}
+@keyframes vt-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes vt-slide-up {
+  from {
+    transform: translateY(12px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

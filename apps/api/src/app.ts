@@ -36,7 +36,7 @@ export type BuildOptions = {
   rateLimits?: boolean;
 };
 
-export async function buildApp({ config, db, clock, rateLimits = true }: BuildOptions): Promise<FastifyInstance> {
+export async function buildApp({ config, db, clock, rateLimits = config.RATE_LIMITS }: BuildOptions): Promise<FastifyInstance> {
   const database = db ?? new Db(config.DATABASE_URL, config.DB_POOL_MAX);
   const ctx: AppContext = {
     config,

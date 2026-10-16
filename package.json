@@ -12,7 +12,7 @@
     "apps/*"
   ],
   "scripts": {
-    "dev": "node scripts/dev-v2.js",
+    "dev": "node tools/dev.mjs",
     "build": "npm run build -w @halden/api && npm run build -w @halden/web",
     "test": "npm run test -w @halden/money -w @halden/api",
     "test:e2e": "npm run test:e2e -w @halden/web",

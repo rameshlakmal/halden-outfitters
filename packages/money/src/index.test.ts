@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { allocate, formatAmount, fromCents, percentOf, toCents } from './index.js';
+import { allocate, formatAmount, fromCents, percentOf, toCents } from './index.ts';
 
 describe('toCents / fromCents', () => {
   it.each([
