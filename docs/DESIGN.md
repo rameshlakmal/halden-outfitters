@@ -11,10 +11,17 @@ Rebuild Halden Outfitters so it behaves like a real production shop: a proper AP
 What stays the same:
 - PostgreSQL, money as `numeric(10,2)` in the database (easy to check with SQL), integer cents in code.
 - The QA lab with planted bugs, each one breaking exactly one rule in `qa/rules.sql`.
-- The look and feel (Geist, Phosphor icons, current colours and photos), moved into React.
+- Currency display (amounts with no currency symbol) and an **8% tax rate**.
 - Free hosting on Vercel + Neon, the live URL https://halden-outfitters.vercel.app.
 
-Decided on 2026-10-17: **Fastify + TypeScript** API, **Next.js (React)** frontend, **Vercel + Neon** hosting.
+What changes visually: the whole storefront gets a **new modern design** with motion (section 5), built with
+the `design-taste-frontend` skill. The product photos are kept.
+
+Decided on 2026-10-17:
+- **Fastify + TypeScript** API, **Next.js (React)** frontend, **Vercel + Neon** hosting.
+- Tax stays a flat **8%** in every shipping zone.
+- **Product reviews** and **loyalty points** are in scope (3.12, 3.13).
+- **No guest checkout**: shoppers sign in to check out.
 
 ## 2. Architecture
 
@@ -83,6 +90,9 @@ docs/
 | Passwords | `@node-rs/argon2` (argon2id) | current OWASP advice; works on Vercel |
 | Logging | pino (JSON) with request IDs | structured, cheap |
 | Frontend | Next.js 15, React 19, TanStack Query, React Hook Form + Zod | standard production stack |
+| Styling and motion | Tailwind v4, Motion (`motion/react`, lazy-loaded), Phosphor, Geist via `next/font` | see section 5 |
+| Staff tables | TanStack Table | dense, sortable, keyboard-friendly |
+| Performance gate | Lighthouse CI | fails a PR that breaks the budgets in 5.5 |
 | Tests | Vitest, Fastify `inject`, Playwright | unit → API → E2E |
 | Quality | ESLint, Prettier, `tsc --noEmit`, GitHub Actions | |
 
@@ -221,8 +231,8 @@ unlimited. They need a reason and are written to the audit log.
 | Europe | EU list | 14.95 | 29.95 | 150.00 |
 | Rest of world | others | 24.95 | n/a | never |
 
-- Tax rate per zone (domestic 8%, Europe 20%, rest of world 0%), charged on the discounted subtotal + shipping, rounded half-up per order.
-- Rates live in tables, not code, so staff can change them and rules can check them.
+- Tax is a flat **8%** in every zone, charged on the subtotal after coupon and points discounts (not on shipping, as in v1), rounded half-up per order.
+- Shipping rates and the tax rate live in tables, not code, so staff can change them and rules can check them. An order stores the rate it was charged, so a later rate change never rewrites old orders.
 
 ### 3.9 Accounts and security
 
@@ -230,7 +240,7 @@ unlimited. They need a reason and are written to the audit log.
 - Login lockout: 5 failed attempts → locked for 15 min. Password reset tokens are single-use, valid 1 h and stored hashed.
 - Server-side sessions (`sessions` table, revocable, 14-day sliding expiry) in an `HttpOnly; Secure; SameSite=Lax` cookie. "Sign out everywhere" is supported.
 - Address book: up to 5 addresses, one default. Each order copies the address it used.
-- Guest checkout is out of scope (keeps the rules simpler).
+- No guest checkout. Shoppers can browse and fill a cart signed out, and the cart is merged into their account when they sign in (quantities added, capped at 20 per line and at available stock).
 
 ### 3.10 Staff roles
 
@@ -253,6 +263,53 @@ unlimited. They need a reason and are written to the audit log.
 
 Emails are written to an `outbox` table in the same transaction as the change, then "sent" to a **fake inbox**
 (a QA lab page per email address). Testers can check that the right email went out with the right amounts.
+
+### 3.12 Product reviews
+
+Who can review:
+- Only a **verified buyer**: the customer has an order line for the product that was delivered.
+- Not if every unit they bought of it was returned and refunded.
+- One review per customer per product. It can be edited for 30 days after it was posted, and deleted at any time.
+
+Content:
+- 1 to 5 stars (required), a title (5-80 characters) and a body (20-2000 characters).
+- Optional "fit" answer for sized items (`runs_small`, `true_to_size`, `runs_large`).
+
+Moderation:
+- Published straight away, unless it contains a link, an email address or a word on the blocklist. Then it goes to `pending` for support.
+- Support can `hide` a review with a reason. The customer is told by email.
+- Statuses: `published`, `pending`, `hidden`.
+
+Ratings and votes:
+- A product's rating is the average of **published** reviews only, shown to one decimal, with the count. Hidden and pending reviews don't count.
+- The rating is stored on the product (`rating_avg`, `rating_count`) and kept up to date in the same transaction as any review change. A DB rule checks it matches the reviews.
+- Signed-in customers can mark a review "helpful" once, but not their own.
+- Sort by most helpful (default), newest, highest or lowest rating.
+
+### 3.13 Loyalty points ("Halden Points")
+
+Earning:
+- **1 point per 1.00** of what the customer paid for the goods: subtotal minus coupon and points discounts. Tax and shipping earn nothing.
+- Rounded down per order.
+- **Summit tier** earns **1.5 points per 1.00**. A customer is Summit when their completed orders in the last 365 days add up to 500.00 or more. The tier is checked when points are earned.
+- Points are `pending` when the order is delivered, and become `available` when the order is `completed` (after the return window). So returned goods never pay out points.
+
+Redeeming at checkout:
+- **100 points = 5.00 off**, in blocks of 100.
+- Points can pay at most **50% of the subtotal after the coupon**. They're applied after the coupon and before tax.
+- The points discount is allocated to lines like a coupon (3.4), so refunds stay exact.
+
+Reversals:
+- **Cancel:** redeemed points go back to the balance, and nothing is earned.
+- **Return:** pending points for the returned lines are removed. Redeemed points for the returned lines are refunded **as points** (not cash), in proportion to the line's share.
+- Points expire **12 months** after they become available, oldest first.
+
+Records:
+- Every change is a row in `loyalty_ledger` (`earn_pending`, `earn_available`, `redeem`, `redeem_reversal`, `return_reversal`, `expire`, `adjustment`).
+- The balance is the ledger sum and can never go negative. Staff adjustments need admin and a reason.
+
+These change the refund formula in 3.4: the "allocated discount share" covers both the coupon and the points
+discount, and the points part is given back as points.
 
 ## 4. Production practices
 
@@ -296,7 +353,102 @@ CI on GitHub Actions: lint → typecheck → unit → integration → API → bu
 - **Vercel Hobby cron runs once a day**, so timed rules (30-min payment timeout, reservation expiry, auto-complete after 30 days) are **applied lazily**: queries treat an expired reservation as released, and the order is moved to its new status the next time it's read or touched. The daily cron sweeps up the rest, and the QA lab has a "Run sweeps now" button.
 - Neon: use the pooled connection string, with small pools per function instance.
 
-## 5. QA lab v2: planted bugs
+## 5. Frontend design
+
+### 5.1 Design read
+
+**Reading this as:** a full visual overhaul of a premium-consumer outdoor-gear shop, for design-conscious
+shoppers, with a modern, motion-rich language, leaning toward **Tailwind v4 + Motion + Geist + CSS-native
+transitions (View Transitions, scroll-driven animations)**. Content and page structure carry over from v1.
+The look starts from scratch.
+
+### 5.2 Two surfaces, two settings
+
+| Surface | Pages | Variance | Motion | Density |
+|---|---|---|---|---|
+| **Storefront** | home, shop and category, product, cart, checkout, account (orders, returns, points, reviews), sign-in | 7 | 6 | 4 |
+| **Staff console** | support, warehouse, admin, QA lab | 3 | 3 | 7 |
+
+The staff console is a work tool, not a showcase. It uses the same tokens, type and icons, but dense tables
+(TanStack Table), keyboard shortcuts, and motion only for feedback.
+
+### 5.3 Visual language
+
+- **Palette: "Forest".** Deep green and stone neutrals with **one** accent, a warm amber, used only for primary
+  actions and key highlights. No beige-and-brass, no AI purple. The palette is designed for light and dark
+  from the start, follows the system setting, and has a manual toggle. Both modes meet WCAG AA, and body text aims for AAA.
+- **Type:** Geist for UI and display, Geist Mono for order numbers, SKUs and money in the staff console.
+  Emphasis uses italic or bold of the same font, never a second family.
+- **Shape:** one radius system. Cards and images 16px, inputs 10px, buttons and chips full pill.
+- **Icons:** Phosphor only, one stroke weight.
+- **Layout:**
+  - An asymmetric split hero with a real photo.
+  - A bento grid for categories (each cell gets its own photo).
+  - An editorial product page with a sticky buy box.
+  - No three-equal-cards rows, and no repeated section layouts.
+- **Surfaces:** frosted glass only where something floats over content (top bar on scroll, cart drawer,
+  command palette), with a solid fallback. Shadows are tinted to the background, never black.
+- **Every state is designed:** skeleton loaders shaped like the real content, empty states that say what to
+  do next, inline form errors, and toasts only for short-lived messages.
+
+### 5.4 Motion: what moves, and why
+
+Every animation has a job: show a change, give feedback, or guide the eye.
+
+| Moment | Technique | Job |
+|---|---|---|
+| Page to page | **View Transitions API** (cross-fade; the product photo morphs from grid to product page) | keeps the shopper's place |
+| Add to cart | button gives way to a check, the cart count springs, the drawer slides in | confirms the action |
+| Lists and grids appearing | CSS **scroll-driven animations** (`animation-timeline: view()`), short fade and rise, once | hierarchy, without JS |
+| Filters and sorting | Motion `layout` on the product grid only | shows items moving, not jumping |
+| Product gallery | swipe and drag with spring physics (Motion) | feels physical on touch |
+| Checkout steps | the step indicator and panels slide by direction | shows progress |
+| Order and return timelines | the status line draws in to the current step | shows where the order is |
+| Dialogs, drawers, menus | CSS `@starting-style` + `transition-behavior: allow-discrete` | smooth enter and exit, no JS |
+| Buttons | press scale 0.98, hover lift | tactile feedback |
+
+Things we won't do: scroll hijacking, endless loops on content, parallax on every image, custom cursors, or a
+marquee more than once on the whole site.
+
+### 5.5 Performance budget (animations must not slow the shop)
+
+Rules:
+- **Animate only `transform` and `opacity`.** `will-change` only while something is animating.
+- **CSS first.** View Transitions, scroll-driven animations and `@starting-style` cost no JavaScript. Motion
+  (`motion/react`) loads only in the few client components that need springs or layout animation, using
+  `LazyMotion` with `domAnimation` (about 15 kB instead of the full bundle).
+- **Server Components by default.** Pages render on the server, and interactive parts are small client islands.
+- **No scroll listeners.** Use IntersectionObserver, CSS timelines or Motion's `useScroll` only.
+- **Images:** `next/image` with AVIF/WebP and fixed sizes (no layout shift). The hero image is preloaded,
+  everything below the fold is lazy.
+- **Fonts:** `next/font` self-hosted, subset, `display: swap`.
+- **Reduced motion:** with `prefers-reduced-motion`, every animation becomes an instant change. Nothing breaks, nothing is hidden.
+- **Low-end devices:** springs and layout animations are skipped when the device reports few CPU cores or
+  saves data (`navigator.hardwareConcurrency`, `Save-Data`).
+
+Budgets, **enforced in CI with Lighthouse CI** on the home, category, product and checkout pages (mobile profile).
+A PR that misses them fails:
+
+| Metric | Budget |
+|---|---|
+| Lighthouse performance | ≥ 90 |
+| Largest Contentful Paint | < 2.5 s |
+| Interaction to Next Paint | < 200 ms |
+| Cumulative Layout Shift | < 0.1 |
+| JS sent for a storefront page | < 170 kB gzipped |
+| Lighthouse accessibility | ≥ 95 |
+
+### 5.6 Pages
+
+- **Storefront:**
+  - Home, shop (filters, sort, search), category, product (gallery, specs grouped in cards, reviews, rating summary), search results.
+  - Cart drawer, cart page, checkout (address, shipping method, coupon and points, payment, review), "bank" page for the extra-step card, order confirmation.
+- **Account:** overview, orders and order detail (timeline, cancel), returns (request wizard, status, label), Halden Points (balance, tier, history), my reviews, addresses, security (sessions, password).
+- **Auth:** sign in, register, verify email, forgot and reset password, locked-account message.
+- **Staff console:** order queue, order detail with all actions, returns queue and inspection, warehouse pick/pack/ship, products and stock, coupons, shipping and tax, reviews moderation, customers, audit log.
+- **QA lab:** bugs, shop clock, run sweeps, fake inbox, webhook replay.
+
+## 6. QA lab v2: planted bugs
 
 Each bug is off by default, switched on in the QA lab, and breaks exactly one rule in `qa/rules.sql`.
 
@@ -317,27 +469,31 @@ Each bug is off by default, switched on in the QA lab, and breaks exactly one ru
 | 13 | Europe orders get the domestic shipping rate | shipping = zone rate |
 | 14 | Store-credit refund also refunds the card | refunded total = refund amount |
 | 15 | Support can goodwill-refund over 50.00 | support goodwill ≤ 50.00 |
+| 16 | Points earned on tax and shipping too | points earned = floor(goods paid × tier rate) |
+| 17 | Returned lines keep their pending points | pending points match non-returned lines |
+| 18 | Hidden reviews still count in the product rating | rating = average of published reviews |
 
-## 6. Delivery phases
+## 7. Delivery phases
 
 Each phase is a vertical slice: migrations + API + frontend pages + tests + rules + docs, deployed and
 pushed before the next one starts. The v1 site stays live until phase 2 reaches parity.
 
 | Phase | Scope | Done when |
 |---|---|---|
-| **1. Foundation** | monorepo, Fastify core (config, errors, logging, sessions, OpenAPI, health), migrations, CI, both Vercel projects, Next.js shell in the current design. Catalog, cart, accounts (verify email, reset, lockout, addresses), fake inbox | shopper can browse, sign up, verify, fill a cart on the new stack |
+| **1. Foundation** | monorepo, Fastify core (config, errors, logging, sessions, OpenAPI, health), migrations, CI (with Lighthouse budgets), both Vercel projects. **Design system** (tokens, type, components, motion primitives, light and dark). Catalog, cart, accounts (verify email, reset, lockout, addresses), fake inbox | shopper can browse, sign up, verify, fill a cart in the new design, within budget |
 | **2. Checkout and orders** | HaldenPay, idempotency, shipping zones, tax, coupons v2, reservations, order lifecycle, cancellation, webhooks | parity with v1 plus the new rules; live URL switches to v2 |
-| **3. Returns and refunds** | return requests, auto-approval, inspection, refund maths, store credit, goodwill refunds | every rule in 3.3 and 3.4 has tests |
-| **4. Staff console** | roles and permissions, audit log, warehouse pick/pack/ship, product admin with locking, QA lab v2 (15 bugs, shop clock, sweeps, webhook replay) | every bug flips exactly its rule |
-| **5. Hardening and release** | full Playwright suite, concurrency tests, Propmaster recipes, scenarios and rules for the new schema, README, API guide, v2.0.0 release | CI green, all docs written |
+| **3. Returns, refunds and points** | return requests, auto-approval, inspection, refund maths, store credit, goodwill refunds, Halden Points (earn, tiers, redeem at checkout, reversals, expiry) | every rule in 3.3, 3.4 and 3.13 has tests |
+| **4. Reviews and staff console** | reviews, ratings, moderation, votes; roles and permissions, audit log, warehouse pick/pack/ship, product admin with locking, QA lab v2 (18 bugs, shop clock, sweeps, webhook replay) | every bug flips exactly its rule |
+| **5. Hardening and release** | full Playwright suite, concurrency tests, accessibility pass, Propmaster recipes, scenarios and rules for the new schema, README, API guide, v2.0.0 release | CI green, all docs written |
 
-## 7. Risks and open questions
+## 8. Risks and open questions
 
 - **Size:** this is several times the current codebase. Phases keep it shippable at every step.
 - **Propmaster assets break:** recipes, scenarios and rules all reference the v1 schema. They're rewritten per phase, not at the end.
 - **Two Vercel projects:** the proxy adds a little latency, but keeps cookies simple. The alternative (Fastify inside a Next.js route) is possible if this hurts.
 - **Cold starts:** Fastify boots fast. OpenAPI generation is done at build time, not per cold start.
-- **Open questions for you:**
-  1. Home country and currency: keep v1's (no currency symbol shown, 8% tax), or pick one (e.g. UK, GBP, 20% VAT)?
-  2. Do you want product reviews (verified buyers only) or a loyalty-points scheme in scope? Both add more rules to test. I've left them out for now.
-  3. Should guest checkout stay out?
+- **Motion vs. speed:** View Transitions and scroll-driven animations are newer CSS. Browsers without them
+  just show the page without the animation, so nothing breaks. Lighthouse CI stops any slow-down from being merged.
+- **Photos:** the new layouts (bento, galleries) need more photos per product than v1 has. More free
+  Pexels/Unsplash photos will be added and credited in `CREDITS.md`.
+- **Answered on 2026-10-17:** keep 8% tax and v1's currency display; reviews and loyalty points are in; no guest checkout.
