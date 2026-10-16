@@ -11,22 +11,44 @@ test.describe('browsing', () => {
     await expect(page.getByTestId('product-card')).toHaveCount(12);
   });
 
-  test('filters live in the URL and narrow the grid', async ({ page }) => {
+  test('filters live in the URL and narrow the grid', async ({ page, isMobile }) => {
     await page.goto('/shop/kitchen');
     await expect(page.getByTestId('product-card')).toHaveCount(4);
-    await page.getByRole('button', { name: 'On sale' }).click();
-    await expect(page).toHaveURL(/onSale=true/);
+    if (isMobile) {
+      // Phones: the filters live in a bottom sheet.
+      await page.getByRole('button', { name: /Filters/ }).click();
+      const sheet = page.getByRole('dialog', { name: 'Filters' });
+      await sheet.getByRole('button', { name: 'On sale' }).click();
+      await expect(page).toHaveURL(/onSale=true/);
+      await sheet.getByRole('button', { name: 'Show results' }).click();
+    } else {
+      await page.getByRole('button', { name: 'On sale' }).click();
+      await expect(page).toHaveURL(/onSale=true/);
+    }
     await expect(page.getByText('Nothing matches these filters')).toBeVisible();
-    await page
-      .getByRole('button', { name: /Clear filters/ })
-      .first()
-      .click();
+    await page.getByRole('link', { name: 'Clear filters' }).click();
     await expect(page.getByTestId('product-card')).toHaveCount(4);
   });
 
   test('sorting by price puts the cheapest first', async ({ page }) => {
     await page.goto('/shop?sort=price-asc');
     await expect(page.getByTestId('product-card').first()).toContainText('Insulated Mug');
+  });
+
+  test('the sort dropdown works by keyboard', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'keyboard flow is a desktop check');
+    await page.goto('/shop');
+    const sort = page.getByRole('button', { name: /Sort/ });
+    await sort.focus();
+    await page.keyboard.press('ArrowDown');
+    const list = page.getByRole('listbox', { name: 'Sort' });
+    await expect(list).toBeVisible();
+    await page.keyboard.press('End'); // Best rated
+    await page.keyboard.press('ArrowUp'); // Price, high to low
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(/sort=price-desc/);
+    await expect(list).toHaveCount(0);
+    await expect(page.getByTestId('product-card').first()).toContainText('Ridgeline 2P Tent');
   });
 
   test('"Show more" loads the next page without repeats', async ({ page }) => {

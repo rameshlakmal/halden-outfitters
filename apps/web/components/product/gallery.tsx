@@ -21,7 +21,7 @@ export function Gallery({ product }: { product: Pick<Product, 'slug' | 'name' | 
   };
 
   return (
-    <div className="grid gap-3">
+    <div className="grid min-w-0 gap-3">
       <div
         ref={strip}
         onScrollEnd={(e) => {

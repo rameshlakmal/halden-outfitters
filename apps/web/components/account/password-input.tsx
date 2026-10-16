@@ -26,7 +26,7 @@ export function PasswordInput({ label, error, hint, className = '', ref, ...rest
           <button
             type="button"
             onClick={() => setVisible((v) => !v)}
-            className="press absolute top-1/2 right-1.5 grid size-8 -translate-y-1/2 place-items-center rounded-[2px] text-ink-3 hover:bg-surface-2 hover:text-ink"
+            className="press absolute top-1/2 right-1 grid size-9 -translate-y-1/2 pointer-coarse:size-10 place-items-center rounded-[2px] text-ink-3 hover:bg-surface-2 hover:text-ink"
             aria-label={visible ? 'Hide password' : 'Show password'}
             aria-pressed={visible}
           >

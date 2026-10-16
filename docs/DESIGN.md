@@ -374,24 +374,31 @@ The staff console is a work tool, not a showcase. It uses the same tokens, type 
 
 ### 5.3 Visual language
 
-Chosen on 2026-10-17 after the first pass ("Forest": green, amber, Geist) turned out too close to v1's look.
+History: "Forest" (green, amber, Geist) was too close to v1; "Glacier" (ice white, cobalt, Manrope) was built
+next; after comparing, **Alpine editorial with the Signal palette** was chosen on 2026-10-17.
 
-- **Palette: "Glacier".** Cool ice-white and silver neutrals, a deep ink-blue brand colour (logo, active
-  chips, one story panel) and **one** accent, cobalt, for primary actions and links. A navy dark mode. No beige,
-  no AI purple. Follows the system setting and has a manual toggle. Both modes meet WCAG AA.
-- **Type:** Manrope (self-hosted with `next/font`), bold display headlines with tight tracking. A system
-  monospace for codes. Emphasis uses bold of the same font, never a second family.
-- **Shape:** one radius system. Tiles and images 28px, thumbnails 18px, inputs 14px, buttons and chips pills.
+- **Palette: "Signal".** Paper white and near-black ink, one signal-orange accent for primary actions, links and
+  active states (dark enough for orange text on white and white text on orange to pass WCAG AA). A near-black
+  dark mode. Follows the system setting and has a manual toggle.
+- **Type:** Archivo (self-hosted with `next/font`). Headlines are condensed (72% width), heavy and uppercase;
+  body text stays at normal width for reading. Buttons, labels and navigation are small bold uppercase with
+  letter spacing.
+- **Shape:** sharp, 2px corners everywhere. Hard rules (1px ink lines) instead of soft shadows; floating
+  panels (dropdowns, search) get a solid offset shadow.
 - **Icons:** Phosphor only, one stroke weight.
 - **Layout:**
-  - A floating glass navigation pill.
-  - A centred hero (one message) over a large rounded photo tile.
-  - Apple-style category tiles: words on top, the photo below, one tile per category.
-  - Products on tinted tiles; the product page has a sticky buy box on its own soft tile.
-  - The cart is a floating rounded panel, not an edge sheet.
+  - A solid top bar with a hard rule; on phones a full-screen menu set in the display face.
+  - A full-bleed photo hero with the headline set over it like a magazine cover.
+  - Category columns edge to edge; products on photo tiles; a sticky buy box on wide screens and a docked
+    "Add to cart" bar on phones.
   - No three-equal-cards rows, and no repeated section layouts.
-- **Surfaces:** frosted glass only where something floats over content (navigation, toasts), with a solid
-  fallback. Shadows are tinted to the background, never black.
+- **Responsive and fluid:** page gutters grow with the screen (`--gutter: clamp(16px, ..., 32px)`), display
+  type uses `clamp()`. Every page is checked at 320, 360, 390, 414, 768, 1024, 1280 and 1440 px for horizontal
+  overflow. On touch screens, controls are at least 44px (`pointer-coarse`). Phones get a filters bottom sheet,
+  a full-screen cart and menu.
+- **Links:** never underlined; hover deepens the colour and nudges a trailing arrow.
+- **Dropdowns:** short lists (sort, price) use a themed listbox with full keyboard support; long lists (country)
+  stay native so phones show their own picker.
 - **Every state is designed:** skeleton loaders shaped like the real content, empty states that say what to
   do next, inline form errors, and toasts only for short-lived messages.
 

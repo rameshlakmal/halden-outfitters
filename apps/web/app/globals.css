@@ -119,6 +119,11 @@
 /* z-index scale: content 0, sticky bar 30, drawer/dialog 50, toast 60. */
 
 @layer base {
+  :root {
+    /* Page side padding that grows with the screen: 16px on a small phone, 32px on a laptop. */
+    --gutter: clamp(16px, 2.8vw + 6px, 32px);
+    accent-color: var(--accent);
+  }
   html {
     -webkit-text-size-adjust: 100%;
     text-rendering: optimizeLegibility;
@@ -186,6 +191,14 @@
   }
   .link:hover {
     color: var(--accent-hover);
+  }
+  /* Touch screens: a link that stands on its own (not inside a sentence) gets a 44px tap area. */
+  @media (pointer: coarse) {
+    .link:not(p .link, li p .link) {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+    }
   }
   .link svg {
     transition: transform 240ms var(--ease-out-expo);
@@ -371,6 +384,38 @@
 }
 @starting-style {
   .drawer[open]::backdrop {
+    opacity: 0;
+  }
+}
+
+/* Bottom sheets (phone filters): rise from the bottom edge, same technique as the drawer. */
+.sheet {
+  transition:
+    transform 420ms var(--ease-out-expo),
+    overlay 420ms allow-discrete,
+    display 420ms allow-discrete;
+  transform: translateY(0);
+}
+.sheet:not([open]) {
+  transform: translateY(100%);
+}
+@starting-style {
+  .sheet[open] {
+    transform: translateY(100%);
+  }
+}
+.sheet::backdrop {
+  background: var(--scrim);
+  transition:
+    opacity 300ms ease,
+    overlay 420ms allow-discrete,
+    display 420ms allow-discrete;
+}
+.sheet:not([open])::backdrop {
+  opacity: 0;
+}
+@starting-style {
+  .sheet[open]::backdrop {
     opacity: 0;
   }
 }

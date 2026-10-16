@@ -11,7 +11,7 @@ export function CartView() {
   const { data: cart, isPending, isError, refetch } = useCart();
 
   return (
-    <div className="mx-auto max-w-[1100px] px-4 pt-10 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-[1100px] px-[var(--gutter)] pt-10 ">
       <h1 className="mb-8 text-4xl font-semibold tracking-tight">Your cart</h1>
       {isPending ? (
         <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
@@ -39,7 +39,7 @@ export function CartView() {
           </LinkButton>
         </div>
       ) : (
-        <div className="grid items-start gap-8 lg:grid-cols-[1fr_360px]">
+        <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
           <div className="rounded-[2px] border border-line bg-surface px-5">
             <ul className="divide-y divide-line">
               {cart.lines.map((line) => (
@@ -88,7 +88,10 @@ export function CartView() {
             >
               Check out
             </Link>
-            <Link href="/shop" className="text-center text-sm text-ink-2 hover:text-ink">
+            <Link
+              href="/shop"
+              className="inline-flex min-h-11 items-center justify-center text-sm text-ink-2 hover:text-accent"
+            >
               Keep shopping
             </Link>
           </aside>

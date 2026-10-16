@@ -9,7 +9,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
       <h1 className="text-3xl font-semibold tracking-tight">Something went wrong on our side</h1>
       <p className="text-ink-2">Try again in a moment. If it keeps happening, this reference helps us find it.</p>
       {error.digest && (
-        <code className="rounded-md bg-surface-2 px-2 py-1 font-mono text-sm text-ink-2">{error.digest}</code>
+        <code className="rounded-[2px] bg-surface-2 px-2 py-1 font-mono text-sm text-ink-2">{error.digest}</code>
       )}
       <div className="mt-2 flex gap-3">
         <Button onClick={reset}>Try again</Button>

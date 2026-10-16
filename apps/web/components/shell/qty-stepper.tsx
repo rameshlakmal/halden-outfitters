@@ -16,13 +16,13 @@ export function QtyStepper({
 }) {
   return (
     <div
-      className="inline-flex h-9 items-center rounded-[2px] border border-line-strong"
+      className="inline-flex h-9 items-center rounded-[2px] border border-line-strong pointer-coarse:h-11"
       role="group"
       aria-label={`Quantity of ${label}`}
     >
       <button
         type="button"
-        className="press grid size-9 place-items-center rounded-[2px] text-ink-2 hover:text-ink disabled:opacity-40"
+        className="press grid size-9 place-items-center rounded-[2px] text-ink-2 hover:text-ink disabled:opacity-40 pointer-coarse:size-11"
         onClick={() => onChange(qty - 1)}
         disabled={disabled || qty <= 1}
         aria-label="One less"
@@ -34,7 +34,7 @@ export function QtyStepper({
       </span>
       <button
         type="button"
-        className="press grid size-9 place-items-center rounded-[2px] text-ink-2 hover:text-ink disabled:opacity-40"
+        className="press grid size-9 place-items-center rounded-[2px] text-ink-2 hover:text-ink disabled:opacity-40 pointer-coarse:size-11"
         onClick={() => onChange(qty + 1)}
         disabled={disabled || qty >= max}
         aria-label="One more"

@@ -37,7 +37,7 @@ export default async function Home() {
           className="-z-10 object-cover object-[30%_center]"
         />
         <div className="absolute inset-0 -z-10 bg-gradient-to-t from-[oklch(0.1_0_0/0.85)] via-[oklch(0.1_0_0/0.25)] to-transparent" />
-        <div className="mx-auto grid w-full max-w-[1400px] gap-6 px-4 pt-32 pb-12 text-[oklch(0.97_0_0)] sm:px-6 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] md:items-end lg:px-8 lg:pb-16">
+        <div className="mx-auto grid w-full max-w-[1400px] gap-6 px-[var(--gutter)] pt-32 pb-12 text-[oklch(0.97_0_0)] md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] md:items-end lg:pb-16">
           <h1
             className="rise text-[clamp(56px,11vw,168px)] leading-[0.86] tracking-[-0.01em]"
             style={{ '--i': 0 } as React.CSSProperties}
@@ -63,7 +63,7 @@ export default async function Home() {
       {/* Categories: four tall photo columns, edge to edge, the name set large at the foot of each. */}
       {categories.length > 0 && (
         <section className="below-fold reveal pt-20" aria-labelledby="cats">
-          <div className="mx-auto mb-8 flex max-w-[1400px] items-end justify-between gap-4 px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto mb-8 flex max-w-[1400px] items-end justify-between gap-4 px-[var(--gutter)]">
             <h2 id="cats" className="text-5xl sm:text-7xl">
               Shop by kit
             </h2>
@@ -102,7 +102,7 @@ export default async function Home() {
 
       {/* Featured: a horizontal, snap-scrolling row of large tiles. */}
       <section className="below-fold reveal pt-24" aria-labelledby="featured">
-        <div className="mx-auto mb-8 flex max-w-[1240px] items-end justify-between gap-4 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto mb-8 flex max-w-[1240px] items-end justify-between gap-4 px-[var(--gutter)]">
           <h2 id="featured" className="text-3xl font-bold tracking-[-0.03em] sm:text-4xl">
             Trail favourites
           </h2>
@@ -110,7 +110,7 @@ export default async function Home() {
             Shop all <CaretRight weight="bold" className="size-4" />
           </Link>
         </div>
-        <ul className="mx-auto flex max-w-[1240px] snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 [scrollbar-width:none] sm:px-6 lg:px-8 [&::-webkit-scrollbar]:hidden">
+        <ul className="mx-auto flex max-w-[1240px] snap-x snap-mandatory gap-4 overflow-x-auto px-[var(--gutter)] pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {featured.items.map((p) => (
             <li key={p.id} className="w-[72%] shrink-0 snap-start sm:w-[44%] md:w-[31%] lg:w-[24%]">
               <ProductCard product={p} sizes="(min-width: 1024px) 24vw, (min-width: 768px) 31vw, 72vw" />
@@ -120,7 +120,7 @@ export default async function Home() {
       </section>
 
       {/* One story: words and photo side by side inside a single tile. */}
-      <section className="below-fold reveal mx-auto max-w-[1240px] px-4 pt-20 sm:px-6 lg:px-8">
+      <section className="below-fold reveal mx-auto max-w-[1240px] px-[var(--gutter)] pt-20 ">
         <div className="grid overflow-hidden rounded-[2px] bg-brand text-brand-ink md:grid-cols-2">
           <div className="grid content-center gap-4 p-8 sm:p-12 lg:p-16">
             <h2 className="text-3xl font-bold tracking-[-0.03em] sm:text-4xl">Hot food, wherever you stop.</h2>
@@ -145,7 +145,7 @@ export default async function Home() {
       </section>
 
       {/* Promises: one panel, four short facts. */}
-      <section className="below-fold reveal mx-auto max-w-[1240px] px-4 pt-20 sm:px-6 lg:px-8" aria-label="Buying here">
+      <section className="below-fold reveal mx-auto max-w-[1240px] px-[var(--gutter)] pt-20 " aria-label="Buying here">
         <ul className="grid divide-y divide-line rounded-[2px] bg-surface-2 sm:grid-cols-2 sm:divide-y-0 lg:grid-cols-4">
           {PROMISES.map(({ icon: Icon, title, text }) => (
             <li key={title} className="grid content-start justify-items-center gap-2 px-6 py-8 text-center">
@@ -159,7 +159,7 @@ export default async function Home() {
 
       {/* Sale picks: a plain grid. */}
       {sale.items.length > 0 && (
-        <section className="below-fold reveal mx-auto max-w-[1240px] px-4 pt-24 sm:px-6 lg:px-8" aria-labelledby="sale">
+        <section className="below-fold reveal mx-auto max-w-[1240px] px-[var(--gutter)] pt-24 " aria-labelledby="sale">
           <div className="mb-8 flex items-end justify-between gap-4">
             <h2 id="sale" className="text-3xl font-bold tracking-[-0.03em] sm:text-4xl">
               Marked down

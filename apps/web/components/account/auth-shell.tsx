@@ -16,7 +16,7 @@ export function AuthShell({
   children: ReactNode;
 }) {
   return (
-    <div className="mx-auto grid max-w-[1400px] gap-10 px-4 pt-8 pb-4 sm:px-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] md:pt-12 lg:gap-16 lg:px-8">
+    <div className="mx-auto grid max-w-[1400px] gap-10 px-[var(--gutter)] pt-8 pb-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] md:pt-12 lg:gap-16">
       <div className="grid content-start gap-8 md:py-10 lg:pl-8">
         <div className="rise grid max-w-md gap-3">
           <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">{title}</h1>

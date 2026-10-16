@@ -5,7 +5,7 @@ export const metadata: Metadata = { title: 'Checkout' };
 
 export default function CheckoutPage() {
   return (
-    <div className="mx-auto max-w-[1200px] px-4 pt-12 sm:px-6 md:pt-20 lg:px-8">
+    <div className="mx-auto max-w-[1200px] px-[var(--gutter)] pt-12 md:pt-20">
       <CheckoutGate />
     </div>
   );

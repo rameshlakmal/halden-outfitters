@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 /** A readable policy page: a short header, then sections in one column of comfortable line length. */
 export function PolicyPage({ title, intro, children }: { title: string; intro: ReactNode; children: ReactNode }) {
   return (
-    <div className="mx-auto grid max-w-[1200px] gap-12 px-4 pt-10 sm:px-6 md:grid-cols-[220px_minmax(0,1fr)] md:pt-16 lg:px-8">
+    <div className="mx-auto grid max-w-[1200px] gap-12 px-[var(--gutter)] pt-10 md:grid-cols-[220px_minmax(0,1fr)] md:pt-16">
       <nav aria-label="Help" className="flex gap-2 md:grid md:content-start md:gap-1">
         <HelpLink href="/help/shipping">Shipping</HelpLink>
         <HelpLink href="/help/returns">Returns</HelpLink>
@@ -22,7 +22,10 @@ export function PolicyPage({ title, intro, children }: { title: string; intro: R
 
 function HelpLink({ href, children }: { href: string; children: ReactNode }) {
   return (
-    <Link href={href} className="rounded-[2px] px-4 py-2 text-[15px] text-ink-2 hover:bg-surface-2 hover:text-ink">
+    <Link
+      href={href}
+      className="inline-flex min-h-11 items-center rounded-[2px] px-4 text-[12px] font-bold tracking-[0.08em] text-ink uppercase hover:bg-surface-2 hover:text-accent"
+    >
       {children}
     </Link>
   );

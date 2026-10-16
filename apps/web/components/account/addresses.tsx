@@ -122,7 +122,7 @@ function AddressTile({
   const [confirming, setConfirming] = useState(false);
   return (
     <div
-      className={`grid h-full content-between gap-5 rounded-[2px] border p-5 ${a.isDefault ? 'border-brand/40 bg-brand-soft/40' : 'border-line bg-surface'}`}
+      className={`grid h-full content-between gap-5 rounded-[2px] border p-5 ${a.isDefault ? 'border-2 border-ink bg-surface' : 'border-line bg-surface'}`}
     >
       <div className="grid gap-1 text-[15px] leading-relaxed">
         <div className="mb-1 flex items-center gap-2">

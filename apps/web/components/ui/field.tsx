@@ -20,9 +20,9 @@ export function Field({ label, error, hint, optional, children }: FieldProps) {
   const describedBy = [hint ? `${id}-hint` : '', error ? `${id}-error` : ''].filter(Boolean).join(' ') || undefined;
   return (
     <div className="grid gap-1.5">
-      <label htmlFor={id} className="text-sm font-medium text-ink">
+      <label htmlFor={id} className="text-[12px] font-bold tracking-[0.08em] text-ink uppercase">
         {label}
-        {optional && <span className="ml-1.5 font-normal text-ink-3">optional</span>}
+        {optional && <span className="ml-1.5 font-semibold tracking-normal text-ink-3 normal-case">optional</span>}
       </label>
       {children({
         id,

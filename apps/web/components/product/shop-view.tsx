@@ -46,7 +46,7 @@ export async function ShopView({
 
   return (
     <ViewTransition enter={PAGE_ENTER} exit="none" default="none">
-      <div className="group/shop mx-auto max-w-[1400px] px-4 pt-10 sm:px-6 lg:px-8">
+      <div className="group/shop mx-auto max-w-[1400px] px-[var(--gutter)] pt-10 ">
         <header className="mb-8 grid gap-3">
           <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">{title}</h1>
           {blurb && <p className="max-w-[60ch] text-lg text-ink-2">{blurb}</p>}

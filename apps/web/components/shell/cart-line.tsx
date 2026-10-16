@@ -31,7 +31,7 @@ export function DrawerLine({ line, onNavigate, list }: { line: CartLine; onNavig
   return (
     <li
       ref={ref}
-      className="enter vt-line flex gap-4 py-4"
+      className="enter vt-line flex gap-3 py-4 min-[380px]:gap-4"
       style={{ viewTransitionName: `${list}-line-${line.productId}` }}
     >
       <Link href={`/products/${line.slug}`} onClick={onNavigate} className="shrink-0">
@@ -41,7 +41,7 @@ export function DrawerLine({ line, onNavigate, list }: { line: CartLine; onNavig
           width={80}
           height={80}
           sizes="80px"
-          className="size-20 rounded-[2px] bg-surface-2 object-cover"
+          className="size-16 rounded-[2px] bg-surface-2 object-cover min-[380px]:size-20"
         />
       </Link>
       <div className="grid min-w-0 flex-1 gap-1">
@@ -49,7 +49,7 @@ export function DrawerLine({ line, onNavigate, list }: { line: CartLine; onNavig
           <Link
             href={`/products/${line.slug}`}
             onClick={onNavigate}
-            className="truncate font-medium transition-colors duration-150 hover:text-accent"
+            className="truncate font-medium transition-colors duration-150 hover:text-accent pointer-coarse:py-2.5"
           >
             {line.name}
           </Link>
@@ -57,7 +57,7 @@ export function DrawerLine({ line, onNavigate, list }: { line: CartLine; onNavig
         </div>
         <span className="text-sm text-ink-3 tabular-nums">{formatAmount(line.unitPrice)} each</span>
         {line.problem && <span className="text-[13px] font-medium text-danger">{PROBLEM[line.problem]}</span>}
-        <div className="mt-1 flex items-center justify-between">
+        <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
           <QtyStepper
             qty={line.qty}
             max={Math.max(line.qty, Math.min(20, max))}
@@ -80,7 +80,7 @@ export function DrawerLine({ line, onNavigate, list }: { line: CartLine; onNavig
               });
             }}
             disabled={busy}
-            className="press inline-flex items-center gap-1 rounded-[2px] px-2 py-1 text-[13px] text-ink-3 hover:text-danger"
+            className="press inline-flex min-h-9 items-center gap-1 rounded-[2px] px-2 text-[13px] text-ink-3 hover:text-danger pointer-coarse:min-h-11"
           >
             <Trash className="size-4" /> Remove
           </button>

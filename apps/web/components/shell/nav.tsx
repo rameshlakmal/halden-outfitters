@@ -11,7 +11,7 @@ export const NAV = [
 
 export function Logo() {
   return (
-    <Link href="/" className="flex items-center gap-2 text-ink" aria-label="Halden Outfitters, home">
+    <Link href="/" className="flex min-h-11 items-center gap-2 text-ink" aria-label="Halden Outfitters, home">
       <Mountains weight="fill" className="size-6 text-accent" />
       <span className="text-[26px] leading-none font-extrabold uppercase [font-stretch:72%]">Halden</span>
     </Link>

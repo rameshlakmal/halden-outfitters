@@ -6,7 +6,7 @@ type Variant = 'primary' | 'brand' | 'outline' | 'ghost' | 'danger' | 'inverse';
 type Size = 'sm' | 'md' | 'lg';
 
 const base =
-  'press inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[2px] font-medium select-none ' +
+  'press inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[2px] font-bold uppercase tracking-[0.06em] select-none ' +
   'disabled:cursor-not-allowed disabled:opacity-55 focus-visible:outline-2';
 
 const variants: Record<Variant, string> = {
@@ -22,9 +22,9 @@ const variants: Record<Variant, string> = {
 };
 
 const sizes: Record<Size, string> = {
-  sm: 'h-9 px-4 text-sm',
-  md: 'h-11 px-5 text-[15px]',
-  lg: 'h-13 px-7 text-base',
+  sm: 'h-9 px-4 text-[12px] pointer-coarse:h-11',
+  md: 'h-11 px-5 text-[13px]',
+  lg: 'h-13 px-7 text-[14px]',
 };
 
 export const buttonClass = (variant: Variant = 'primary', size: Size = 'md', extra = '') =>

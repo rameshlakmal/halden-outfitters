@@ -44,7 +44,7 @@ export function ThemeToggle() {
     <button
       type="button"
       onClick={() => write(nextTheme)}
-      className="press grid size-10 place-items-center rounded-[2px] text-ink-2 hover:bg-surface-2 hover:text-ink"
+      className="press grid size-10 place-items-center pointer-coarse:size-11 rounded-[2px] text-ink-2 hover:bg-surface-2 hover:text-ink"
       aria-label={`${LABEL[theme]}. Switch to ${nextTheme === 'system' ? 'match device' : nextTheme}.`}
       title={LABEL[theme]}
     >

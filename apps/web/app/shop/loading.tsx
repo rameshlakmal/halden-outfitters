@@ -2,7 +2,7 @@ import { Skeleton } from '@/components/ui/bits';
 
 export default function Loading() {
   return (
-    <div className="mx-auto max-w-[1400px] px-4 pt-10 sm:px-6 lg:px-8" aria-busy="true" aria-label="Loading products">
+    <div className="mx-auto max-w-[1400px] px-[var(--gutter)] pt-10 " aria-busy="true" aria-label="Loading products">
       <Skeleton className="mb-4 h-12 w-64" />
       <Skeleton className="mb-10 h-5 w-96 max-w-full" />
       <div className="mb-8 flex gap-2">

@@ -1,5 +1,5 @@
 'use client';
-import { List, ShoppingBag, User, X } from '@phosphor-icons/react';
+import { CaretRight, List, ShoppingBag, User, X } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef } from 'react';
@@ -17,10 +17,10 @@ export function TopBar() {
   return (
     // A solid editorial bar with a hard rule underneath.
     <header className="sticky top-0 z-30 border-b border-line-strong bg-bg">
-      <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-1 px-4 sm:px-6 lg:gap-6 lg:px-8">
+      <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-1 px-[var(--gutter)] lg:gap-6">
         <button
           type="button"
-          className="press grid size-10 place-items-center rounded-[2px] text-ink-2 hover:bg-surface-2 md:hidden"
+          className="press grid size-10 place-items-center pointer-coarse:size-11 rounded-[2px] text-ink-2 hover:bg-surface-2 md:hidden"
           aria-label="Open menu"
           onClick={() => menu.current?.showModal()}
         >
@@ -44,7 +44,10 @@ export function TopBar() {
         </nav>
         <div className="ml-auto flex items-center gap-0.5 md:ml-0">
           <SearchButton />
-          <ThemeToggle />
+          {/* On the narrowest phones the theme switch lives in the menu instead. */}
+          <div className="hidden min-[400px]:block">
+            <ThemeToggle />
+          </div>
           <AccountLink />
           <CartButton />
         </div>
@@ -54,39 +57,44 @@ export function TopBar() {
         ref={menu}
         onClick={(e) => e.target === menu.current && menu.current?.close()}
         aria-label="Menu"
-        className="pop m-0 h-dvh max-h-dvh w-[min(320px,86vw)] bg-surface p-0 text-ink"
+        className="pop m-0 h-dvh max-h-dvh w-full max-w-none bg-bg p-0 text-ink"
       >
-        <div className="flex items-center justify-between border-b border-line px-4 py-3">
+        <div className="flex h-16 items-center justify-between border-b border-line-strong px-[var(--gutter)]">
           <Logo />
           <button
             type="button"
-            className="press grid size-10 place-items-center rounded-[2px] hover:bg-surface-2"
+            className="press grid size-11 place-items-center rounded-[2px] hover:bg-surface-2"
             aria-label="Close menu"
             onClick={() => menu.current?.close()}
           >
-            <X className="size-5" />
+            <X className="size-6" />
           </button>
         </div>
-        <nav aria-label="Mobile" className="grid gap-1 p-3">
-          {NAV.map((n) => (
-            <Link
-              key={n.href}
-              href={n.href}
-              onClick={() => menu.current?.close()}
-              className="rounded-[2px] px-3 py-3 text-lg hover:bg-surface-2"
-            >
-              {n.label}
-            </Link>
-          ))}
-          <Link
-            href="/account"
-            prefetch={false}
-            onClick={() => menu.current?.close()}
-            className="rounded-[2px] px-3 py-3 text-lg hover:bg-surface-2"
-          >
-            Your account
-          </Link>
+        {/* Big, thumb-friendly links set in the display face. */}
+        <nav aria-label="Mobile" className="grid px-[var(--gutter)] py-4">
+          {[...NAV, { href: '/account', label: 'Your account' }].map((n) => {
+            const current = n.href === '/shop' ? pathname === '/shop' : pathname.startsWith(n.href);
+            return (
+              <Link
+                key={n.href}
+                href={n.href}
+                prefetch={n.href === '/account' ? false : undefined}
+                onClick={() => menu.current?.close()}
+                aria-current={current ? 'page' : undefined}
+                className={`flex items-center justify-between border-b border-line py-4 text-[clamp(32px,9vw,48px)] leading-none font-extrabold uppercase [font-stretch:72%] transition-colors ${
+                  current ? 'text-accent' : 'hover:text-accent'
+                }`}
+              >
+                {n.label}
+                <CaretRight weight="bold" className="size-6" />
+              </Link>
+            );
+          })}
         </nav>
+        <div className="flex items-center justify-between px-[var(--gutter)] py-4 text-sm font-semibold text-ink-2">
+          Theme
+          <ThemeToggle />
+        </div>
       </dialog>
     </header>
   );
@@ -104,11 +112,11 @@ function AccountLink() {
     <Link
       href={me ? '/account' : '/sign-in'}
       prefetch={false}
-      className="press grid size-10 place-items-center rounded-[2px] text-ink-2 hover:bg-surface-2 hover:text-ink"
+      className="press grid size-10 place-items-center pointer-coarse:size-11 rounded-[2px] text-ink-2 hover:bg-surface-2 hover:text-ink"
       aria-label={me ? `Your account (${me.name})` : 'Sign in'}
     >
       {me ? (
-        <span className="grid size-8 place-items-center rounded-[2px] bg-brand-soft text-[13px] font-semibold text-brand">
+        <span className="grid size-8 place-items-center rounded-[2px] bg-ink text-[12px] font-bold tracking-[0.04em] text-bg">
           {initials}
         </span>
       ) : (
@@ -137,7 +145,7 @@ function CartButton() {
       onClick={open}
       onPointerEnter={preloadCartDrawer}
       onFocus={preloadCartDrawer}
-      className="press relative grid size-10 place-items-center rounded-[2px] text-ink hover:bg-surface-2"
+      className="press relative grid size-10 place-items-center pointer-coarse:size-11 rounded-[2px] text-ink hover:bg-surface-2"
       aria-label={`Open cart, ${count} item${count === 1 ? '' : 's'}`}
       data-testid="cart-button"
     >
