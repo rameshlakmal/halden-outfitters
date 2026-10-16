@@ -56,7 +56,7 @@ jobs:
         options: >-
           --health-cmd "pg_isready -U halden" --health-interval 5s --health-timeout 5s --health-retries 10
     env:
-      NODE_ENV: production
+      # NODE_ENV is set only where servers start: npm ci must still install dev dependencies.
       DATABASE_URL: postgres://halden:halden@localhost:5432/halden_e2e
       APP_URL: http://localhost:3001
       API_URL: http://127.0.0.1:4000
@@ -81,8 +81,8 @@ jobs:
         run: npm run db:seed
       - name: Start servers for the budgets
         run: |
-          npm run start -w @halden/api &
-          npm run start -w @halden/web &
+          NODE_ENV=production npm run start -w @halden/api &
+          NODE_ENV=production npm run start -w @halden/web &
           npx wait-on -t 60000 http://127.0.0.1:4000/api/v1/health http://localhost:3001/
       - name: First-load JavaScript budget
         run: node apps/web/scripts/check-js-budget.mjs http://localhost:3001
