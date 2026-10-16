@@ -50,5 +50,5 @@ export function AvailabilityNote({ availability }: { availability: ProductCard['
 }
 
 export function Skeleton({ className = '' }: { className?: string }) {
-  return <div className={`skeleton rounded-[14px] ${className}`} aria-hidden="true" />;
+  return <div className={`skeleton rounded-[2px] ${className}`} aria-hidden="true" />;
 }

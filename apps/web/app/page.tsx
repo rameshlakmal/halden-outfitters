@@ -25,85 +25,74 @@ export default async function Home() {
 
   return (
     <>
-      {/* Hero: one message, centred, then the photo as a large rounded tile. */}
-      <section className="mx-auto max-w-[1240px] px-4 pt-14 sm:px-6 md:pt-20 lg:px-8">
-        <div className="mx-auto grid max-w-3xl justify-items-center gap-5 text-center">
-          <p
-            className="rise rounded-full bg-brand-soft px-3.5 py-1 text-[13px] font-semibold text-accent"
+      {/* Hero: the photo edge to edge, the headline set over it like a magazine cover. */}
+      <section className="relative isolate flex min-h-[min(86dvh,760px)] items-end overflow-hidden bg-brand">
+        <Image
+          src={hero}
+          alt="A lit tent under a starry sky at dusk"
+          preload
+          placeholder="blur"
+          fill
+          sizes="100vw"
+          className="-z-10 object-cover object-[30%_center]"
+        />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-[oklch(0.1_0_0/0.85)] via-[oklch(0.1_0_0/0.25)] to-transparent" />
+        <div className="mx-auto grid w-full max-w-[1400px] gap-6 px-4 pt-32 pb-12 text-[oklch(0.97_0_0)] sm:px-6 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] md:items-end lg:px-8 lg:pb-16">
+          <h1
+            className="rise text-[clamp(56px,11vw,168px)] leading-[0.86] tracking-[-0.01em]"
             style={{ '--i': 0 } as React.CSSProperties}
           >
-            Outdoor gear for nights out
-          </p>
-          <h1
-            className="rise text-[44px] leading-[1.02] font-bold tracking-[-0.035em] text-balance sm:text-6xl lg:text-7xl"
-            style={{ '--i': 1 } as React.CSSProperties}
-          >
-            Light enough to forget.
+            Gear that earns its place.
           </h1>
-          <p
-            className="rise max-w-[46ch] text-lg leading-relaxed text-ink-2 sm:text-xl"
-            style={{ '--i': 2 } as React.CSSProperties}
-          >
-            Tents, sleeping bags, stoves and packs that disappear into your pack and keep you warm all night.
-          </p>
-          <div className="rise mt-1 flex flex-wrap justify-center gap-3" style={{ '--i': 3 } as React.CSSProperties}>
-            <LinkButton href="/shop" size="lg">
-              Shop all gear
-            </LinkButton>
-            <LinkButton href="/shop?onSale=true" variant="ghost" size="lg" className="text-accent hover:text-accent">
-              See what's on sale <CaretRight weight="bold" className="size-4" />
-            </LinkButton>
+          <div className="rise grid gap-5 md:pb-3" style={{ '--i': 1 } as React.CSSProperties}>
+            <p className="max-w-[38ch] text-lg leading-relaxed text-[oklch(0.88_0_0)]">
+              Tents, sleeping bags, stoves and packs, picked for long nights out and light enough to carry all day.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <LinkButton href="/shop" size="lg" className="uppercase tracking-[0.06em]">
+                Shop all gear <ArrowRight className="size-5" />
+              </LinkButton>
+              <LinkButton href="/shop?onSale=true" variant="inverse" size="lg" className="tracking-[0.06em] uppercase">
+                On sale
+              </LinkButton>
+            </div>
           </div>
-        </div>
-        <div
-          className="rise mt-12 overflow-hidden rounded-[28px] bg-surface-2"
-          style={{ '--i': 4 } as React.CSSProperties}
-        >
-          <Image
-            src={hero}
-            alt="A lit tent under a starry sky at dusk"
-            preload
-            placeholder="blur"
-            sizes="(min-width: 1240px) 1176px, 100vw"
-            className="aspect-[4/3] w-full object-cover object-[30%_center] sm:aspect-[16/8] lg:aspect-[21/9]"
-          />
         </div>
       </section>
 
-      {/* Categories: Apple-style tiles, words on top, the photo below. One tile per category. */}
+      {/* Categories: four tall photo columns, edge to edge, the name set large at the foot of each. */}
       {categories.length > 0 && (
-        <section className="below-fold reveal mx-auto max-w-[1240px] px-4 pt-24 sm:px-6 lg:px-8" aria-labelledby="cats">
-          <h2 id="cats" className="mb-8 text-center text-3xl font-bold tracking-[-0.03em] sm:text-4xl">
-            Shop by what you're packing
-          </h2>
-          <ul className="grid gap-4 sm:grid-cols-2">
+        <section className="below-fold reveal pt-20" aria-labelledby="cats">
+          <div className="mx-auto mb-8 flex max-w-[1400px] items-end justify-between gap-4 px-4 sm:px-6 lg:px-8">
+            <h2 id="cats" className="text-5xl sm:text-7xl">
+              Shop by kit
+            </h2>
+            <Link href="/shop" className="link inline-flex items-center gap-1 text-[13px] tracking-[0.08em] uppercase">
+              Everything <CaretRight weight="bold" className="size-4" />
+            </Link>
+          </div>
+          <ul className="grid grid-cols-2 gap-px bg-line-strong lg:grid-cols-4">
             {categories.map((c) => (
-              <li key={c.slug}>
+              <li key={c.slug} className="bg-bg">
                 <Link
                   href={`/shop/${c.slug}`}
-                  className="group grid h-full content-between gap-6 overflow-hidden rounded-[28px] bg-surface-2 pt-9 text-center transition-colors hover:bg-surface-3"
+                  className="group relative isolate flex aspect-[3/4] flex-col justify-end overflow-hidden p-5 text-[oklch(0.97_0_0)] sm:p-7"
                 >
-                  <div className="grid justify-items-center gap-2 px-6">
-                    <h3 className="text-2xl font-bold tracking-[-0.02em] sm:text-3xl">{c.name}</h3>
-                    <p className="max-w-[34ch] text-ink-2">{c.blurb}</p>
-                    <span className="mt-1 inline-flex items-center gap-1 text-[15px] font-semibold text-accent">
-                      Shop {c.productCount} products
-                      <CaretRight
-                        weight="bold"
-                        className="size-4 transition-transform duration-300 group-hover:translate-x-1"
-                      />
-                    </span>
-                  </div>
-                  <div className="mx-6 overflow-hidden rounded-t-[22px]">
-                    <Image
-                      src={c.image}
-                      alt=""
-                      width={1200}
-                      height={1200}
-                      sizes="(min-width: 640px) 46vw, 92vw"
-                      className="aspect-[16/10] w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.04]"
-                    />
-                  </div>
+                  <Image
+                    src={c.image}
+                    alt=""
+                    fill
+                    sizes="(min-width: 1024px) 25vw, 50vw"
+                    className="-z-10 object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.06]"
+                  />
+                  <div className="absolute inset-0 -z-10 bg-gradient-to-t from-[oklch(0.1_0_0/0.8)] to-transparent to-60%" />
+                  <h3 className="text-3xl leading-none font-extrabold uppercase [font-stretch:72%] sm:text-5xl">
+                    {c.name}
+                  </h3>
+                  <span className="mt-2 inline-flex items-center gap-1 text-[13px] font-bold tracking-[0.08em] uppercase transition-colors group-hover:text-accent">
+                    {c.productCount} products{' '}
+                    <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
+                  </span>
                 </Link>
               </li>
             ))}
@@ -132,7 +121,7 @@ export default async function Home() {
 
       {/* One story: words and photo side by side inside a single tile. */}
       <section className="below-fold reveal mx-auto max-w-[1240px] px-4 pt-20 sm:px-6 lg:px-8">
-        <div className="grid overflow-hidden rounded-[28px] bg-brand text-brand-ink md:grid-cols-2">
+        <div className="grid overflow-hidden rounded-[2px] bg-brand text-brand-ink md:grid-cols-2">
           <div className="grid content-center gap-4 p-8 sm:p-12 lg:p-16">
             <h2 className="text-3xl font-bold tracking-[-0.03em] sm:text-4xl">Hot food, wherever you stop.</h2>
             <p className="max-w-[40ch] text-lg opacity-80">
@@ -157,7 +146,7 @@ export default async function Home() {
 
       {/* Promises: one panel, four short facts. */}
       <section className="below-fold reveal mx-auto max-w-[1240px] px-4 pt-20 sm:px-6 lg:px-8" aria-label="Buying here">
-        <ul className="grid divide-y divide-line rounded-[28px] bg-surface-2 sm:grid-cols-2 sm:divide-y-0 lg:grid-cols-4">
+        <ul className="grid divide-y divide-line rounded-[2px] bg-surface-2 sm:grid-cols-2 sm:divide-y-0 lg:grid-cols-4">
           {PROMISES.map(({ icon: Icon, title, text }) => (
             <li key={title} className="grid content-start justify-items-center gap-2 px-6 py-8 text-center">
               <Icon className="size-7 text-accent" />

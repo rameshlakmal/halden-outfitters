@@ -2,11 +2,11 @@ import { CircleNotch } from '@phosphor-icons/react/dist/ssr';
 import Link from 'next/link';
 import type { ComponentProps, ReactNode } from 'react';
 
-type Variant = 'primary' | 'brand' | 'outline' | 'ghost' | 'danger';
+type Variant = 'primary' | 'brand' | 'outline' | 'ghost' | 'danger' | 'inverse';
 type Size = 'sm' | 'md' | 'lg';
 
 const base =
-  'press inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium select-none ' +
+  'press inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[2px] font-medium select-none ' +
   'disabled:cursor-not-allowed disabled:opacity-55 focus-visible:outline-2';
 
 const variants: Record<Variant, string> = {
@@ -16,6 +16,9 @@ const variants: Record<Variant, string> = {
   outline: 'border border-line-strong bg-surface text-ink hover:border-ink-3 hover:bg-surface-2',
   ghost: 'text-ink-2 hover:bg-surface-2 hover:text-ink',
   danger: 'border border-danger/40 text-danger hover:bg-danger-soft',
+  // On photos: a light outline that fills in on hover.
+  inverse:
+    'border border-[oklch(0.97_0_0)] text-[oklch(0.97_0_0)] hover:bg-[oklch(0.97_0_0)] hover:text-[oklch(0.16_0_0)]',
 };
 
 const sizes: Record<Size, string> = {

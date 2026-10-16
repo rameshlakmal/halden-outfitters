@@ -16,7 +16,7 @@ export default function ShippingPage() {
 
       <PolicySection title="Rates by zone">
         <p>The zone comes from the country of your delivery address.</p>
-        <div className="overflow-x-auto rounded-[28px] border border-line">
+        <div className="overflow-x-auto rounded-[2px] border border-line">
           <table className="w-full min-w-[520px] text-left text-[15px]">
             <thead className="bg-surface-2 text-sm text-ink">
               <tr>

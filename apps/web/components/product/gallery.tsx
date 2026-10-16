@@ -28,7 +28,7 @@ export function Gallery({ product }: { product: Pick<Product, 'slug' | 'name' | 
           const el = e.currentTarget;
           setIndex(Math.round(el.scrollLeft / Math.max(1, el.clientWidth)));
         }}
-        className="flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain rounded-[28px] bg-surface-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain rounded-[2px] bg-surface-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         aria-label={many ? `Photos of ${product.name}, swipe for more` : undefined}
       >
         {images.map((img, i) => (
@@ -68,7 +68,7 @@ export function Gallery({ product }: { product: Pick<Product, 'slug' | 'name' | 
               aria-selected={i === index}
               aria-label={`Photo ${i + 1} of ${images.length}`}
               onClick={() => go(i)}
-              className={`press overflow-hidden rounded-[18px] border-2 ${i === index ? 'border-brand' : 'border-transparent opacity-70 hover:opacity-100'}`}
+              className={`press overflow-hidden rounded-[2px] border-2 ${i === index ? 'border-brand' : 'border-transparent opacity-70 hover:opacity-100'}`}
             >
               <Image src={img.url} alt="" width={72} height={72} sizes="72px" className="size-[72px] object-cover" />
             </button>

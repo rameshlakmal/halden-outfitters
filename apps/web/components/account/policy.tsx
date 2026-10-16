@@ -22,7 +22,7 @@ export function PolicyPage({ title, intro, children }: { title: string; intro: R
 
 function HelpLink({ href, children }: { href: string; children: ReactNode }) {
   return (
-    <Link href={href} className="rounded-full px-4 py-2 text-[15px] text-ink-2 hover:bg-surface-2 hover:text-ink">
+    <Link href={href} className="rounded-[2px] px-4 py-2 text-[15px] text-ink-2 hover:bg-surface-2 hover:text-ink">
       {children}
     </Link>
   );
@@ -40,5 +40,5 @@ export function PolicySection({ title, children }: { title: string; children: Re
 }
 
 export function Notice({ children }: { children: ReactNode }) {
-  return <p className="rounded-[28px] bg-brand-soft px-5 py-4 text-[15px] text-brand">{children}</p>;
+  return <p className="rounded-[2px] bg-brand-soft px-5 py-4 text-[15px] text-brand">{children}</p>;
 }

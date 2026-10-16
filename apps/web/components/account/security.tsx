@@ -189,7 +189,7 @@ function Devices() {
           </button>
         </FormAlert>
       ) : (
-        <ul className="divide-y divide-line rounded-[28px] border border-line bg-surface">
+        <ul className="divide-y divide-line rounded-[2px] border border-line bg-surface">
           {items.map((s) => {
             const d = describe(s.userAgent);
             const Icon = d.mobile ? DeviceMobile : Desktop;
@@ -200,7 +200,7 @@ function Devices() {
                   <span className="flex items-center gap-2 font-medium">
                     {d.label}
                     {s.current && (
-                      <span className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-medium text-brand">
+                      <span className="rounded-[2px] bg-brand-soft px-2 py-0.5 text-xs font-medium text-brand">
                         This device
                       </span>
                     )}
