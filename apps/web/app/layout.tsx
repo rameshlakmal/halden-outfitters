@@ -3,9 +3,11 @@ import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import { Providers } from '@/components/providers';
 import { Footer } from '@/components/shell/footer';
-import { THEME_SCRIPT } from '@/components/shell/theme';
 import { TopBar } from '@/components/shell/top-bar';
 import './globals.css';
+import './palettes.css';
+import { PaletteSwitcher } from '@/components/shell/palette-switcher';
+import { BOOT_SCRIPT } from '@/lib/boot-script';
 
 // Self-hosted at build time (no request to Google at runtime). One variable file covers every weight.
 const archivo = Archivo({ subsets: ['latin'], variable: '--font-archivo', display: 'swap', axes: ['wdth'] });
@@ -28,7 +30,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={archivo.variable} suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: BOOT_SCRIPT }} />
       </head>
       <body className="min-h-dvh">
         <a
@@ -41,6 +43,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <TopBar />
           <main id="main">{children}</main>
           <Footer />
+          <PaletteSwitcher />
         </Providers>
       </body>
     </html>

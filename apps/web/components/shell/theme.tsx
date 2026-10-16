@@ -3,13 +3,7 @@ import { Desktop, Moon, Sun } from '@phosphor-icons/react';
 import { useSyncExternalStore } from 'react';
 
 type Theme = 'system' | 'light' | 'dark';
-const KEY = 'halden-theme';
-
-/**
- * Runs in <head> before the first paint, so a saved choice never flashes the wrong theme.
- * Kept tiny and inline on purpose; everything else waits for React.
- */
-export const THEME_SCRIPT = `try{var t=localStorage.getItem('${KEY}');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}`;
+import { THEME_KEY as KEY } from '@/lib/boot-script';
 
 const listeners = new Set<() => void>();
 function read(): Theme {
