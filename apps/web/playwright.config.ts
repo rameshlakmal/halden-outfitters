@@ -30,7 +30,8 @@ export default defineConfig({
           command: 'npm run start -w @halden/api',
           url: 'http://127.0.0.1:4000/api/v1/health',
           cwd: '../..',
-          reuseExistingServer: false,
+          // CI starts the API before the web build (pages prerender from it), so reuse that one.
+          reuseExistingServer: true,
           env: { NODE_ENV: 'production' },
         },
         { command: 'npm run start', url: WEB, reuseExistingServer: false, env: { NODE_ENV: 'production' } },

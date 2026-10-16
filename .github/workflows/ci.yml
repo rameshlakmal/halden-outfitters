@@ -70,8 +70,14 @@ jobs:
       - run: npm ci
       - name: Migrate and seed
         run: npm run db:migrate && npm run db:seed
-      - name: Build
-        run: npm run build
+      # The web build prerenders pages from the API, so the API is built and started first and keeps running.
+      - name: Build and start the API
+        run: |
+          npm run build -w @halden/api
+          NODE_ENV=production nohup npm run start -w @halden/api > api.log 2>&1 &
+          npx wait-on -t 60000 http://127.0.0.1:4000/api/v1/health
+      - name: Build the web app
+        run: npm run build -w @halden/web
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
         working-directory: apps/web
@@ -79,11 +85,10 @@ jobs:
         run: npm run test:e2e
       - name: Reseed (the e2e run changed carts and accounts)
         run: npm run db:seed
-      - name: Start servers for the budgets
+      - name: Start the web app for the budgets
         run: |
-          NODE_ENV=production npm run start -w @halden/api &
-          NODE_ENV=production npm run start -w @halden/web &
-          npx wait-on -t 60000 http://127.0.0.1:4000/api/v1/health http://localhost:3001/
+          NODE_ENV=production nohup npm run start -w @halden/web > web.log 2>&1 &
+          npx wait-on -t 60000 http://localhost:3001/
       - name: First-load JavaScript budget
         run: node apps/web/scripts/check-js-budget.mjs http://localhost:3001
       - name: Lighthouse budgets (mobile)
