@@ -18,7 +18,7 @@ function Body({ text }: { text: string }) {
     <p className="text-[15px] leading-relaxed break-words whitespace-pre-wrap text-ink-2">
       {text.split(LINK).map((part, i) =>
         i % 2 === 1 ? (
-          <a key={i} href={part} className="font-medium break-all text-brand underline">
+          <a key={i} href={part} className="font-medium break-all link">
             {part}
           </a>
         ) : (

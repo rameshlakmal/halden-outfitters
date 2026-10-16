@@ -166,6 +166,23 @@
     contain-intrinsic-size: auto 720px;
   }
 
+  /* Text links: cobalt, never underlined. On hover the colour deepens and a trailing icon nudges forward. */
+  .link {
+    color: var(--accent);
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 160ms ease;
+  }
+  .link:hover {
+    color: var(--accent-hover);
+  }
+  .link svg {
+    transition: transform 240ms var(--ease-out-expo);
+  }
+  .link:hover svg {
+    transform: translateX(3px);
+  }
+
   /* Pressable: a physical push on :active. */
   .press {
     transition:

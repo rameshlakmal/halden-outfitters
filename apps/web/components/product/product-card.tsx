@@ -47,7 +47,11 @@ export function ProductCard({
       <div className="grid gap-1 px-0.5">
         <div className="flex items-start justify-between gap-3">
           <h3 className="text-[15px] leading-snug font-medium">
-            <Link href={`/products/${product.slug}`} transitionTypes={['nav-forward']} className="hover:underline">
+            <Link
+              href={`/products/${product.slug}`}
+              transitionTypes={['nav-forward']}
+              className="transition-colors duration-150 hover:text-accent"
+            >
               {product.name}
             </Link>
           </h3>

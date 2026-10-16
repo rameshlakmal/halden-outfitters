@@ -117,10 +117,7 @@ export default async function Home() {
           <h2 id="featured" className="text-3xl font-bold tracking-[-0.03em] sm:text-4xl">
             Trail favourites
           </h2>
-          <Link
-            href="/shop"
-            className="inline-flex items-center gap-1 text-[15px] font-semibold text-accent hover:underline"
-          >
+          <Link href="/shop" className="inline-flex items-center gap-1 text-[15px] font-semibold link">
             Shop all <CaretRight weight="bold" className="size-4" />
           </Link>
         </div>
@@ -178,10 +175,7 @@ export default async function Home() {
             <h2 id="sale" className="text-3xl font-bold tracking-[-0.03em] sm:text-4xl">
               Marked down
             </h2>
-            <Link
-              href="/shop?onSale=true"
-              className="inline-flex items-center gap-1 text-[15px] font-semibold text-accent hover:underline"
-            >
+            <Link href="/shop?onSale=true" className="inline-flex items-center gap-1 text-[15px] font-semibold link">
               All sale items <ArrowRight className="size-4" />
             </Link>
           </div>

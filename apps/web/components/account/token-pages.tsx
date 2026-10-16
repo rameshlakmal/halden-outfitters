@@ -82,7 +82,7 @@ export function VerifyEmail() {
         <ResendLink />
       ) : (
         <p>
-          <Link href="/sign-in?next=/account" className="font-medium text-brand hover:underline">
+          <Link href="/sign-in?next=/account" className="font-medium link">
             Sign in
           </Link>{' '}
           and ask for a new link from your account page.
@@ -112,7 +112,7 @@ export function ResendLink({ variant = 'outline' }: { variant?: 'outline' | 'pri
       {state.sent && (
         <p className="text-sm text-brand" role="status">
           Sent. Check your inbox (or the{' '}
-          <Link href="/qa/inbox" className="underline">
+          <Link href="/qa/inbox" className="link font-semibold">
             fake inbox
           </Link>{' '}
           on this demo).
@@ -157,7 +157,7 @@ export function ForgotPasswordForm() {
         </p>
         <p className="text-sm">
           Testing this demo? Open the{' '}
-          <Link href={`/qa/inbox?email=${encodeURIComponent(sentTo)}`} className="font-medium text-brand underline">
+          <Link href={`/qa/inbox?email=${encodeURIComponent(sentTo)}`} className="font-medium link">
             fake inbox
           </Link>
           .
@@ -181,7 +181,7 @@ export function ForgotPasswordForm() {
       </Button>
       <p className="text-sm text-ink-2">
         Remembered it?{' '}
-        <Link href="/sign-in" className="font-medium text-brand hover:underline">
+        <Link href="/sign-in" className="font-medium link">
           Sign in
         </Link>
       </p>

@@ -46,7 +46,11 @@ export function DrawerLine({ line, onNavigate, list }: { line: CartLine; onNavig
       </Link>
       <div className="grid min-w-0 flex-1 gap-1">
         <div className="flex items-start justify-between gap-3">
-          <Link href={`/products/${line.slug}`} onClick={onNavigate} className="truncate font-medium hover:underline">
+          <Link
+            href={`/products/${line.slug}`}
+            onClick={onNavigate}
+            className="truncate font-medium transition-colors duration-150 hover:text-accent"
+          >
             {line.name}
           </Link>
           <span className="font-semibold tabular-nums">{formatAmount(line.lineTotal)}</span>

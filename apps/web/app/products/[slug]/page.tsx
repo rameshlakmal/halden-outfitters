@@ -111,7 +111,7 @@ export default async function ProductPage({ params }: Props) {
             <h2 id="related" className="text-2xl font-semibold tracking-tight">
               More {product.category.name.toLowerCase()}
             </h2>
-            <Link href={`/shop/${product.category.slug}`} className="text-sm font-medium text-brand hover:underline">
+            <Link href={`/shop/${product.category.slug}`} className="text-sm font-medium link">
               See all
             </Link>
           </div>

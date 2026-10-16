@@ -44,7 +44,7 @@ export function SignInForm() {
         <FormAlert>
           {alert.message}{' '}
           {alert.locked && (
-            <Link href="/forgot-password" className="font-medium underline">
+            <Link href="/forgot-password" className="link font-semibold">
               Reset your password
             </Link>
           )}
@@ -65,7 +65,7 @@ export function SignInForm() {
           error={errors.password?.message}
           {...register('password')}
         />
-        <Link href="/forgot-password" className="justify-self-end text-sm text-brand hover:underline">
+        <Link href="/forgot-password" className="justify-self-end text-sm link">
           Forgot your password?
         </Link>
       </div>
@@ -74,7 +74,7 @@ export function SignInForm() {
       </Button>
       <p className="text-sm text-ink-2">
         New to Halden?{' '}
-        <Link href={`/register${query}`} className="font-medium text-brand hover:underline">
+        <Link href={`/register${query}`} className="font-medium link">
           Create an account
         </Link>
       </p>

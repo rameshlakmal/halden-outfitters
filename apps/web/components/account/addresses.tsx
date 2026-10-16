@@ -69,7 +69,7 @@ export function AddressBook() {
       ) : list.isError ? (
         <FormAlert>
           {errorMessage(list.error)}{' '}
-          <button type="button" className="font-medium underline" onClick={() => list.refetch()}>
+          <button type="button" className="link font-semibold" onClick={() => list.refetch()}>
             Try again
           </button>
         </FormAlert>

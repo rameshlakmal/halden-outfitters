@@ -55,7 +55,7 @@ export function RegisterForm() {
           {...register('email')}
         />
         {taken && (
-          <Link href={`/sign-in${query}`} className="text-sm font-medium text-brand hover:underline">
+          <Link href={`/sign-in${query}`} className="text-sm font-medium link">
             Sign in to that account instead
           </Link>
         )}
@@ -75,7 +75,7 @@ export function RegisterForm() {
       </p>
       <p className="text-sm text-ink-2">
         Already have an account?{' '}
-        <Link href={`/sign-in${query}`} className="font-medium text-brand hover:underline">
+        <Link href={`/sign-in${query}`} className="font-medium link">
           Sign in
         </Link>
       </p>

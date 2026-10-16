@@ -184,7 +184,7 @@ function Devices() {
       ) : sessions.isError ? (
         <FormAlert>
           {errorMessage(sessions.error)}{' '}
-          <button type="button" className="font-medium underline" onClick={() => sessions.refetch()}>
+          <button type="button" className="link font-semibold" onClick={() => sessions.refetch()}>
             Try again
           </button>
         </FormAlert>
