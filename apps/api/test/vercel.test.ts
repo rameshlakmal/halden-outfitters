@@ -25,6 +25,7 @@ describe('originalUrl', () => {
     expect(originalUrl('/api?path=health')).toBe('/api/v1/health');
     expect(originalUrl('/api?path=orders/12&limit=5')).toBe('/api/v1/orders/12?limit=5');
     expect(originalUrl('/api?q=tent&path=products')).toBe('/api/v1/products?q=tent');
+    expect(originalUrl('/api?path=docs/')).toBe('/api/v1/docs/');
     expect(originalUrl('/api/v1/health')).toBe('/api/v1/health');
   });
 });
