@@ -8,6 +8,7 @@ import {
   type CouponCreate,
   type CouponEdit,
   type OrderStatus,
+  type ProductCreate,
   type ReturnReason,
   type Role,
   type StaffProduct,
@@ -109,6 +110,7 @@ export function parseIfMatch(header: string | undefined): number | null {
 
 type CouponCreateInput = z.output<typeof CouponCreate>;
 type CouponEditInput = z.output<typeof CouponEdit>;
+type ProductCreateInput = z.output<typeof ProductCreate>;
 type CouponRow = {
   code: string;
   kind: 'percent' | 'fixed' | 'free_shipping';
@@ -210,6 +212,70 @@ export class StaffService {
   }
 
   /** Stock arriving, counted or written off. Stock held for orders can't be adjusted away. */
+  /** A new product with its photos and opening stock (written as an "initial" stock movement), audited. */
+  async createProduct(user: CurrentUser, input: ProductCreateInput, now: Date) {
+    const id = await this.ctx.db.tx(async (tx) => {
+      const { rows: cat } = await tx.query<{ id: number }>('SELECT id FROM categories WHERE slug = $1', [
+        input.category,
+      ]);
+      if (!cat[0]) throw fieldError('category', 'No category with that name.');
+      let created: string;
+      try {
+        const { rows } = await tx.query<{ id: string }>(
+          `INSERT INTO products (slug, sku, category_id, name, summary, description, details, price, compare_at_price,
+                                 returnable, featured, active, sized, low_stock_threshold, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $15) RETURNING id`,
+          [
+            input.slug,
+            input.sku,
+            cat[0].id,
+            input.name,
+            input.summary,
+            input.description,
+            JSON.stringify(input.details),
+            input.price,
+            input.compareAtPrice,
+            input.returnable,
+            input.featured,
+            input.active,
+            input.sized,
+            input.lowStockThreshold,
+            now,
+          ],
+        );
+        created = rows[0]!.id;
+      } catch (err) {
+        const e = err as pg.DatabaseError;
+        if (e.code === '23505') {
+          throw e.constraint?.includes('sku')
+            ? fieldError('sku', 'Another product already has this SKU.')
+            : fieldError('slug', 'Another product already uses this address.');
+        }
+        throw err;
+      }
+      for (const [i, img] of input.images.entries()) {
+        await tx.query(
+          'INSERT INTO product_images (product_id, url, alt, width, height, position) VALUES ($1, $2, $3, 1200, 1200, $4)',
+          [created, img.url, img.alt, i + 1],
+        );
+      }
+      await tx.query('INSERT INTO inventory (product_id, on_hand, updated_at) VALUES ($1, $2, $3)', [
+        created,
+        input.initialStock,
+        now,
+      ]);
+      if (input.initialStock > 0) {
+        await tx.query(
+          "INSERT INTO stock_movements (product_id, change, reason, actor_id, note, created_at) VALUES ($1, $2, 'initial', $3, 'Opening stock', $4)",
+          [created, input.initialStock, user.id, now],
+        );
+      }
+      await audit(tx, user, 'product.create', { type: 'product', id: created }, { after: input }, now);
+      return created;
+    });
+    return this.product(id);
+  }
+
   async adjustStock(
     id: string,
     user: CurrentUser,

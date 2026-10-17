@@ -6,6 +6,7 @@ import {
   DASHBOARD_RANGES,
   Id,
   Problem,
+  ProductCreate,
   ProductEdit,
   RateEdit,
   ROLES,
@@ -61,6 +62,25 @@ export const staffRoutes: FastifyPluginAsyncZod = async (app) => {
         req.query.limit,
       );
     },
+  );
+
+  app.post(
+    '/staff/products',
+    {
+      preValidation: needsUser,
+      schema: {
+        tags,
+        summary: 'Add a product (admin)',
+        description:
+          'With at least one photo (uploaded to Vercel Blob by the admin app, or a path under /images/) and its opening ' +
+          'stock. The SKU and the address (slug) must be unused.',
+        security,
+        body: ProductCreate,
+        response: { 201: StaffProduct, 400: Problem, ...ok },
+      },
+    },
+    async (req, reply) =>
+      reply.status(201).send(await staff.createProduct(requireRole(req, 'admin'), req.body, req.now)),
   );
 
   app.get(

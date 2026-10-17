@@ -98,10 +98,10 @@ function BugRow({ bug: b }: { bug: Bug }) {
     );
   const toggle = async () => {
     const before = b;
-    // Flip at once, so the switch answers the click; put it back if the API refuses. A list refresh already on its
-    // way would overwrite the flip with the old value, so cancel it first.
-    await qc.cancelQueries({ queryKey: staffKeys.bugs });
+    // Flip at once (synchronously, so the switch answers the click), then cancel any list refresh already on its
+    // way, which would otherwise put the old value back. Put it back ourselves if the API refuses.
     setBug({ ...b, enabled: !b.enabled });
+    void qc.cancelQueries({ queryKey: staffKeys.bugs }, { revert: false });
     setBusy(true);
     try {
       const updated = await put<Bug>(`/qa/bugs/${b.key}`, { enabled: !before.enabled });

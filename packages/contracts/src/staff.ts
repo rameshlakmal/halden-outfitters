@@ -52,6 +52,53 @@ export const ProductEdit = z
   .partial()
   .refine((e) => Object.keys(e).length > 0, 'Change at least one field.');
 
+/**
+ * Where a product photo may live: the shop's own files (/images/...) or Vercel Blob, where the admin uploads them.
+ * Nothing else, so a product page never loads images from an arbitrary site.
+ */
+const LOCAL_IMAGE = /^\/images\/[\w-]+(\/[\w-]+)*\.(jpe?g|png|webp|avif)$/i;
+const BLOB_IMAGE =
+  /^https:\/\/[a-z0-9]+\.public\.blob\.vercel-storage\.com\/[\w-]+(\/[\w-]+)*\.(jpe?g|png|webp|avif)$/i;
+export const ProductImageUrl = z
+  .string()
+  .trim()
+  .max(500)
+  .refine((u) => LOCAL_IMAGE.test(u) || BLOB_IMAGE.test(u), 'Use an uploaded photo, or a path under /images/.');
+
+export const ProductCreate = z
+  .object({
+    name: z.string().trim().min(2).max(80),
+    slug: Slug.max(80).describe('The address: /products/<slug>'),
+    sku: z
+      .string()
+      .trim()
+      .toUpperCase()
+      .regex(/^HO-[A-Z0-9]{3,12}$/, 'HO- then 3 to 12 letters or digits, e.g. HO-CAMPLAMP.'),
+    category: Slug,
+    summary: z.string().trim().min(5).max(200),
+    description: z.string().trim().min(10).max(4000),
+    details: z
+      .array(z.tuple([z.string().trim().min(1).max(40), z.string().trim().min(1).max(120)]))
+      .max(12)
+      .default([]),
+    price: Amount.refine((a) => Number(a) > 0, 'Above 0.00.'),
+    compareAtPrice: Amount.nullable().default(null),
+    returnable: z.boolean().default(true),
+    featured: z.boolean().default(false),
+    active: z.boolean().default(true),
+    sized: z.boolean().default(false),
+    lowStockThreshold: z.number().int().min(0).max(1000).default(5),
+    initialStock: z.number().int().min(0).max(100_000).default(0),
+    images: z
+      .array(z.object({ url: ProductImageUrl, alt: z.string().trim().min(3).max(160) }))
+      .min(1, 'Add at least one photo.')
+      .max(6),
+  })
+  .refine((p) => p.compareAtPrice === null || Number(p.compareAtPrice) > Number(p.price), {
+    path: ['compareAtPrice'],
+    message: 'The old price must be above the price.',
+  });
+
 export const STOCK_REASONS = ['restock', 'adjustment', 'write_off'] as const;
 export const StockAdjust = z.object({
   change: z

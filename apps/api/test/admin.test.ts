@@ -131,3 +131,69 @@ describe('coupon management', () => {
     expect((await support.post('/staff/coupons', coupon)).statusCode).toBe(403);
   });
 });
+
+describe('adding products', () => {
+  const product = {
+    name: 'Camp Lantern',
+    slug: 'camp-lantern',
+    sku: 'ho-lantern1',
+    category: 'kitchen',
+    summary: 'A rechargeable lantern for the camp table.',
+    description: 'Warm light for four hours on high, twenty on low. Charges over USB-C.',
+    details: [['Weight', '240 g']],
+    price: '39.00',
+    compareAtPrice: null,
+    initialStock: 12,
+    images: [{ url: '/images/products/headlamp-400.jpg', alt: 'Camp Lantern on a picnic table' }],
+  };
+
+  it('an admin adds a product: it is in the shop with its stock, and the opening stock is recorded', async () => {
+    const a = await admin();
+    const res = await a.post('/staff/products', product);
+    expect(res.statusCode).toBe(201);
+    const created = json(res);
+    expect(created).toMatchObject({ slug: 'camp-lantern', sku: 'HO-LANTERN1', price: '39.00', active: true });
+    expect(created.stock).toMatchObject({ onHand: 12, available: 12 });
+
+    const shop = json(await a.get('/products/camp-lantern'));
+    expect(shop).toMatchObject({ name: 'Camp Lantern', availability: { status: 'in_stock' } });
+    expect(shop.images[0]).toMatchObject({ url: '/images/products/headlamp-400.jpg' });
+
+    const moves = await t.db.query<{ reason: string; change: number }>(
+      'SELECT reason, change FROM stock_movements WHERE product_id = $1',
+      [created.id],
+    );
+    expect(moves).toEqual([{ reason: 'initial', change: 12 }]);
+    const log = await t.db.one<{ n: number }>(
+      "SELECT count(*)::int AS n FROM audit_log WHERE action = 'product.create' AND entity_id = $1",
+      [created.id],
+    );
+    expect(log!.n).toBe(1);
+  });
+
+  it('refuses a taken SKU or address, an unknown category, a photo from another site and a bad old price', async () => {
+    const a = await admin();
+    const field = async (body: object) => json(await a.post('/staff/products', body)).errors?.[0]?.path;
+    expect(await field({ ...product, sku: 'HO-RIDGELINE2' })).toBe('sku');
+    expect(await field({ ...product, slug: 'ridgeline-2p-tent' })).toBe('slug');
+    expect(await field({ ...product, category: 'tents' })).toBe('category');
+    expect(await field({ ...product, images: [{ url: 'https://evil.example/x.jpg', alt: 'Not ours at all' }] })).toBe(
+      'images.0.url',
+    );
+    expect(await field({ ...product, images: [] })).toBe('images');
+    expect(await field({ ...product, compareAtPrice: '20.00' })).toBe('compareAtPrice');
+  });
+
+  it('accepts a photo uploaded to Vercel Blob', async () => {
+    const url = 'https://abc123xyz.public.blob.vercel-storage.com/products/camp-lantern-k2Jd9.jpg';
+    const res = await (
+      await admin()
+    ).post('/staff/products', { ...product, images: [{ url, alt: 'Camp Lantern lit up' }] });
+    expect(res.statusCode).toBe(201);
+  });
+
+  it('is for admins only', async () => {
+    const support = await signedIn(t, 'support@halden.test', true);
+    expect((await support.post('/staff/products', product)).statusCode).toBe(403);
+  });
+});

@@ -62,10 +62,10 @@ export function Coupons() {
       (old) => old && { items: old.items.map((x) => (x.code === next.code ? next : x)) },
     );
   const toggle = async (c: Coupon) => {
-    // Flip at once, so the switch answers the click; put it back if the API refuses. A list refresh already on its
-    // way would overwrite the flip with the old value, so cancel it first.
-    await qc.cancelQueries({ queryKey: staffKeys.coupons });
+    // Flip at once (synchronously, so the switch answers the click), then cancel any list refresh already on its
+    // way, which would otherwise put the old value back. Put it back ourselves if the API refuses.
     setCoupon({ ...c, active: !c.active });
+    void qc.cancelQueries({ queryKey: staffKeys.coupons }, { revert: false });
     setBusy(c.code);
     try {
       setCoupon(await patch<Coupon>(`/staff/coupons/${c.code}`, { active: !c.active }));

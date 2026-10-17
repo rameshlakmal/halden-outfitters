@@ -3,7 +3,7 @@
 // the save carries the version that was loaded, and a newer save by someone else is never overwritten).
 import type { StaffProduct } from '@halden/contracts';
 import { formatAmount } from '@halden/money';
-import { MagnifyingGlass, WarningCircle } from '@phosphor-icons/react';
+import { MagnifyingGlass, Plus, WarningCircle } from '@phosphor-icons/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useDeferredValue, useEffect, useState } from 'react';
 import { ApiError, post } from '@/lib/api';
@@ -11,7 +11,7 @@ import { formatDateTime } from '@/lib/orders';
 import { useSession } from '@/lib/queries';
 import { errorMessage } from '../account/forms';
 import { Skeleton } from '../ui/bits';
-import { Button } from '../ui/button';
+import { Button, LinkButton } from '../ui/button';
 import { FormAlert } from '../ui/field';
 import { useToast } from '../ui/toast';
 import { send, STOCK_REASON_LABEL, staffKeys, useMovements, useStaffProduct, useStaffProducts } from './api';
@@ -35,6 +35,7 @@ import {
 const low = (p: StaffProduct) => p.stock.available <= p.stock.lowStockThreshold;
 
 export function ProductList() {
+  const { data: me } = useSession();
   const [search, setSearch] = useState('');
   const [lowOnly, setLowOnly] = useState(false);
   // The dashboard's low-stock tile links here with ?low=1 (read after mount, so server and browser render alike).
@@ -45,7 +46,17 @@ export function ProductList() {
   const rows = q.data?.pages.flatMap((p) => p.items) ?? [];
   return (
     <>
-      <PageHead title="Products" sub="Available is on hand minus what open orders hold." />
+      <PageHead
+        title="Products"
+        sub="Available is on hand minus what open orders hold."
+        actions={
+          me?.role === 'admin' && (
+            <LinkButton href="/products/new" size="sm" variant="primary">
+              <Plus className="size-4" weight="bold" /> New product
+            </LinkButton>
+          )
+        }
+      />
       <div className="flex flex-wrap items-center gap-3">
         <label className="relative w-full max-w-sm">
           <span className="sr-only">Search products by name or SKU</span>

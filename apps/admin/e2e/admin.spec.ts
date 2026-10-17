@@ -79,3 +79,40 @@ test('on a phone, the sections are in a slide-in menu', async ({ page }) => {
   await page.getByRole('dialog').getByRole('link', { name: 'Products' }).click();
   await expect(page.getByRole('heading', { name: 'Products' })).toBeVisible();
 });
+
+test('an admin adds a product, and it has its stock', async ({ page }) => {
+  await signIn(page, 'admin@halden.test', '/products');
+  await page.getByRole('link', { name: 'New product' }).click();
+  await expect(page.getByRole('heading', { name: 'New product' })).toBeVisible();
+  const n = Date.now().toString().slice(-6);
+  await page.getByLabel('Name').fill(`Trail Lantern ${n}`);
+  await expect(page.getByLabel('Address')).toHaveValue(`trail-lantern-${n}`);
+  await page.getByLabel('SKU').fill(`HO-LAMP${n}`);
+  await page.getByLabel('Category').selectOption({ label: 'Camp kitchen' });
+  await page.getByLabel('Summary (one sentence, shown on cards)').fill('A rechargeable lantern for the camp table.');
+  await page.getByLabel('Description').fill('Warm light for four hours on high, twenty on low. Charges over USB-C.');
+  await page.getByLabel('Detail 1 label').fill('Weight');
+  await page.getByLabel('Detail 1 value').fill('240 g');
+  // No Blob store in tests: use a photo the shop already has.
+  await page.getByLabel('Photo path on the shop').fill('/images/products/headlamp-400.jpg');
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
+  await page.getByLabel('Price', { exact: true }).fill('39');
+  await page.getByLabel('Opening stock').fill('12');
+  await page.getByRole('button', { name: 'Add product' }).click();
+  await expect(page.getByRole('heading', { name: `Trail Lantern ${n}` })).toBeVisible();
+  await expect(page.getByText('12', { exact: true }).first()).toBeVisible();
+});
+
+test('the new product form explains a taken SKU', async ({ page }) => {
+  await signIn(page, 'admin@halden.test', '/products/new');
+  await page.getByLabel('Name').fill('Second Tent');
+  await page.getByLabel('SKU').fill('HO-RIDGELINE2');
+  await page.getByLabel('Category').selectOption({ label: 'Shelter' });
+  await page.getByLabel('Summary (one sentence, shown on cards)').fill('A tent with a taken stock code.');
+  await page.getByLabel('Description').fill('This one should be refused because the SKU is used.');
+  await page.getByLabel('Photo path on the shop').fill('/images/products/ridgeline-2p-tent.jpg');
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
+  await page.getByLabel('Price', { exact: true }).fill('300');
+  await page.getByRole('button', { name: 'Add product' }).click();
+  await expect(page.getByText('Another product already has this SKU.')).toBeVisible();
+});

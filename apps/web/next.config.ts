@@ -39,6 +39,8 @@ const config: NextConfig = {
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 828, 1080, 1280, 1600, 2048],
     imageSizes: [64, 96, 160, 256, 384],
+    // Photos uploaded in the admin live in Vercel Blob (the only other place a product photo may be; see the API).
+    remotePatterns: [{ protocol: 'https', hostname: '*.public.blob.vercel-storage.com' }],
   },
   experimental: {
     optimizePackageImports: ['@phosphor-icons/react'],

@@ -35,6 +35,7 @@ const PAGES = [
   '/returns',
   '/reviews',
   '/products',
+  '/products/new',
   '/coupons',
   '/customers',
   '/settings',
