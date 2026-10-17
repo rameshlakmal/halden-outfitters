@@ -5,7 +5,7 @@ import { ViewTransition } from 'react';
 import { BuyBox } from '@/components/product/add-to-cart';
 import { Gallery } from '@/components/product/gallery';
 import { ProductCard } from '@/components/product/product-card';
-import { ReviewsSection } from '@/components/reviews/reviews-section';
+import { LazyReviews } from '@/components/reviews/lazy-reviews';
 import { AvailabilityNote, Price, Stars } from '@/components/ui/bits';
 import { getProduct, getProducts } from '@/lib/server-api';
 import { PAGE_ENTER } from '@/lib/transitions';
@@ -111,7 +111,7 @@ export default async function ProductPage({ params }: Props) {
         )}
       </section>
 
-      <ReviewsSection slug={product.slug} productName={product.name} sized={product.sized} />
+      <LazyReviews slug={product.slug} productName={product.name} sized={product.sized} />
 
       {product.related.length > 0 && (
         <section className="below-fold reveal mt-24" aria-labelledby="related">

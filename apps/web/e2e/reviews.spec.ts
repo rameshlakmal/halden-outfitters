@@ -2,6 +2,15 @@
 // held for moderation (it has a link), and Maya reviewed the tent she received.
 import { expect, type Page, test } from '@playwright/test';
 
+/** Scrolls to the reviews (their code and data load as they near the screen) and waits until they are there. */
+async function showReviews(page: Page) {
+  await page
+    .locator('#reviews')
+    .first()
+    .evaluate((el) => el.scrollIntoView());
+  await page.getByRole('heading', { name: 'Reviews', level: 2 }).waitFor();
+}
+
 const PASSWORD = process.env.SEED_SHOPPER_PASSWORD;
 
 async function signIn(page: Page, email: string, next: string) {
@@ -32,7 +41,7 @@ test.describe('signed in', () => {
   test("Maya marks Jonas's review helpful", async ({ page }) => {
     await signIn(page, 'maya@halden.test', '/products/insulated-mug');
     // Reviews load as the section nears the screen, so scroll to it the way a shopper would.
-    await page.locator('#reviews').scrollIntoViewIfNeeded();
+    await showReviews(page);
     const card = page
       .locator('#reviews')
       .getByTestId('review-card')
@@ -44,7 +53,7 @@ test.describe('signed in', () => {
     await expect(button).toHaveText(/\(1\)/);
     // Still counted after a reload: the vote was saved.
     await page.reload();
-    await page.locator('#reviews').scrollIntoViewIfNeeded();
+    await showReviews(page);
     await expect(
       page
         .locator('#reviews')

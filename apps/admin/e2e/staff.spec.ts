@@ -35,6 +35,7 @@ test('admin switches a planted bug on and off, and the audit log shows it', asyn
   await expect(toggle).not.toBeChecked();
   await toggle.check();
   await expect(toggle).toBeChecked();
+  await expect(toggle).toBeEnabled(); // saved: the switch takes the next click
   await toggle.uncheck();
   await expect(toggle).not.toBeChecked();
 
