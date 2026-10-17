@@ -7,6 +7,12 @@ type Templates = {
   password_reset: { name: string; link: string };
   password_changed: { name: string };
   account_locked: { name: string; minutes: number; resetLink: string };
+  order_confirmed: { name: string; orderId: string; total: string; lines: string; link: string };
+  order_cancelled: { name: string; orderId: string; reason: string; link: string };
+  payment_failed: { name: string; orderId: string; link: string };
+  order_shipped: { name: string; orderId: string; trackingNumber: string; link: string };
+  order_delivered: { name: string; orderId: string; link: string };
+  payment_disputed: { orderId: string; amount: string };
 };
 export type Template = keyof Templates;
 
@@ -26,6 +32,30 @@ const RENDER: { [K in Template]: (d: Templates[K]) => { subject: string; body: s
   account_locked: (d) => ({
     subject: 'Sign-in to your Halden Outfitters account is paused',
     body: `Hi ${d.name},\n\nThere were too many wrong passwords for your account, so sign-in is paused for ${d.minutes} minutes.\n\nIf this wasn't you, reset your password:\n\n${d.resetLink}`,
+  }),
+  order_confirmed: (d) => ({
+    subject: `Order ${d.orderId} is confirmed`,
+    body: `Hi ${d.name},\n\nThanks for your order. Your card is authorized for ${d.total}; it's charged when the order ships.\n\n${d.lines}\n\nTrack it here:\n${d.link}`,
+  }),
+  order_cancelled: (d) => ({
+    subject: `Order ${d.orderId} is cancelled`,
+    body: `Hi ${d.name},\n\nOrder ${d.orderId} was cancelled (${d.reason}). Nothing was charged: the hold on your card has been released.\n\n${d.link}`,
+  }),
+  payment_failed: (d) => ({
+    subject: `We couldn't take payment for order ${d.orderId}`,
+    body: `Hi ${d.name},\n\nYour card was declined, so order ${d.orderId} was not placed. Your cart is still waiting for you:\n\n${d.link}`,
+  }),
+  order_shipped: (d) => ({
+    subject: `Order ${d.orderId} is on its way`,
+    body: `Hi ${d.name},\n\nOrder ${d.orderId} has shipped and your card was charged. Tracking number: ${d.trackingNumber}.\n\n${d.link}`,
+  }),
+  order_delivered: (d) => ({
+    subject: `Order ${d.orderId} was delivered`,
+    body: `Hi ${d.name},\n\nOrder ${d.orderId} was delivered. You have 30 days from today to return anything that isn't right.\n\n${d.link}`,
+  }),
+  payment_disputed: (d) => ({
+    subject: `Dispute opened on order ${d.orderId}`,
+    body: `The card holder disputed the payment of ${d.amount} for order ${d.orderId}. Review the order in the staff console.`,
   }),
 };
 

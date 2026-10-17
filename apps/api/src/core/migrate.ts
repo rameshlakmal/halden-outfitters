@@ -58,8 +58,9 @@ export async function migrate(db: Db, dir = MIGRATIONS_DIR, log: (msg: string) =
   }
 }
 
-/** Drops everything in the public schema (local and test databases only). Propmaster's schema is left alone. */
+/** Drops the shop's schemas (local and test databases only). Propmaster's schema is left alone. */
 export async function dropAll(db: Db): Promise<void> {
+  await db.query('DROP SCHEMA IF EXISTS haldenpay CASCADE');
   await db.query('DROP SCHEMA public CASCADE');
   await db.query('CREATE SCHEMA public');
 }

@@ -24,6 +24,8 @@ describe('guest cart', () => {
       itemCount: 0,
       subtotal: '0.00',
       savings: '0.00',
+      coupon: null,
+      discount: '0.00',
       canCheckOut: false,
     });
   });

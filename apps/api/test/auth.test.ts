@@ -64,7 +64,7 @@ describe('email confirmation', () => {
     const c = new Client(t.app);
     await c.post('/auth/register', NEW);
     const token = tokenFrom((await lastEmail(t.db, NEW.email))!.body_text);
-    t.advance(24 * 3600 + 1);
+    await t.advance(24 * 3600 + 1);
     expect(json(await c.post('/auth/verify-email', { token })).code).toBe('token_invalid');
   });
 
@@ -115,7 +115,7 @@ describe('login', () => {
     expect(json(right).code).toBe('account_locked');
     expect((await lastEmail(t.db, 'jonas@halden.test'))?.template).toBe('account_locked');
 
-    t.advance(15 * 60 + 1);
+    await t.advance(15 * 60 + 1);
     expect((await c.post('/auth/login', { email: 'jonas@halden.test', password: PASSWORDS.shopper })).statusCode).toBe(200);
   });
 
@@ -150,7 +150,7 @@ describe('sessions', () => {
   it('expire after 14 days without use', async () => {
     const c = new Client(t.app);
     await c.login('maya@halden.test', PASSWORDS.shopper);
-    t.advance(14 * 86400 + 60);
+    await t.advance(14 * 86400 + 60);
     expect(json(await c.get('/auth/session')).customer).toBeNull();
   });
 
@@ -158,7 +158,7 @@ describe('sessions', () => {
     const c = new Client(t.app);
     await c.login('maya@halden.test', PASSWORDS.shopper);
     for (let i = 0; i < 3; i++) {
-      t.advance(10 * 86400);
+      await t.advance(10 * 86400);
       expect(json(await c.get('/auth/session')).customer, `day ${(i + 1) * 10}`).not.toBeNull();
     }
   });
@@ -193,7 +193,7 @@ describe('password reset', () => {
   it('a reset link works once and for one hour', async () => {
     await new Client(t.app).post('/auth/forgot-password', { email: 'ari@halden.test' });
     const token = tokenFrom((await lastEmail(t.db, 'ari@halden.test', 'password_reset'))!.body_text);
-    t.advance(3601);
+    await t.advance(3601);
     expect(json(await new Client(t.app).post('/auth/reset-password', { token, password: 'too late for this one' })).code).toBe('token_invalid');
 
     await new Client(t.app).post('/auth/forgot-password', { email: 'ari@halden.test' });

@@ -3,6 +3,8 @@ import type { Config } from '../config.js';
 import type { CurrentUser } from './auth.js';
 import type { Clock } from './clock.js';
 import type { Db } from './db.js';
+import type { PaymentGateway } from '../modules/payments/gateway.js';
+import type { Bugs } from './bugs.js';
 import type { RateLimiter } from './rate-limit.js';
 
 export type AppContext = {
@@ -10,6 +12,10 @@ export type AppContext = {
   db: Db;
   clock: Clock;
   limiter: RateLimiter;
+  bugs: Bugs;
+  gateway: PaymentGateway;
+  /** Delivers the payment provider's queued webhook events (set once the app is built). */
+  deliverWebhooks: () => Promise<number>;
 };
 
 declare module 'fastify' {

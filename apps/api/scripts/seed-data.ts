@@ -342,3 +342,73 @@ export const ADDRESSES: Record<
     { name: 'Ari Takahashi', line1: '2-7-1 Asahi', city: 'Sapporo', postcode: '060-0042', country: 'JP' },
   ],
 };
+
+// ---------- phase 2: shipping, coupons, demo orders ----------
+
+export const ZONES = [
+  { code: 'domestic', name: 'United States' },
+  { code: 'europe', name: 'Europe' },
+  { code: 'world', name: 'Rest of the world' },
+];
+
+/** Europe for shipping: the EU plus the UK, Norway, Switzerland and Iceland. The US is domestic. */
+export const EUROPE = new Set([
+  'AT', 'BE', 'CH', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GB', 'GR', 'HR', 'HU', 'IE', 'IS', 'IT', 'LT', 'LU', 'LV',
+  'NL', 'NO', 'PL', 'PT', 'RO', 'SE', 'SI', 'SK',
+]);
+export const zoneOf = (country: string) => (country === 'US' ? 'domestic' : EUROPE.has(country) ? 'europe' : 'world');
+
+export const RATES = [
+  { zone: 'domestic', method: 'standard', price: '7.95', freeFrom: '75.00', days: [2, 4] },
+  { zone: 'domestic', method: 'express', price: '14.95', freeFrom: null, days: [1, 2] },
+  { zone: 'europe', method: 'standard', price: '14.95', freeFrom: '150.00', days: [4, 7] },
+  { zone: 'europe', method: 'express', price: '29.95', freeFrom: null, days: [2, 3] },
+  { zone: 'world', method: 'standard', price: '24.95', freeFrom: null, days: [7, 14] },
+] as const;
+
+export type SeedCoupon = {
+  code: string;
+  kind: 'percent' | 'fixed' | 'free_shipping';
+  value: string;
+  minSubtotal?: string;
+  maxUses?: number;
+  perCustomer?: number;
+  firstOrderOnly?: boolean;
+  includeSaleItems?: boolean;
+  endsAt?: string;
+  active?: boolean;
+  excludeCategories?: string[];
+  description: string;
+};
+
+export const COUPONS: SeedCoupon[] = [
+  { code: 'WELCOME10', kind: 'percent', value: '10', perCustomer: 1, firstOrderOnly: true, description: '10% off your first order' },
+  { code: 'TRAILHEAD15', kind: 'percent', value: '15', minSubtotal: '100.00', maxUses: 3, description: '15% off orders of 100.00 or more; 3 uses (all used by the demo orders)' },
+  { code: 'SAVE20', kind: 'fixed', value: '20.00', minSubtotal: '150.00', description: '20.00 off orders of 150.00 or more' },
+  { code: 'FREESHIP', kind: 'free_shipping', value: '0', minSubtotal: '40.00', description: 'Free shipping, any method, on 40.00 or more' },
+  { code: 'CAMP20', kind: 'percent', value: '20', excludeCategories: ['shelter'], description: '20% off everything except shelter' },
+  { code: 'ALLIN25', kind: 'percent', value: '25', includeSaleItems: true, perCustomer: 2, description: '25% off, sale items included; twice per customer' },
+  { code: 'SPRING5', kind: 'fixed', value: '5.00', endsAt: '2026-04-30T23:59:59Z', description: 'Expired at the end of April' },
+  { code: 'STAFF50', kind: 'percent', value: '50', active: false, description: 'Switched off' },
+];
+
+export type SeedOrder = {
+  email: string;
+  daysAgo: number;
+  items: [slug: string, qty: number][];
+  coupon?: string;
+  /** How far the order got. */
+  status: 'confirmed' | 'packed' | 'shipped' | 'delivered' | 'cancelled';
+  method?: 'standard' | 'express';
+  card?: string;
+};
+
+export const DEMO_ORDERS: SeedOrder[] = [
+  { email: 'maya@halden.test', daysAgo: 45, items: [['wool-camp-blanket', 1], ['camp-pillow', 2]], status: 'delivered' },
+  { email: 'maya@halden.test', daysAgo: 12, items: [['ridgeline-2p-tent', 1], ['ember-stove', 1]], coupon: 'TRAILHEAD15', status: 'delivered' },
+  { email: 'jonas@halden.test', daysAgo: 6, items: [['camp-pillow', 2], ['insulated-mug', 1]], status: 'delivered' },
+  { email: 'ari@halden.test', daysAgo: 5, items: [['drift-hammock', 1]], status: 'cancelled' },
+  { email: 'jonas@halden.test', daysAgo: 3, items: [['summit-45l-pack', 1], ['roll-top-dry-bag', 2]], coupon: 'TRAILHEAD15', status: 'shipped', method: 'express' },
+  { email: 'maya@halden.test', daysAgo: 1, items: [['alpine-down-bag', 1]], coupon: 'TRAILHEAD15', status: 'packed' },
+  { email: 'ari@halden.test', daysAgo: 0, items: [['headlamp-400', 1], ['water-filter', 1]], coupon: 'WELCOME10', status: 'confirmed' },
+];

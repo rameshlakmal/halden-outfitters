@@ -49,11 +49,13 @@ export function toCart(rows: LineRow[]): Cart {
     itemCount: lines.reduce((n, l) => n + l.qty, 0),
     subtotal: fromCents(subtotal),
     savings: fromCents(savings),
+    coupon: null,
+    discount: '0.00',
     canCheckOut: lines.length > 0 && lines.every((l) => l.problem === null),
   };
 }
 
-const EMPTY: Cart = { lines: [], itemCount: 0, subtotal: '0.00', savings: '0.00', canCheckOut: false };
+const EMPTY: Cart = { lines: [], itemCount: 0, subtotal: '0.00', savings: '0.00', coupon: null, discount: '0.00', canCheckOut: false };
 
 export class CartService {
   constructor(private readonly db: Db) {}
@@ -63,6 +65,15 @@ export class CartService {
     if (owner.customerId) return cartRepo.findByCustomer(client, owner.customerId);
     if (owner.guestCartId && UUID.test(owner.guestCartId)) return cartRepo.findGuest(client, owner.guestCartId);
     return null;
+  }
+
+  /** The owner's cart, created if there is none yet (for a guest, the new id goes in the cookie). */
+  async ensure(owner: CartOwner): Promise<{ id: string; newGuestCartId: string | null }> {
+    const found = await this.find(owner);
+    if (found) return { id: found, newGuestCartId: null };
+    if (owner.customerId) return { id: await cartRepo.ensureForCustomer(this.db.pool, owner.customerId), newGuestCartId: null };
+    const id = await cartRepo.createGuest(this.db.pool);
+    return { id, newGuestCartId: id };
   }
 
   async view(owner: CartOwner): Promise<Cart> {
@@ -159,6 +170,11 @@ export class CartService {
          SET qty = least(cart_items.qty + excluded.qty, $3,
                          greatest((SELECT available FROM stock_levels WHERE product_id = excluded.product_id), cart_items.qty))`,
       [guestCartId, own, MAX_LINE_QTY],
+    );
+    // A code applied while signed out comes along, unless the account's cart already has one.
+    await tx.query(
+      'UPDATE carts SET coupon_code = coalesce(coupon_code, (SELECT coupon_code FROM carts WHERE id = $2)) WHERE id = $1',
+      [own, guestCartId],
     );
     await tx.query('DELETE FROM carts WHERE id = $1', [guestCartId]);
   }

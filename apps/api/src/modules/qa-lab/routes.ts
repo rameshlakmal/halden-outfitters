@@ -9,6 +9,7 @@ import type { FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { requireRole } from '../../core/auth.js';
 import { AppError } from '../../core/errors.js';
+import { OrderService } from '../orders/service.js';
 
 type OutboxRow = { id: string; to_email: string; template: string; subject: string; body_text: string; created_at: Date };
 
@@ -88,4 +89,108 @@ export const qaRoutes: FastifyPluginAsyncZod = async (app) => {
       return { now: (await clock.now()).toISOString(), offsetSeconds: req.body.offsetSeconds };
     },
   );
+
+  // ---------- planted bugs ----------
+
+  const Bug = z.object({
+    key: z.string(),
+    phase: z.number().int(),
+    title: z.string(),
+    description: z.string(),
+    howToSee: z.string(),
+    rule: z.string(),
+    enabled: z.boolean(),
+  });
+
+  app.get(
+    '/qa/bugs',
+    { schema: { tags, summary: 'Planted bugs and whether each is on', response: { 200: z.object({ items: z.array(Bug) }), 404: Problem } } },
+    async () => {
+      enabled();
+      const rows = await db.query<{ key: string; phase: number; title: string; description: string; how_to_see: string; rule: string; enabled: boolean }>(
+        'SELECT key, phase, title, description, how_to_see, rule, enabled FROM qa_bugs ORDER BY position',
+      );
+      return { items: rows.map((r) => ({ key: r.key, phase: r.phase, title: r.title, description: r.description, howToSee: r.how_to_see, rule: r.rule, enabled: r.enabled })) };
+    },
+  );
+
+  app.put(
+    '/qa/bugs/:key',
+    {
+      schema: {
+        tags,
+        summary: 'Switch a planted bug on or off (admin)',
+        security: [{ session: [] }],
+        params: z.object({ key: z.string().regex(/^[a-z_]+$/) }),
+        body: z.object({ enabled: z.boolean() }),
+        response: { 200: Bug, 401: Problem, 403: Problem, 404: Problem },
+      },
+    },
+    async (req) => {
+      enabled();
+      requireRole(req, 'admin');
+      const row = await db.one<{ key: string; phase: number; title: string; description: string; how_to_see: string; rule: string; enabled: boolean }>(
+        'UPDATE qa_bugs SET enabled = $2 WHERE key = $1 RETURNING key, phase, title, description, how_to_see, rule, enabled',
+        [req.params.key, req.body.enabled],
+      );
+      if (!row) throw new AppError('not_found', 'No planted bug with that key.');
+      app.ctx.bugs.forget();
+      return { key: row.key, phase: row.phase, title: row.title, description: row.description, howToSee: row.how_to_see, rule: row.rule, enabled: row.enabled };
+    },
+  );
+
+  // ---------- sweeps and webhooks ----------
+
+  const Sweep = z.object({ expired: z.number().int(), completed: z.number().int(), webhooksDelivered: z.number().int() });
+  const orders = new OrderService(app.ctx);
+  const runSweep = async (now: Date) => {
+    const result = await orders.sweep(now);
+    return { ...result, webhooksDelivered: await app.ctx.deliverWebhooks() };
+  };
+
+  app.post(
+    '/qa/sweeps',
+    {
+      schema: {
+        tags,
+        summary: 'Run the time-based rules now (admin)',
+        description: 'Cancels unpaid orders past their 30 minutes, completes orders past their return window, delivers queued webhooks.',
+        security: [{ session: [] }],
+        response: { 200: Sweep, 401: Problem, 403: Problem, 404: Problem },
+      },
+    },
+    async (req) => {
+      enabled();
+      requireRole(req, 'admin');
+      return runSweep(req.now);
+    },
+  );
+
+  app.post(
+    '/qa/webhooks/:id/redeliver',
+    {
+      schema: {
+        tags,
+        summary: 'Send a payment webhook again (admin)',
+        description: 'For testing that a repeated delivery changes nothing.',
+        security: [{ session: [] }],
+        params: z.object({ id: z.string().regex(/^evt_[A-Za-z0-9_-]+$/) }),
+        response: { 200: z.object({ delivered: z.number().int() }), 401: Problem, 403: Problem, 404: Problem },
+      },
+    },
+    async (req) => {
+      enabled();
+      requireRole(req, 'admin');
+      const rows = await db.query("UPDATE haldenpay.events SET delivered_at = NULL, deliver_after = now() WHERE id = $1 RETURNING id", [req.params.id]);
+      if (rows.length === 0) throw new AppError('not_found', 'No webhook event with that id.');
+      return { delivered: await app.ctx.deliverWebhooks() };
+    },
+  );
+
+  // Vercel Cron calls this once a day with the CRON_SECRET as a bearer token.
+  app.get('/internal/cron/sweep', { schema: { hide: true } }, async (req) => {
+    const secret = app.ctx.config.CRON_SECRET;
+    if (!secret || req.headers.authorization !== `Bearer ${secret}`) throw new AppError('forbidden', 'Not allowed.');
+    return runSweep(req.now);
+  });
 };

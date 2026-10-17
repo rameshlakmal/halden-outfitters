@@ -19,7 +19,12 @@ import { Clock } from './core/clock.js';
 import type { AppContext } from './core/context.js';
 import { Db } from './core/db.js';
 import { AppError, problemTitle } from './core/errors.js';
+import { Bugs } from './core/bugs.js';
 import { RateLimiter } from './core/rate-limit.js';
+import { checkoutRoutes } from './modules/checkout/routes.js';
+import { orderRoutes } from './modules/orders/routes.js';
+import { HaldenPay } from './modules/payments/haldenpay.js';
+import { deliverWebhooks, webhookRoutes } from './modules/payments/webhooks.js';
 import { accountRoutes } from './modules/accounts/routes.js';
 import { cartRoutes } from './modules/cart/routes.js';
 import { catalogRoutes } from './modules/catalog/routes.js';
@@ -43,6 +48,9 @@ export async function buildApp({ config, db, clock, rateLimits = config.RATE_LIM
     db: database,
     clock: clock ?? new Clock(database),
     limiter: new RateLimiter(database, rateLimits),
+    bugs: new Bugs(database),
+    gateway: new HaldenPay(),
+    deliverWebhooks: async () => 0, // replaced below, once the app exists
   };
 
   const app = Fastify({
@@ -95,6 +103,9 @@ export async function buildApp({ config, db, clock, rateLimits = config.RATE_LIM
         { name: 'Cart' },
         { name: 'Auth' },
         { name: 'Account' },
+        { name: 'Checkout' },
+        { name: 'Orders' },
+        { name: 'Staff' },
         { name: 'QA lab' },
         { name: 'System' },
       ],
@@ -118,7 +129,8 @@ export async function buildApp({ config, db, clock, rateLimits = config.RATE_LIM
     }
   });
 
-  app.addHook('preHandler', async (req) => {
+  // preValidation: before the body is validated, so routes that need a session answer 401 before 400.
+  app.addHook('preValidation', async (req) => {
     req.now = await ctx.clock.now();
     req.user = await loadSession(ctx.db, req.cookies[SESSION_COOKIE], req.now);
   });
@@ -141,10 +153,15 @@ export async function buildApp({ config, db, clock, rateLimits = config.RATE_LIM
       await api.register(catalogRoutes);
       await api.register(cartRoutes);
       await api.register(accountRoutes);
+      await api.register(checkoutRoutes);
+      await api.register(orderRoutes);
+      await api.register(webhookRoutes(ctx));
       await api.register(qaRoutes);
     },
     { prefix: API_PREFIX },
   );
+
+  ctx.deliverWebhooks = () => deliverWebhooks(app, ctx);
 
   app.addHook('onClose', async () => {
     if (!db) await database.close();

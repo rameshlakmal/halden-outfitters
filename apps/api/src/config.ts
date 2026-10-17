@@ -22,6 +22,10 @@ const Env = z.object({
   RATE_LIMITS: bool.default(true),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   GIT_SHA: z.string().default(process.env.VERCEL_GIT_COMMIT_SHA ?? 'dev'),
+  /** Shared secret for HaldenPay webhook signatures. Must be set to a real secret in production. */
+  HALDENPAY_WEBHOOK_SECRET: z.string().min(16).default('whsec_local_development_only'),
+  /** Vercel Cron sends this as a bearer token to the sweep endpoint. */
+  CRON_SECRET: z.string().min(16).optional(),
 });
 
 export type Config = z.infer<typeof Env> & { allowedOrigins: Set<string>; secureCookies: boolean };
@@ -36,5 +40,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const allowedOrigins = new Set(
     [new URL(c.APP_URL).origin, ...c.ALLOWED_ORIGINS.split(',')].map((o) => o.trim()).filter(Boolean),
   );
+  if (c.NODE_ENV === 'production' && c.HALDENPAY_WEBHOOK_SECRET === 'whsec_local_development_only') {
+    throw new Error('Invalid configuration:\n  HALDENPAY_WEBHOOK_SECRET: set a real secret in production');
+  }
   return { ...c, allowedOrigins, secureCookies: new URL(c.APP_URL).protocol === 'https:' };
 }

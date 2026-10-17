@@ -98,6 +98,11 @@ export function clearCookie(reply: FastifyReply, name: string, secure: boolean):
   reply.clearCookie(name, { path: '/', httpOnly: true, sameSite: 'lax', secure });
 }
 
+/** Route option: refuse requests without a session before the body is even validated. */
+export async function needsUser(req: FastifyRequest): Promise<void> {
+  requireUser(req);
+}
+
 export function requireUser(req: FastifyRequest): CurrentUser {
   if (!req.user) throw new AppError('unauthenticated', 'Please sign in first.');
   return req.user;

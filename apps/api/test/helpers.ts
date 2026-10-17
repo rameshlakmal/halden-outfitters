@@ -21,17 +21,16 @@ export type TestApp = {
   app: FastifyInstance;
   db: Db;
   clock: Clock;
-  /** Real time offset, in ms, that the test clock adds on top of the shop clock. */
-  advance: (seconds: number) => void;
+  /** Moves the shop clock forward (the app's clock and SQL's shop_now() together). */
+  advance: (seconds: number) => Promise<void>;
   /** Puts the demo data back and the clock back to real time. */
-  reseed: () => Promise<void>;
+  reseed: (opts?: { orders?: boolean }) => Promise<void>;
   close: () => Promise<void>;
 };
 
 export async function startApp({ rateLimits = false } = {}): Promise<TestApp> {
   const db = new Db(testDbUrl(), 4);
-  let extraMs = 0;
-  const clock = new Clock(db, () => Date.now() + extraMs);
+  const clock = new Clock(db);
   const config = loadConfig({
     ...process.env,
     NODE_ENV: 'test',
@@ -41,17 +40,16 @@ export async function startApp({ rateLimits = false } = {}): Promise<TestApp> {
   });
   const app = await buildApp({ config, db, clock, rateLimits });
   await app.ready();
-  await seed(db, PASSWORDS);
+  await seed(db, PASSWORDS, { orders: false });
   return {
     app,
     db,
     clock,
-    advance: (seconds) => {
-      extraMs += seconds * 1000;
+    advance: async (seconds) => {
+      await clock.setOffsetSeconds((await clock.offsetSeconds()) + seconds);
     },
-    reseed: async () => {
-      extraMs = 0;
-      await seed(db, PASSWORDS);
+    reseed: async (opts = {}) => {
+      await seed(db, PASSWORDS, { orders: opts.orders ?? false });
       await clock.setOffsetSeconds(0);
     },
     close: async () => {

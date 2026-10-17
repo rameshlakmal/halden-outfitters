@@ -1,24 +1,38 @@
 // Fills a migrated database with the demo shop. Empties every shop table first, so it can be run again.
 import { hashPassword } from '../src/core/crypto.js';
 import type { Db } from '../src/core/db.js';
-import { ACCOUNTS, ADDRESSES, CATEGORIES, COUNTRIES, PRODUCTS } from './seed-data.js';
+import { BUGS } from '../src/core/bugs.js';
+import { ACCOUNTS, ADDRESSES, CATEGORIES, COUNTRIES, COUPONS, PRODUCTS, RATES, ZONES, zoneOf } from './seed-data.js';
+import { seedOrders } from './seed-orders.js';
 
 export type SeedPasswords = { staff: string; shopper: string };
 
-export async function seed(db: Db, passwords: SeedPasswords): Promise<string> {
+export async function seed(db: Db, passwords: SeedPasswords, opts: { orders?: boolean } = {}): Promise<string> {
   // Hash outside the transaction: argon2 is deliberately slow.
   const staffHash = await hashPassword(passwords.staff);
   const shopperHash = await hashPassword(passwords.shopper);
 
   await db.tx(async (tx) => {
     const { rows: tables } = await tx.query<{ name: string }>(
-      `SELECT quote_ident(tablename) AS name FROM pg_tables
-        WHERE schemaname = 'public' AND tablename NOT IN ('schema_migrations', 'qa_settings')`,
+      `SELECT quote_ident(schemaname) || '.' || quote_ident(tablename) AS name FROM pg_tables
+        WHERE schemaname IN ('public', 'haldenpay') AND tablename NOT IN ('schema_migrations', 'qa_settings', 'shop_settings')`,
     );
     if (tables.length) await tx.query(`TRUNCATE ${tables.map((t) => t.name).join(', ')} RESTART IDENTITY CASCADE`);
     await tx.query("UPDATE qa_settings SET value = '0' WHERE key = 'clock_offset_seconds'");
+    await tx.query("UPDATE shop_settings SET value = '8' WHERE key = 'tax_rate_percent'");
 
-    for (const [code, name] of COUNTRIES) await tx.query('INSERT INTO countries (code, name) VALUES ($1, $2)', [code, name]);
+    for (const [i, z] of ZONES.entries()) {
+      await tx.query('INSERT INTO shipping_zones (code, name, position) VALUES ($1, $2, $3)', [z.code, z.name, i + 1]);
+    }
+    for (const r of RATES) {
+      await tx.query(
+        'INSERT INTO shipping_rates (zone_code, method, price, free_from, days_min, days_max) VALUES ($1, $2, $3, $4, $5, $6)',
+        [r.zone, r.method, r.price, r.freeFrom, r.days[0], r.days[1]],
+      );
+    }
+    for (const [code, name] of COUNTRIES) {
+      await tx.query('INSERT INTO countries (code, name, zone_code) VALUES ($1, $2, $3)', [code, name, zoneOf(code)]);
+    }
 
     for (const [i, c] of CATEGORIES.entries()) {
       await tx.query('INSERT INTO categories (slug, name, blurb, image, position) VALUES ($1, $2, $3, $4, $5)', [
@@ -67,6 +81,25 @@ export async function seed(db: Db, passwords: SeedPasswords): Promise<string> {
       }
     }
 
+    for (const c of COUPONS) {
+      await tx.query(
+        `INSERT INTO coupons (code, kind, value, min_subtotal, max_uses, per_customer_limit, first_order_only,
+                              excludes_sale_items, ends_at, active, description)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+        [c.code, c.kind, c.value, c.minSubtotal ?? '0', c.maxUses ?? null, c.perCustomer ?? null, c.firstOrderOnly ?? false,
+          !c.includeSaleItems, c.endsAt ?? null, c.active ?? true, c.description],
+      );
+      for (const slug of c.excludeCategories ?? []) {
+        await tx.query('INSERT INTO coupon_excluded_categories (coupon_code, category_id) SELECT $1, id FROM categories WHERE slug = $2', [c.code, slug]);
+      }
+    }
+    for (const [i, b] of BUGS.entries()) {
+      await tx.query(
+        'INSERT INTO qa_bugs (key, phase, title, description, how_to_see, rule, position) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+        [b.key, b.phase, b.title, b.description, b.howToSee, b.rule, i + 1],
+      );
+    }
+
     for (const a of ACCOUNTS) {
       const { rows } = await tx.query<{ id: string }>(
         `INSERT INTO customers (email, name, password_hash, role, email_verified_at, is_demo, created_at, updated_at)
@@ -84,7 +117,8 @@ export async function seed(db: Db, passwords: SeedPasswords): Promise<string> {
     }
   });
 
-  return `Shop ready: ${CATEGORIES.length} categories, ${PRODUCTS.length} products, ${ACCOUNTS.length} accounts, ${COUNTRIES.length} countries.`;
+  const orders = opts.orders === false ? 0 : await seedOrders(db);
+  return `Shop ready: ${CATEGORIES.length} categories, ${PRODUCTS.length} products, ${ACCOUNTS.length} accounts, ${COUNTRIES.length} countries, ${COUPONS.length} coupons, ${orders} orders.`;
 }
 
 export function seedPasswordsFromEnv(env = process.env): SeedPasswords {
