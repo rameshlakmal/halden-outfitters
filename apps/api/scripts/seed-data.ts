@@ -408,8 +408,34 @@ export const ZONES = [
 
 /** Europe for shipping: the EU plus the UK, Norway, Switzerland and Iceland. The US is domestic. */
 export const EUROPE = new Set([
-  'AT', 'BE', 'CH', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GB', 'GR', 'HR', 'HU', 'IE', 'IS', 'IT', 'LT', 'LU', 'LV',
-  'NL', 'NO', 'PL', 'PT', 'RO', 'SE', 'SI', 'SK',
+  'AT',
+  'BE',
+  'CH',
+  'CZ',
+  'DE',
+  'DK',
+  'EE',
+  'ES',
+  'FI',
+  'FR',
+  'GB',
+  'GR',
+  'HR',
+  'HU',
+  'IE',
+  'IS',
+  'IT',
+  'LT',
+  'LU',
+  'LV',
+  'NL',
+  'NO',
+  'PL',
+  'PT',
+  'RO',
+  'SE',
+  'SI',
+  'SK',
 ]);
 export const zoneOf = (country: string) => (country === 'US' ? 'domestic' : EUROPE.has(country) ? 'europe' : 'world');
 
@@ -437,13 +463,58 @@ export type SeedCoupon = {
 };
 
 export const COUPONS: SeedCoupon[] = [
-  { code: 'WELCOME10', kind: 'percent', value: '10', perCustomer: 1, firstOrderOnly: true, description: '10% off your first order' },
-  { code: 'TRAILHEAD15', kind: 'percent', value: '15', minSubtotal: '100.00', maxUses: 3, description: '15% off orders of 100.00 or more; 3 uses (all used by the demo orders)' },
-  { code: 'SAVE20', kind: 'fixed', value: '20.00', minSubtotal: '150.00', description: '20.00 off orders of 150.00 or more' },
-  { code: 'FREESHIP', kind: 'free_shipping', value: '0', minSubtotal: '40.00', description: 'Free shipping, any method, on 40.00 or more' },
-  { code: 'CAMP20', kind: 'percent', value: '20', excludeCategories: ['shelter'], description: '20% off everything except shelter' },
-  { code: 'ALLIN25', kind: 'percent', value: '25', includeSaleItems: true, perCustomer: 2, description: '25% off, sale items included; twice per customer' },
-  { code: 'SPRING5', kind: 'fixed', value: '5.00', endsAt: '2026-04-30T23:59:59Z', description: 'Expired at the end of April' },
+  {
+    code: 'WELCOME10',
+    kind: 'percent',
+    value: '10',
+    perCustomer: 1,
+    firstOrderOnly: true,
+    description: '10% off your first order',
+  },
+  {
+    code: 'TRAILHEAD15',
+    kind: 'percent',
+    value: '15',
+    minSubtotal: '100.00',
+    maxUses: 3,
+    description: '15% off orders of 100.00 or more; 3 uses (all used by the demo orders)',
+  },
+  {
+    code: 'SAVE20',
+    kind: 'fixed',
+    value: '20.00',
+    minSubtotal: '150.00',
+    description: '20.00 off orders of 150.00 or more',
+  },
+  {
+    code: 'FREESHIP',
+    kind: 'free_shipping',
+    value: '0',
+    minSubtotal: '40.00',
+    description: 'Free shipping, any method, on 40.00 or more',
+  },
+  {
+    code: 'CAMP20',
+    kind: 'percent',
+    value: '20',
+    excludeCategories: ['shelter'],
+    description: '20% off everything except shelter',
+  },
+  {
+    code: 'ALLIN25',
+    kind: 'percent',
+    value: '25',
+    includeSaleItems: true,
+    perCustomer: 2,
+    description: '25% off, sale items included; twice per customer',
+  },
+  {
+    code: 'SPRING5',
+    kind: 'fixed',
+    value: '5.00',
+    endsAt: '2026-04-30T23:59:59Z',
+    description: 'Expired at the end of April',
+  },
   { code: 'STAFF50', kind: 'percent', value: '50', active: false, description: 'Switched off' },
 ];
 
@@ -459,13 +530,57 @@ export type SeedOrder = {
 };
 
 export const DEMO_ORDERS: SeedOrder[] = [
-  { email: 'maya@halden.test', daysAgo: 45, items: [['wool-camp-blanket', 1], ['camp-pillow', 2]], status: 'delivered' },
-  { email: 'maya@halden.test', daysAgo: 12, items: [['ridgeline-2p-tent', 1], ['ember-stove', 1]], coupon: 'TRAILHEAD15', status: 'delivered' },
-  { email: 'jonas@halden.test', daysAgo: 6, items: [['camp-pillow', 2], ['insulated-mug', 1]], status: 'delivered' },
+  {
+    email: 'maya@halden.test',
+    daysAgo: 45,
+    items: [
+      ['wool-camp-blanket', 1],
+      ['camp-pillow', 2],
+    ],
+    status: 'delivered',
+  },
+  {
+    email: 'maya@halden.test',
+    daysAgo: 12,
+    items: [
+      ['ridgeline-2p-tent', 1],
+      ['ember-stove', 1],
+    ],
+    coupon: 'TRAILHEAD15',
+    status: 'delivered',
+  },
+  {
+    email: 'jonas@halden.test',
+    daysAgo: 6,
+    items: [
+      ['camp-pillow', 2],
+      ['insulated-mug', 1],
+    ],
+    status: 'delivered',
+  },
   { email: 'ari@halden.test', daysAgo: 5, items: [['drift-hammock', 1]], status: 'cancelled' },
-  { email: 'jonas@halden.test', daysAgo: 3, items: [['summit-45l-pack', 1], ['roll-top-dry-bag', 2]], coupon: 'TRAILHEAD15', status: 'shipped', method: 'express' },
+  {
+    email: 'jonas@halden.test',
+    daysAgo: 3,
+    items: [
+      ['summit-45l-pack', 1],
+      ['roll-top-dry-bag', 2],
+    ],
+    coupon: 'TRAILHEAD15',
+    status: 'shipped',
+    method: 'express',
+  },
   { email: 'maya@halden.test', daysAgo: 1, items: [['alpine-down-bag', 1]], coupon: 'TRAILHEAD15', status: 'packed' },
-  { email: 'ari@halden.test', daysAgo: 0, items: [['headlamp-400', 1], ['water-filter', 1]], coupon: 'WELCOME10', status: 'confirmed' },
+  {
+    email: 'ari@halden.test',
+    daysAgo: 0,
+    items: [
+      ['headlamp-400', 1],
+      ['water-filter', 1],
+    ],
+    coupon: 'WELCOME10',
+    status: 'confirmed',
+  },
 ];
 
 /** Products a "fit" answer makes sense for in reviews. */

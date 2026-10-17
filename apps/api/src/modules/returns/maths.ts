@@ -17,7 +17,14 @@ export const LABEL_DAYS = 14;
 
 const CENTS_PER_POINT = CENTS_PER_BLOCK / POINTS_PER_BLOCK;
 
-export type LineMoney = { qty: number; lineTotal: number; discount: number; points: number; tax: number; pointsEarned: number };
+export type LineMoney = {
+  qty: number;
+  lineTotal: number;
+  discount: number;
+  points: number;
+  tax: number;
+  pointsEarned: number;
+};
 
 /** The share of `amount` belonging to units before..before+n of a line of `qty` units. */
 export function unitShare(amount: number, qty: number, before: number, n: number): number {
@@ -31,7 +38,12 @@ export type UnitRefund = { cash: number; pointsBack: number; pointsEarned: numbe
  * What n units of a line are worth when returned, `before` units of it having been refunded already.
  * Planted bug refund_ignores_discount leaves the coupon share in.
  */
-export function unitRefund(l: LineMoney, before: number, n: number, opts: { ignoreDiscount?: boolean } = {}): UnitRefund {
+export function unitRefund(
+  l: LineMoney,
+  before: number,
+  n: number,
+  opts: { ignoreDiscount?: boolean } = {},
+): UnitRefund {
   const s = (x: number) => unitShare(x, l.qty, before, n);
   const points = s(l.points);
   return {

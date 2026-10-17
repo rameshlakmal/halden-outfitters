@@ -73,7 +73,12 @@ export const cartRoutes: FastifyPluginAsyncZod = async (app) => {
   app.delete(
     '/cart/items/:productId',
     {
-      schema: { tags, summary: 'Remove a line', params: z.object({ productId: Id }), response: { 200: Cart, 404: Problem } },
+      schema: {
+        tags,
+        summary: 'Remove a line',
+        params: z.object({ productId: Id }),
+        response: { 200: Cart, 404: Problem },
+      },
     },
     async (req) => finish(req, await carts.remove(owner(req), req.params.productId)),
   );
@@ -110,9 +115,13 @@ export const cartRoutes: FastifyPluginAsyncZod = async (app) => {
     },
   );
 
-  app.delete('/cart/coupon', { schema: { tags, summary: 'Remove the coupon', response: { 200: Cart } } }, async (req) => {
-    const id = await carts.find(owner(req));
-    if (id) await coupons.remove(id);
-    return finish(req, await carts.view(owner(req)), id);
-  });
+  app.delete(
+    '/cart/coupon',
+    { schema: { tags, summary: 'Remove the coupon', response: { 200: Cart } } },
+    async (req) => {
+      const id = await carts.find(owner(req));
+      if (id) await coupons.remove(id);
+      return finish(req, await carts.view(owner(req)), id);
+    },
+  );
 };

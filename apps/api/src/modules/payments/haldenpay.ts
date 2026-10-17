@@ -63,7 +63,11 @@ export class HaldenPay implements PaymentGateway {
     const base = { intentId, brand, last4 };
 
     const status =
-      scenario === 'decline' || scenario === 'insufficient' ? 'failed' : scenario === 'action' ? 'requires_action' : 'authorized';
+      scenario === 'decline' || scenario === 'insufficient'
+        ? 'failed'
+        : scenario === 'action'
+          ? 'requires_action'
+          : 'authorized';
     const actionToken = scenario === 'action' ? randomBytes(24).toString('base64url') : null;
     await client.query(
       `INSERT INTO haldenpay.intents (id, merchant_ref, amount, status, card_last4, card_brand, scenario, action_token)
@@ -93,10 +97,10 @@ export class HaldenPay implements PaymentGateway {
       throw new AppError('token_invalid', 'This bank check has expired or was already answered.');
     }
     const status = approve ? 'authorized' : 'failed';
-    await client.query('UPDATE haldenpay.intents SET status = $2, action_token = NULL, updated_at = now() WHERE id = $1', [
-      intent.id,
-      status,
-    ]);
+    await client.query(
+      'UPDATE haldenpay.intents SET status = $2, action_token = NULL, updated_at = now() WHERE id = $1',
+      [intent.id, status],
+    );
     if (approve) await emit(client, intent.id, 'payment.authorized', { amount: intent.amount });
     else await emit(client, intent.id, 'payment.failed', { code: 'authentication_failed' });
     return { intentId: intent.id, status: status as 'authorized' | 'failed' };
@@ -108,24 +112,28 @@ export class HaldenPay implements PaymentGateway {
       [intentId],
     );
     const intent = rows[0];
-    if (!intent || intent.status !== 'authorized') throw new Error(`HaldenPay: cannot capture ${intentId} (${intent?.status})`);
-    await client.query("UPDATE haldenpay.intents SET status = 'captured', captured = $2, updated_at = now() WHERE id = $1", [
-      intentId,
-      amount,
-    ]);
+    if (!intent || intent.status !== 'authorized')
+      throw new Error(`HaldenPay: cannot capture ${intentId} (${intent?.status})`);
+    await client.query(
+      "UPDATE haldenpay.intents SET status = 'captured', captured = $2, updated_at = now() WHERE id = $1",
+      [intentId, amount],
+    );
     await emit(client, intentId, 'payment.captured', { amount });
-    if (intent.scenario === 'dispute') await emit(client, intentId, 'charge.dispute.created', { amount, reason: 'fraudulent' });
+    if (intent.scenario === 'dispute')
+      await emit(client, intentId, 'charge.dispute.created', { amount, reason: 'fraudulent' });
   }
 
   async void(client: Queryable, intentId: string) {
-    const { rows } = await client.query<{ status: string }>('SELECT status FROM haldenpay.intents WHERE id = $1 FOR UPDATE', [
-      intentId,
-    ]);
+    const { rows } = await client.query<{ status: string }>(
+      'SELECT status FROM haldenpay.intents WHERE id = $1 FOR UPDATE',
+      [intentId],
+    );
     const status = rows[0]?.status;
     if (status !== 'authorized' && status !== 'requires_action') return; // nothing held
-    await client.query("UPDATE haldenpay.intents SET status = 'voided', action_token = NULL, updated_at = now() WHERE id = $1", [
-      intentId,
-    ]);
+    await client.query(
+      "UPDATE haldenpay.intents SET status = 'voided', action_token = NULL, updated_at = now() WHERE id = $1",
+      [intentId],
+    );
     await emit(client, intentId, 'payment.voided', {});
   }
 

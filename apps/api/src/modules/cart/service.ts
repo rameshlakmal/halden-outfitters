@@ -55,7 +55,15 @@ export function toCart(rows: LineRow[]): Cart {
   };
 }
 
-const EMPTY: Cart = { lines: [], itemCount: 0, subtotal: '0.00', savings: '0.00', coupon: null, discount: '0.00', canCheckOut: false };
+const EMPTY: Cart = {
+  lines: [],
+  itemCount: 0,
+  subtotal: '0.00',
+  savings: '0.00',
+  coupon: null,
+  discount: '0.00',
+  canCheckOut: false,
+};
 
 export class CartService {
   constructor(private readonly db: Db) {}
@@ -71,7 +79,8 @@ export class CartService {
   async ensure(owner: CartOwner): Promise<{ id: string; newGuestCartId: string | null }> {
     const found = await this.find(owner);
     if (found) return { id: found, newGuestCartId: null };
-    if (owner.customerId) return { id: await cartRepo.ensureForCustomer(this.db.pool, owner.customerId), newGuestCartId: null };
+    if (owner.customerId)
+      return { id: await cartRepo.ensureForCustomer(this.db.pool, owner.customerId), newGuestCartId: null };
     const id = await cartRepo.createGuest(this.db.pool);
     return { id, newGuestCartId: id };
   }
@@ -126,11 +135,14 @@ export class CartService {
         throw new AppError('not_found', 'That product is not in your cart.');
       }
       const product = await cartRepo.product(tx, productId);
-      if (!product || !product.active) throw new AppError('product_unavailable', 'That product is no longer sold. Remove it from your cart.');
+      if (!product || !product.active)
+        throw new AppError('product_unavailable', 'That product is no longer sold. Remove it from your cart.');
       if (qty > product.available) {
         throw new AppError(
           product.available === 0 ? 'out_of_stock' : 'not_enough_stock',
-          product.available === 0 ? `Sorry, ${product.name} is out of stock.` : `Only ${product.available} ${product.name} left.`,
+          product.available === 0
+            ? `Sorry, ${product.name} is out of stock.`
+            : `Only ${product.available} ${product.name} left.`,
         );
       }
       await cartRepo.setQty(tx, id, productId, qty);
@@ -155,9 +167,10 @@ export class CartService {
   /** On sign-in: moves a browser cart into the customer's cart. Runs inside the sign-in transaction. */
   async mergeGuestCart(tx: Queryable, customerId: string, guestCartId: string | undefined): Promise<void> {
     if (!guestCartId || !UUID.test(guestCartId)) return;
-    const { rows } = await tx.query<{ id: string }>('SELECT id FROM carts WHERE id = $1 AND customer_id IS NULL FOR UPDATE', [
-      guestCartId,
-    ]);
+    const { rows } = await tx.query<{ id: string }>(
+      'SELECT id FROM carts WHERE id = $1 AND customer_id IS NULL FOR UPDATE',
+      [guestCartId],
+    );
     if (!rows[0]) return;
     const own = await cartRepo.ensureForCustomer(tx, customerId);
     await tx.query(

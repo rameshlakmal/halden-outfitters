@@ -86,7 +86,15 @@ export class OrderService {
     return rows[0];
   }
 
-  private async event(tx: Queryable, id: string, from: OrderStatus | null, to: OrderStatus, actor: Actor, note: string | null, at: Date) {
+  private async event(
+    tx: Queryable,
+    id: string,
+    from: OrderStatus | null,
+    to: OrderStatus,
+    actor: Actor,
+    note: string | null,
+    at: Date,
+  ) {
     await tx.query(
       'INSERT INTO order_events (order_id, from_status, to_status, actor_id, actor_role, note, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7)',
       [id, from, to, actor.id, actor.role, note, at],
@@ -100,7 +108,10 @@ export class OrderService {
 
   private assertMove(o: OrderRow, to: OrderStatus) {
     if (!canMove(o.status, to)) {
-      throw new AppError('invalid_transition', `An order that is ${o.status.replace('_', ' ')} cannot be moved to ${to.replace('_', ' ')}.`);
+      throw new AppError(
+        'invalid_transition',
+        `An order that is ${o.status.replace('_', ' ')} cannot be moved to ${to.replace('_', ' ')}.`,
+      );
     }
   }
 
@@ -121,7 +132,9 @@ export class OrderService {
       [orderId, now],
     );
     await tx.query("UPDATE payments SET status = 'authorized', updated_at = $2 WHERE order_id = $1", [orderId, now]);
-    await tx.query('UPDATE stock_reservations SET expires_at = NULL WHERE order_id = $1 AND released_at IS NULL', [orderId]);
+    await tx.query('UPDATE stock_reservations SET expires_at = NULL WHERE order_id = $1 AND released_at IS NULL', [
+      orderId,
+    ]);
     await tx.query(
       `DELETE FROM cart_items WHERE cart_id = (SELECT id FROM carts WHERE customer_id = $1)
          AND product_id IN (SELECT product_id FROM order_items WHERE order_id = $2)`,
@@ -159,7 +172,13 @@ export class OrderService {
       now,
     ]);
     await this.release(tx, o, 'payment_failed', null, systemActor, now, { voidPayment: false });
-    await queueEmail(tx, o.email, 'payment_failed', { name: await this.customerName(tx, o.customer_id), orderId, link: `${this.ctx.config.APP_URL}/cart` }, now);
+    await queueEmail(
+      tx,
+      o.email,
+      'payment_failed',
+      { name: await this.customerName(tx, o.customer_id), orderId, link: `${this.ctx.config.APP_URL}/cart` },
+      now,
+    );
   }
 
   // ---------- cancellation ----------
@@ -182,20 +201,43 @@ export class OrderService {
               : 'This order is being packed and can no longer be cancelled online. Contact support.',
         );
       }
-      if (isOwner && !staff && !(['changed_mind', 'ordered_by_mistake', 'found_cheaper', 'delivery_too_slow', 'other'] as string[]).includes(reason)) {
-        throw new AppError('validation_failed', 'Choose a reason for cancelling.', { errors: [{ path: 'reason', message: 'Choose a reason.' }] });
+      if (
+        isOwner &&
+        !staff &&
+        !(['changed_mind', 'ordered_by_mistake', 'found_cheaper', 'delivery_too_slow', 'other'] as string[]).includes(
+          reason,
+        )
+      ) {
+        throw new AppError('validation_failed', 'Choose a reason for cancelling.', {
+          errors: [{ path: 'reason', message: 'Choose a reason.' }],
+        });
       }
       if (reason === 'other' && !note) {
-        throw new AppError('validation_failed', 'Tell us a little more.', { errors: [{ path: 'note', message: 'Tell us why.' }] });
+        throw new AppError('validation_failed', 'Tell us a little more.', {
+          errors: [{ path: 'note', message: 'Tell us why.' }],
+        });
       }
       const actor = actorOf(user, o.customer_id);
       await this.release(tx, o, reason, note, actor, now, { voidPayment: true });
-      if (actor.kind === 'staff') await audit(tx, user, 'order.cancel', { type: 'order', id: orderId }, { before: { status: o.status }, after: { status: 'cancelled', reason, note } }, now);
+      if (actor.kind === 'staff')
+        await audit(
+          tx,
+          user,
+          'order.cancel',
+          { type: 'order', id: orderId },
+          { before: { status: o.status }, after: { status: 'cancelled', reason, note } },
+          now,
+        );
       await queueEmail(
         tx,
         o.email,
         'order_cancelled',
-        { name: await this.customerName(tx, o.customer_id), orderId, reason: REASON_TEXT[reason], link: this.link(orderId) },
+        {
+          name: await this.customerName(tx, o.customer_id),
+          orderId,
+          reason: REASON_TEXT[reason],
+          link: this.link(orderId),
+        },
         now,
       );
     });
@@ -219,20 +261,34 @@ export class OrderService {
     );
     // Planted bug: cancel_keeps_reservation.
     if (!(await this.ctx.bugs.enabled('cancel_keeps_reservation', tx))) {
-      await tx.query('UPDATE stock_reservations SET released_at = $2 WHERE order_id = $1 AND released_at IS NULL AND consumed_at IS NULL', [o.id, now]);
+      await tx.query(
+        'UPDATE stock_reservations SET released_at = $2 WHERE order_id = $1 AND released_at IS NULL AND consumed_at IS NULL',
+        [o.id, now],
+      );
     }
     // Planted bug: cancel_keeps_coupon_use.
     if (!(await this.ctx.bugs.enabled('cancel_keeps_coupon_use', tx))) {
-      await tx.query('UPDATE coupon_redemptions SET released_at = $2 WHERE order_id = $1 AND released_at IS NULL', [o.id, now]);
+      await tx.query('UPDATE coupon_redemptions SET released_at = $2 WHERE order_id = $1 AND released_at IS NULL', [
+        o.id,
+        now,
+      ]);
     }
     // Points spent and store credit used on the order go back to the customer.
     await giveBack(tx, o.customer_id, o.points_redeemed, 'redeem_reversal', { orderId: o.id }, now);
-    if (toCents(o.store_credit_used) > 0) await addCredit(tx, o.customer_id, o.store_credit_used, 'purchase_reversal', { orderId: o.id }, now);
+    if (toCents(o.store_credit_used) > 0)
+      await addCredit(tx, o.customer_id, o.store_credit_used, 'purchase_reversal', { orderId: o.id }, now);
     if (opts.voidPayment) {
-      const { rows } = await tx.query<{ intent_id: string; status: string }>('SELECT intent_id, status FROM payments WHERE order_id = $1', [o.id]);
+      const { rows } = await tx.query<{ intent_id: string; status: string }>(
+        'SELECT intent_id, status FROM payments WHERE order_id = $1',
+        [o.id],
+      );
       const p = rows[0];
       // Planted bug: cancel_leaves_authorization.
-      if (p && (p.status === 'authorized' || p.status === 'requires_action') && !(await this.ctx.bugs.enabled('cancel_leaves_authorization', tx))) {
+      if (
+        p &&
+        (p.status === 'authorized' || p.status === 'requires_action') &&
+        !(await this.ctx.bugs.enabled('cancel_leaves_authorization', tx))
+      ) {
         await this.ctx.gateway.void(tx, p.intent_id);
         await tx.query("UPDATE payments SET status = 'voided', updated_at = $2 WHERE order_id = $1", [o.id, now]);
       }
@@ -246,9 +302,19 @@ export class OrderService {
     await this.ctx.db.tx(async (tx) => {
       const o = await this.lockOrder(tx, orderId);
       this.assertMove(o, 'packed');
-      await tx.query("UPDATE orders SET status = 'packed', packed_at = $2, version = version + 1, updated_at = $2 WHERE id = $1", [orderId, now]);
+      await tx.query(
+        "UPDATE orders SET status = 'packed', packed_at = $2, version = version + 1, updated_at = $2 WHERE id = $1",
+        [orderId, now],
+      );
       await this.event(tx, orderId, o.status, 'packed', actorOf(user), null, now);
-      await audit(tx, user, 'order.pack', { type: 'order', id: orderId }, { before: { status: o.status }, after: { status: 'packed' } }, now);
+      await audit(
+        tx,
+        user,
+        'order.pack',
+        { type: 'order', id: orderId },
+        { before: { status: o.status }, after: { status: 'packed' } },
+        now,
+      );
     });
   }
 
@@ -264,9 +330,13 @@ export class OrderService {
       const pay = pays[0];
       // Orders paid fully with store credit have no card to charge.
       if (pay) {
-        if (pay.status !== 'authorized') throw new AppError('invalid_transition', 'This order has no authorized payment to charge.');
+        if (pay.status !== 'authorized')
+          throw new AppError('invalid_transition', 'This order has no authorized payment to charge.');
         await this.ctx.gateway.capture(tx, pay.intent_id, pay.amount);
-        await tx.query("UPDATE payments SET status = 'captured', amount_captured = amount, updated_at = $2 WHERE order_id = $1", [orderId, now]);
+        await tx.query(
+          "UPDATE payments SET status = 'captured', amount_captured = amount, updated_at = $2 WHERE order_id = $1",
+          [orderId, now],
+        );
       }
 
       const { rows: holds } = await tx.query<{ id: string; product_id: string; qty: number }>(
@@ -275,7 +345,11 @@ export class OrderService {
         [orderId],
       );
       for (const h of holds) {
-        await tx.query('UPDATE inventory SET on_hand = on_hand - $2, updated_at = $3 WHERE product_id = $1', [h.product_id, h.qty, now]);
+        await tx.query('UPDATE inventory SET on_hand = on_hand - $2, updated_at = $3 WHERE product_id = $1', [
+          h.product_id,
+          h.qty,
+          now,
+        ]);
         await tx.query(
           "INSERT INTO stock_movements (product_id, change, reason, order_id, actor_id, created_at) VALUES ($1, $2, 'sale', $3, $4, $5)",
           [h.product_id, -h.qty, orderId, user.id, now],
@@ -287,7 +361,14 @@ export class OrderService {
         [orderId, now, trackingNumber],
       );
       await this.event(tx, orderId, o.status, 'shipped', actorOf(user), `Tracking ${trackingNumber}`, now);
-      await audit(tx, user, 'order.ship', { type: 'order', id: orderId }, { before: { status: o.status }, after: { status: 'shipped', trackingNumber } }, now);
+      await audit(
+        tx,
+        user,
+        'order.ship',
+        { type: 'order', id: orderId },
+        { before: { status: o.status }, after: { status: 'shipped', trackingNumber } },
+        now,
+      );
       await queueEmail(
         tx,
         o.email,
@@ -302,12 +383,28 @@ export class OrderService {
     await this.ctx.db.tx(async (tx) => {
       const o = await this.lockOrder(tx, orderId);
       this.assertMove(o, 'delivered');
-      await tx.query("UPDATE orders SET status = 'delivered', delivered_at = $2, version = version + 1, updated_at = $2 WHERE id = $1", [orderId, now]);
+      await tx.query(
+        "UPDATE orders SET status = 'delivered', delivered_at = $2, version = version + 1, updated_at = $2 WHERE id = $1",
+        [orderId, now],
+      );
       // Planted bug: points_on_tax_shipping.
       await earnOnDelivery(tx, o, now, { onTaxAndShipping: await this.ctx.bugs.enabled('points_on_tax_shipping', tx) });
       await this.event(tx, orderId, o.status, 'delivered', actorOf(user), null, now);
-      await audit(tx, user, 'order.deliver', { type: 'order', id: orderId }, { before: { status: o.status }, after: { status: 'delivered' } }, now);
-      await queueEmail(tx, o.email, 'order_delivered', { name: await this.customerName(tx, o.customer_id), orderId, link: this.link(orderId) }, now);
+      await audit(
+        tx,
+        user,
+        'order.deliver',
+        { type: 'order', id: orderId },
+        { before: { status: o.status }, after: { status: 'delivered' } },
+        now,
+      );
+      await queueEmail(
+        tx,
+        o.email,
+        'order_delivered',
+        { name: await this.customerName(tx, o.customer_id), orderId, link: this.link(orderId) },
+        now,
+      );
     });
   }
 
@@ -320,7 +417,10 @@ export class OrderService {
   async returnWindowFrom(db: Queryable, o: { id: string; delivered_at: Date | null }): Promise<Date> {
     const delivered = o.delivered_at!;
     if (!(await this.ctx.bugs.enabled('return_window_restarts', db))) return delivered;
-    const { rows } = await db.query<{ at: Date | null }>('SELECT max(requested_at) AS at FROM returns WHERE order_id = $1', [o.id]);
+    const { rows } = await db.query<{ at: Date | null }>(
+      'SELECT max(requested_at) AS at FROM returns WHERE order_id = $1',
+      [o.id],
+    );
     const at = rows[0]?.at;
     return at && at > delivered ? at : delivered;
   }
@@ -336,20 +436,38 @@ export class OrderService {
       // Release first: it voids the intent while the payment still reads requires_action, so its bank step can't be
       // approved later. Then record the payment as failed by timeout.
       await this.release(tx, locked, 'payment_timeout', null, systemActor, now, { voidPayment: true });
-      await tx.query("UPDATE payments SET status = 'failed', failure_code = 'timeout', updated_at = $2 WHERE order_id = $1", [orderId, now]);
+      await tx.query(
+        "UPDATE payments SET status = 'failed', failure_code = 'timeout', updated_at = $2 WHERE order_id = $1",
+        [orderId, now],
+      );
       await queueEmail(
         tx,
         o.email,
         'order_cancelled',
-        { name: await this.customerName(tx, o.customer_id), orderId, reason: REASON_TEXT.payment_timeout, link: this.link(orderId) },
+        {
+          name: await this.customerName(tx, o.customer_id),
+          orderId,
+          reason: REASON_TEXT.payment_timeout,
+          link: this.link(orderId),
+        },
         now,
       );
-    } else if (o.status === 'delivered' && o.delivered_at && returnWindowClosed(await this.returnWindowFrom(tx, o), now)) {
+    } else if (
+      o.status === 'delivered' &&
+      o.delivered_at &&
+      returnWindowClosed(await this.returnWindowFrom(tx, o), now)
+    ) {
       const locked = await this.lockOrder(tx, orderId);
       if (locked.status !== 'delivered') return;
-      const { rows: open } = await tx.query("SELECT 1 FROM returns WHERE order_id = $1 AND status IN ('requested', 'approved')", [orderId]);
+      const { rows: open } = await tx.query(
+        "SELECT 1 FROM returns WHERE order_id = $1 AND status IN ('requested', 'approved')",
+        [orderId],
+      );
       if (open.length) return; // completes once the return is finished
-      await tx.query("UPDATE orders SET status = 'completed', completed_at = $2, version = version + 1, updated_at = $2 WHERE id = $1", [orderId, now]);
+      await tx.query(
+        "UPDATE orders SET status = 'completed', completed_at = $2, version = version + 1, updated_at = $2 WHERE id = $1",
+        [orderId, now],
+      );
       await this.event(tx, orderId, 'delivered', 'completed', systemActor, 'Return window closed', now);
       await releaseOnCompletion(tx, o.customer_id, orderId, now);
     }
@@ -419,24 +537,42 @@ export class OrderService {
         amount_captured: string;
         amount_refunded: string;
         disputed: boolean;
-      }>('SELECT status, card_brand, card_last4, amount, amount_captured, amount_refunded, disputed FROM payments WHERE order_id = $1', [orderId]),
-      this.ctx.db.query<{ from_status: OrderStatus | null; to_status: OrderStatus; actor_id: string | null; actor_role: Role | null; note: string | null; created_at: Date }>(
+      }>(
+        'SELECT status, card_brand, card_last4, amount, amount_captured, amount_refunded, disputed FROM payments WHERE order_id = $1',
+        [orderId],
+      ),
+      this.ctx.db.query<{
+        from_status: OrderStatus | null;
+        to_status: OrderStatus;
+        actor_id: string | null;
+        actor_role: Role | null;
+        note: string | null;
+        created_at: Date;
+      }>(
         'SELECT from_status, to_status, actor_id, actor_role, note, created_at FROM order_events WHERE order_id = $1 ORDER BY id',
         [orderId],
       ),
-      this.ctx.db.query<{ kind: 'return' | 'goodwill'; method: 'card' | 'store_credit'; amount: string; reason: string; created_at: Date }>(
-        'SELECT kind, method, amount, reason, created_at FROM refunds WHERE order_id = $1 ORDER BY id',
+      this.ctx.db.query<{
+        kind: 'return' | 'goodwill';
+        method: 'card' | 'store_credit';
+        amount: string;
+        reason: string;
+        created_at: Date;
+      }>('SELECT kind, method, amount, reason, created_at FROM refunds WHERE order_id = $1 ORDER BY id', [orderId]),
+      this.ctx.db.query<{ id: string; status: ReturnStatus }>(
+        'SELECT id, status FROM returns WHERE order_id = $1 ORDER BY id',
         [orderId],
       ),
-      this.ctx.db.query<{ id: string; status: ReturnStatus }>('SELECT id, status FROM returns WHERE order_id = $1 ORDER BY id', [orderId]),
     ]);
     const windowFrom = o.delivered_at ? await this.returnWindowFrom(this.ctx.db.pool, o) : null;
     const windowOpen = o.status === 'delivered' && !!windowFrom && !returnWindowClosed(windowFrom, now);
     const openReturn = returns.some((r) => r.status === 'requested' || r.status === 'approved');
-    const canReturn = (l: { returnable: boolean; qty: number; claimed: number }) => windowOpen && !openReturn && l.returnable ? l.qty - l.claimed : 0;
+    const canReturn = (l: { returnable: boolean; qty: number; claimed: number }) =>
+      windowOpen && !openReturn && l.returnable ? l.qty - l.claimed : 0;
     const actions = allowedActions(o.status, { id: user.id, role: user.role, isOwner: o.customer_id === user.id });
     if (o.customer_id === user.id && lines.some((l) => canReturn(l) > 0)) actions.push('return');
-    if ((user.role === 'support' || user.role === 'admin') && ['shipped', 'delivered', 'completed'].includes(o.status)) actions.push('goodwill');
+    if ((user.role === 'support' || user.role === 'admin') && ['shipped', 'delivered', 'completed'].includes(o.status))
+      actions.push('goodwill');
 
     return {
       id: o.id,
@@ -497,17 +633,31 @@ export class OrderService {
             disputed: payment.disputed,
           }
         : null,
-      cancel: o.cancelled_at && o.cancel_reason ? { reason: o.cancel_reason, note: o.cancel_note, at: o.cancelled_at.toISOString() } : null,
+      cancel:
+        o.cancelled_at && o.cancel_reason
+          ? { reason: o.cancel_reason, note: o.cancel_note, at: o.cancelled_at.toISOString() }
+          : null,
       events: events.map((e) => ({
         from: e.from_status,
         to: e.to_status,
-        by: e.actor_id === null ? ('system' as const) : e.actor_role === 'customer' || e.actor_id === o.customer_id ? ('customer' as const) : ('staff' as const),
+        by:
+          e.actor_id === null
+            ? ('system' as const)
+            : e.actor_role === 'customer' || e.actor_id === o.customer_id
+              ? ('customer' as const)
+              : ('staff' as const),
         note: e.note,
         at: e.created_at.toISOString(),
       })),
       returnWindowEndsAt: o.delivered_at && windowFrom ? returnWindowEnds(windowFrom).toISOString() : null,
       pointsEarned: o.points_earned,
-      refunds: refunds.map((r) => ({ kind: r.kind, method: r.method, amount: r.amount, reason: r.reason, at: r.created_at.toISOString() })),
+      refunds: refunds.map((r) => ({
+        kind: r.kind,
+        method: r.method,
+        amount: r.amount,
+        reason: r.reason,
+        at: r.created_at.toISOString(),
+      })),
       returns,
       allowedActions: actions,
     };
@@ -529,7 +679,15 @@ export class OrderService {
       where.push(`o.id < $${params.length}`);
     }
     params.push(limit + 1);
-    const rows = await this.ctx.db.query<{ id: string; status: OrderStatus; placed_at: Date; total: string; item_count: number; images: string[]; email: string }>(
+    const rows = await this.ctx.db.query<{
+      id: string;
+      status: OrderStatus;
+      placed_at: Date;
+      total: string;
+      item_count: number;
+      images: string[];
+      email: string;
+    }>(
       `SELECT o.id, o.status, o.placed_at, o.total, o.email,
               (SELECT sum(qty)::int FROM order_items WHERE order_id = o.id) AS item_count,
               (SELECT array_agg(image ORDER BY id) FROM (SELECT image, id FROM order_items WHERE order_id = o.id ORDER BY id LIMIT 3) i) AS images

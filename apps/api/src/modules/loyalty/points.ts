@@ -53,7 +53,10 @@ const expiresAt = (now: Date) => new Date(now.getTime() + EXPIRY_DAYS * 86400_00
 export async function redeem(db: Queryable, customerId: string, points: number, orderId: string, now: Date) {
   if (points <= 0) return;
   const { available } = await balance(db, customerId, now);
-  if (points > available) throw new AppError('validation_failed', `You have ${available} points.`, { errors: [{ path: 'pointsToRedeem', message: `You have ${available} points.` }] });
+  if (points > available)
+    throw new AppError('validation_failed', `You have ${available} points.`, {
+      errors: [{ path: 'pointsToRedeem', message: `You have ${available} points.` }],
+    });
   let left = points;
   let earliest: Date | null = null;
   const { rows } = await db.query<{ id: string; remaining: number; expires_at: Date | null }>(
@@ -100,7 +103,17 @@ export async function giveBack(
   await db.query(
     `INSERT INTO loyalty_ledger (customer_id, bucket, kind, points, remaining, expires_at, order_id, return_id, actor_id, note, created_at)
      VALUES ($1, 'available', $2, $3, $3, $4, $5, $6, $7, $8, $9)`,
-    [customerId, kind, points, expiry, refs.orderId ?? null, refs.returnId ?? null, refs.actorId ?? null, refs.note ?? null, now],
+    [
+      customerId,
+      kind,
+      points,
+      expiry,
+      refs.orderId ?? null,
+      refs.returnId ?? null,
+      refs.actorId ?? null,
+      refs.note ?? null,
+      now,
+    ],
   );
 }
 
@@ -110,7 +123,12 @@ type EarnLine = { id: string; line_total: string; discount_alloc: string; points
  * Points an order earns on delivery, spread over its lines. Planted bug points_on_tax_shipping also counts the
  * order's tax and shipping.
  */
-export async function earnOnDelivery(db: Queryable, order: { id: string; customer_id: string; tax: string; shipping: string }, now: Date, opts: { onTaxAndShipping: boolean }) {
+export async function earnOnDelivery(
+  db: Queryable,
+  order: { id: string; customer_id: string; tax: string; shipping: string },
+  now: Date,
+  opts: { onTaxAndShipping: boolean },
+) {
   const { rows: lines } = await db.query<EarnLine>(
     'SELECT id, line_total, discount_alloc, points_alloc FROM order_items WHERE order_id = $1 ORDER BY id',
     [order.id],
@@ -121,8 +139,12 @@ export async function earnOnDelivery(db: Queryable, order: { id: string; custome
   const rate = (await isSummit(db, order.customer_id, now)) ? 1.5 : 1;
   const total = Math.floor((base / 100) * rate);
   if (total <= 0) return 0;
-  const perLine = allocate(total, paid.map((p) => Math.max(p, 0)));
-  for (const [i, l] of lines.entries()) await db.query('UPDATE order_items SET points_earned = $2 WHERE id = $1', [l.id, perLine[i]]);
+  const perLine = allocate(
+    total,
+    paid.map((p) => Math.max(p, 0)),
+  );
+  for (const [i, l] of lines.entries())
+    await db.query('UPDATE order_items SET points_earned = $2 WHERE id = $1', [l.id, perLine[i]]);
   await db.query('UPDATE orders SET points_earned = $2 WHERE id = $1', [order.id, total]);
   await db.query(
     "INSERT INTO loyalty_ledger (customer_id, bucket, kind, points, order_id, note, created_at) VALUES ($1, 'pending', 'earn_pending', $2, $3, $4, $5)",
@@ -141,7 +163,14 @@ export async function pendingForOrder(db: Queryable, orderId: string): Promise<n
 }
 
 /** A return takes back the pending points of its lines (while the order hasn't completed). */
-export async function reversePending(db: Queryable, customerId: string, orderId: string, returnId: string, points: number, now: Date) {
+export async function reversePending(
+  db: Queryable,
+  customerId: string,
+  orderId: string,
+  returnId: string,
+  points: number,
+  now: Date,
+) {
   const held = await pendingForOrder(db, orderId);
   const take = Math.min(points, held);
   if (take <= 0) return 0;

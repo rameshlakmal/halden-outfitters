@@ -19,7 +19,15 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.get(
     '/orders',
-    { schema: { tags, summary: 'Your orders, newest first', security, querystring: listQuery, response: { 200: OrderList, 401: Problem } } },
+    {
+      schema: {
+        tags,
+        summary: 'Your orders, newest first',
+        security,
+        querystring: listQuery,
+        response: { 200: OrderList, 401: Problem },
+      },
+    },
     async (req) => {
       const user = requireUser(req);
       // Settle any of this customer's unpaid orders that have timed out, so the list is current.
@@ -37,7 +45,13 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
     '/orders/:id',
     {
       preValidation: needsUser,
-      schema: { tags, summary: 'One of your orders', security, params: z.object({ id: Id }), response: { 200: Order, 401: Problem, 404: Problem } },
+      schema: {
+        tags,
+        summary: 'One of your orders',
+        security,
+        params: z.object({ id: Id }),
+        response: { 200: Order, 401: Problem, 404: Problem },
+      },
     },
     async (req) => orders.view(req.params.id, requireUser(req), req.now),
   );
@@ -89,7 +103,13 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
     '/staff/orders/:id',
     {
       preValidation: needsUser,
-      schema: { tags: staffTags, summary: 'One order (staff)', security, params: z.object({ id: Id }), response: { 200: Order, 401: Problem, 403: Problem, 404: Problem } },
+      schema: {
+        tags: staffTags,
+        summary: 'One order (staff)',
+        security,
+        params: z.object({ id: Id }),
+        response: { 200: Order, 401: Problem, 403: Problem, 404: Problem },
+      },
     },
     async (req) => orders.view(req.params.id, requireRole(req, 'support', 'warehouse', 'admin'), req.now),
   );
@@ -99,7 +119,13 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
       `/staff/orders/:id/${path}`,
       {
         preValidation: needsUser,
-      schema: { tags: staffTags, summary, security, params: z.object({ id: Id }), response: { 200: Order, 401: Problem, 403: Problem, 404: Problem, 409: Problem } },
+        schema: {
+          tags: staffTags,
+          summary,
+          security,
+          params: z.object({ id: Id }),
+          response: { 200: Order, 401: Problem, 403: Problem, 404: Problem, 409: Problem },
+        },
       },
       async (req) => {
         const user = requireRole(req, 'warehouse', 'admin');

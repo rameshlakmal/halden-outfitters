@@ -62,7 +62,9 @@ describe('product list', () => {
       let cursor: string | null = null;
       let pages = 0;
       do {
-        const page: Record<string, any> = json(await c.get(`/products?sort=${sort}&limit=5${cursor ? `&cursor=${cursor}` : ''}`));
+        const page: Record<string, any> = json(
+          await c.get(`/products?sort=${sort}&limit=5${cursor ? `&cursor=${cursor}` : ''}`),
+        );
         seen.push(...page.items.map((i: { id: string }) => i.id));
         cursor = page.nextCursor;
         pages++;

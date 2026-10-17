@@ -52,7 +52,11 @@ export const staffRoutes: FastifyPluginAsyncZod = async (app) => {
     },
     async (req) => {
       requireRole(req, 'support', 'warehouse', 'admin');
-      return staff.products({ q: req.query.q, lowStock: req.query.lowStock }, req.query.cursor ?? null, req.query.limit);
+      return staff.products(
+        { q: req.query.q, lowStock: req.query.lowStock },
+        req.query.cursor ?? null,
+        req.query.limit,
+      );
     },
   );
 
@@ -60,7 +64,13 @@ export const staffRoutes: FastifyPluginAsyncZod = async (app) => {
     '/staff/products/:id',
     {
       preValidation: needsUser,
-      schema: { tags, summary: 'One product; the ETag is its version', security, params, response: { 200: StaffProduct, ...ok } },
+      schema: {
+        tags,
+        summary: 'One product; the ETag is its version',
+        security,
+        params,
+        response: { 200: StaffProduct, ...ok },
+      },
     },
     async (req, reply) => {
       requireRole(req, 'support', 'warehouse', 'admin');
@@ -113,7 +123,16 @@ export const staffRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.get(
     '/staff/products/:id/movements',
-    { preValidation: needsUser, schema: { tags, summary: 'Stock movements, newest first', security, params, response: { 200: z.object({ items: z.array(StockMovement) }), ...ok } } },
+    {
+      preValidation: needsUser,
+      schema: {
+        tags,
+        summary: 'Stock movements, newest first',
+        security,
+        params,
+        response: { 200: z.object({ items: z.array(StockMovement) }), ...ok },
+      },
+    },
     async (req) => {
       requireRole(req, 'support', 'warehouse', 'admin');
       await staff.product(req.params.id);
@@ -125,7 +144,14 @@ export const staffRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.get(
     '/staff/coupons',
-    { schema: { tags, summary: 'Coupons with their uses (admin)', security, response: { 200: z.object({ items: z.array(StaffCoupon) }), 401: Problem, 403: Problem } } },
+    {
+      schema: {
+        tags,
+        summary: 'Coupons with their uses (admin)',
+        security,
+        response: { 200: z.object({ items: z.array(StaffCoupon) }), 401: Problem, 403: Problem },
+      },
+    },
     async (req) => {
       requireRole(req, 'admin');
       return { items: await staff.coupons() };
@@ -150,7 +176,14 @@ export const staffRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.get(
     '/staff/shipping-rates',
-    { schema: { tags, summary: 'Shipping rates by zone (admin)', security, response: { 200: z.object({ items: z.array(ShippingRate) }), 401: Problem, 403: Problem } } },
+    {
+      schema: {
+        tags,
+        summary: 'Shipping rates by zone (admin)',
+        security,
+        response: { 200: z.object({ items: z.array(ShippingRate) }), 401: Problem, 403: Problem },
+      },
+    },
     async (req) => {
       requireRole(req, 'admin');
       return { items: await staff.rates() };
@@ -176,7 +209,14 @@ export const staffRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.get(
     '/staff/tax',
-    { schema: { tags, summary: 'The tax rate (admin)', security, response: { 200: TaxSetting, 401: Problem, 403: Problem } } },
+    {
+      schema: {
+        tags,
+        summary: 'The tax rate (admin)',
+        security,
+        response: { 200: TaxSetting, 401: Problem, 403: Problem },
+      },
+    },
     async (req) => {
       requireRole(req, 'admin');
       return { ratePercent: await staff.taxRate() };
@@ -187,7 +227,14 @@ export const staffRoutes: FastifyPluginAsyncZod = async (app) => {
     '/staff/tax',
     {
       preValidation: needsUser,
-      schema: { tags, summary: 'Change the tax rate (admin)', description: 'Placed orders keep the rate they were charged.', security, body: TaxSetting, response: { 200: TaxSetting, 400: Problem, 401: Problem, 403: Problem } },
+      schema: {
+        tags,
+        summary: 'Change the tax rate (admin)',
+        description: 'Placed orders keep the rate they were charged.',
+        security,
+        body: TaxSetting,
+        response: { 200: TaxSetting, 400: Problem, 401: Problem, 403: Problem },
+      },
     },
     async (req) => ({ ratePercent: await staff.setTaxRate(requireRole(req, 'admin'), req.body.ratePercent, req.now) }),
   );
@@ -216,7 +263,14 @@ export const staffRoutes: FastifyPluginAsyncZod = async (app) => {
     '/staff/customers/:id/role',
     {
       preValidation: needsUser,
-      schema: { tags, summary: "Change an account's role (admin); signs it out everywhere", security, params, body: SetRole, response: { 204: z.null(), 400: Problem, ...ok } },
+      schema: {
+        tags,
+        summary: "Change an account's role (admin); signs it out everywhere",
+        security,
+        params,
+        body: SetRole,
+        response: { 204: z.null(), 400: Problem, ...ok },
+      },
     },
     async (req, reply) => {
       await staff.setRole(req.params.id, requireRole(req, 'admin'), req.body.role, req.now);
@@ -234,7 +288,11 @@ export const staffRoutes: FastifyPluginAsyncZod = async (app) => {
         tags,
         summary: 'Audit log, newest first (admin)',
         security,
-        querystring: listQuery.extend({ entityType: z.string().max(40).optional(), entityId: z.string().max(60).optional(), actorId: Id.optional() }),
+        querystring: listQuery.extend({
+          entityType: z.string().max(40).optional(),
+          entityId: z.string().max(60).optional(),
+          actorId: Id.optional(),
+        }),
         response: { 200: page(AuditEntry), 401: Problem, 403: Problem },
       },
     },

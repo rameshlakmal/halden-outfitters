@@ -15,7 +15,11 @@ export type AuthorizeResult =
 export interface PaymentGateway {
   authorize(client: Queryable, input: AuthorizeInput): Promise<AuthorizeResult>;
   /** The customer's answer at the bank step. */
-  authenticate(client: Queryable, actionToken: string, approve: boolean): Promise<{ intentId: string; status: 'authorized' | 'failed' }>;
+  authenticate(
+    client: Queryable,
+    actionToken: string,
+    approve: boolean,
+  ): Promise<{ intentId: string; status: 'authorized' | 'failed' }>;
   capture(client: Queryable, intentId: string, amount: string): Promise<void>;
   void(client: Queryable, intentId: string): Promise<void>;
   refund(client: Queryable, intentId: string, amount: string): Promise<void>;

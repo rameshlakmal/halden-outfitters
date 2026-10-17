@@ -51,10 +51,10 @@ export const cartRepo = {
   },
 
   async lineQty(db: Queryable, cartId: string, productId: string): Promise<number> {
-    const { rows } = await db.query<{ qty: number }>('SELECT qty FROM cart_items WHERE cart_id = $1 AND product_id = $2', [
-      cartId,
-      productId,
-    ]);
+    const { rows } = await db.query<{ qty: number }>(
+      'SELECT qty FROM cart_items WHERE cart_id = $1 AND product_id = $2',
+      [cartId, productId],
+    );
     return rows[0]?.qty ?? 0;
   },
 

@@ -60,13 +60,30 @@ export const returnRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.get(
     '/returns',
-    { schema: { tags, summary: 'Your returns, newest first', security, querystring: listQuery, response: { 200: ReturnList, 401: Problem } } },
+    {
+      schema: {
+        tags,
+        summary: 'Your returns, newest first',
+        security,
+        querystring: listQuery,
+        response: { 200: ReturnList, 401: Problem },
+      },
+    },
     async (req) => returns.list({ customerId: requireUser(req).id }, req.query.cursor ?? null, req.query.limit),
   );
 
   app.get(
     '/returns/:id',
-    { preValidation: needsUser, schema: { tags, summary: 'One of your returns', security, params, response: { 200: Return, 401: Problem, 404: Problem } } },
+    {
+      preValidation: needsUser,
+      schema: {
+        tags,
+        summary: 'One of your returns',
+        security,
+        params,
+        response: { 200: Return, 401: Problem, 404: Problem },
+      },
+    },
     async (req) => returns.view(req.params.id, requireUser(req), req.now),
   );
 
@@ -74,7 +91,13 @@ export const returnRoutes: FastifyPluginAsyncZod = async (app) => {
     '/returns/:id/cancel',
     {
       preValidation: needsUser,
-      schema: { tags, summary: 'Cancel a return before it is sent', security, params, response: { 200: Return, 401: Problem, 404: Problem, 409: Problem } },
+      schema: {
+        tags,
+        summary: 'Cancel a return before it is sent',
+        security,
+        params,
+        response: { 200: Return, 401: Problem, 404: Problem, 409: Problem },
+      },
     },
     async (req) => {
       const user = requireUser(req);
@@ -87,7 +110,14 @@ export const returnRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.get(
     '/account/points',
-    { schema: { tags: accountTags, summary: 'Halden Points balance and history', security, response: { 200: PointsAccount, 401: Problem } } },
+    {
+      schema: {
+        tags: accountTags,
+        summary: 'Halden Points balance and history',
+        security,
+        response: { 200: PointsAccount, 401: Problem },
+      },
+    },
     async (req) => {
       const user = requireUser(req);
       const db = app.ctx.db;
@@ -100,7 +130,14 @@ export const returnRoutes: FastifyPluginAsyncZod = async (app) => {
               AND expires_at = (SELECT min(expires_at) FROM loyalty_ledger WHERE customer_id = $1 AND remaining > 0 AND expires_at > $2)`,
           [user.id, req.now],
         ),
-        db.query<{ kind: string; points: number; bucket: 'pending' | 'available'; order_id: string | null; note: string | null; created_at: Date }>(
+        db.query<{
+          kind: string;
+          points: number;
+          bucket: 'pending' | 'available';
+          order_id: string | null;
+          note: string | null;
+          created_at: Date;
+        }>(
           'SELECT kind, points, bucket, order_id, note, created_at FROM loyalty_ledger WHERE customer_id = $1 ORDER BY created_at DESC, id DESC LIMIT 100',
           [user.id],
         ),
@@ -110,14 +147,28 @@ export const returnRoutes: FastifyPluginAsyncZod = async (app) => {
         pending: b.pending,
         tier: summit ? ('summit' as const) : ('base' as const),
         nextExpiry: next?.points && next.expires_at ? { points: next.points, at: next.expires_at.toISOString() } : null,
-        history: history.map((h) => ({ kind: h.kind, points: h.points, bucket: h.bucket, orderId: h.order_id, note: h.note, at: h.created_at.toISOString() })),
+        history: history.map((h) => ({
+          kind: h.kind,
+          points: h.points,
+          bucket: h.bucket,
+          orderId: h.order_id,
+          note: h.note,
+          at: h.created_at.toISOString(),
+        })),
       };
     },
   );
 
   app.get(
     '/account/store-credit',
-    { schema: { tags: accountTags, summary: 'Store credit balance and history', security, response: { 200: StoreCreditAccount, 401: Problem } } },
+    {
+      schema: {
+        tags: accountTags,
+        summary: 'Store credit balance and history',
+        security,
+        response: { 200: StoreCreditAccount, 401: Problem },
+      },
+    },
     async (req) => {
       const user = requireUser(req);
       const [b, history] = await Promise.all([
@@ -127,7 +178,15 @@ export const returnRoutes: FastifyPluginAsyncZod = async (app) => {
           [user.id],
         ),
       ]);
-      return { balance: b, history: history.map((h) => ({ amount: h.amount, reason: h.reason, orderId: h.order_id, at: h.created_at.toISOString() })) };
+      return {
+        balance: b,
+        history: history.map((h) => ({
+          amount: h.amount,
+          reason: h.reason,
+          orderId: h.order_id,
+          at: h.created_at.toISOString(),
+        })),
+      };
     },
   );
 
@@ -153,7 +212,16 @@ export const returnRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.get(
     '/staff/returns/:id',
-    { preValidation: needsUser, schema: { tags: staffTags, summary: 'One return (staff)', security, params, response: { 200: Return, 401: Problem, 403: Problem, 404: Problem } } },
+    {
+      preValidation: needsUser,
+      schema: {
+        tags: staffTags,
+        summary: 'One return (staff)',
+        security,
+        params,
+        response: { 200: Return, 401: Problem, 403: Problem, 404: Problem },
+      },
+    },
     async (req) => returns.view(req.params.id, requireRole(req, 'support', 'warehouse', 'admin'), req.now),
   );
 
@@ -161,7 +229,13 @@ export const returnRoutes: FastifyPluginAsyncZod = async (app) => {
     '/staff/returns/:id/approve',
     {
       preValidation: needsUser,
-      schema: { tags: staffTags, summary: 'Approve a return and issue the label (support)', security, params, response: { 200: Return, 401: Problem, 403: Problem, 404: Problem, 409: Problem } },
+      schema: {
+        tags: staffTags,
+        summary: 'Approve a return and issue the label (support)',
+        security,
+        params,
+        response: { 200: Return, 401: Problem, 403: Problem, 404: Problem, 409: Problem },
+      },
     },
     async (req) => {
       const user = requireRole(req, 'support', 'admin');

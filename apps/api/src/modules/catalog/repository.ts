@@ -31,7 +31,8 @@ const SORT_KEYS: Record<ProductSort, string> = {
   'price-asc': "lpad((p.price * 100)::bigint::text, 12, '0')",
   'price-desc': "lpad((999999999999 - p.price * 100)::bigint::text, 12, '0')",
   newest: "lpad((9999999999 - extract(epoch FROM p.created_at))::bigint::text, 12, '0')",
-  rating: "lpad((99 - coalesce(p.rating_avg, 0) * 10)::int::text, 2, '0') || lpad((999999 - p.rating_count)::text, 6, '0')",
+  rating:
+    "lpad((99 - coalesce(p.rating_avg, 0) * 10)::int::text, 2, '0') || lpad((999999 - p.rating_count)::text, 6, '0')",
 };
 
 export const CARD_SELECT = (sortKey = "''") => `
@@ -84,7 +85,13 @@ export function decodeCursor(s: string | undefined): Cursor | null {
   if (!s) return null;
   try {
     const v: unknown = JSON.parse(Buffer.from(s, 'base64url').toString('utf8'));
-    if (Array.isArray(v) && v.length === 2 && typeof v[0] === 'string' && typeof v[1] === 'string' && /^\d+$/.test(v[1])) {
+    if (
+      Array.isArray(v) &&
+      v.length === 2 &&
+      typeof v[0] === 'string' &&
+      typeof v[1] === 'string' &&
+      /^\d+$/.test(v[1])
+    ) {
       return { key: v[0], id: v[1] };
     }
   } catch {
@@ -148,7 +155,9 @@ export class CatalogRepository {
   }
 
   findProduct(slug: string) {
-    return this.db.one<CardRow & { description: string; details: [string, string][]; returnable: boolean; sized: boolean }>(
+    return this.db.one<
+      CardRow & { description: string; details: [string, string][]; returnable: boolean; sized: boolean }
+    >(
       `SELECT ${CARD_SELECT()}, p.description, p.details, p.returnable, p.sized ${CARD_FROM} WHERE p.slug = $1 AND p.active`,
       [slug],
     );

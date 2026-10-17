@@ -37,7 +37,8 @@ export function useReturnList() {
   });
 }
 
-export const useReturn = (id: string) => useQuery({ queryKey: returnKeys.one(id), queryFn: () => get<Return>(`/returns/${id}`) });
+export const useReturn = (id: string) =>
+  useQuery({ queryKey: returnKeys.one(id), queryFn: () => get<Return>(`/returns/${id}`) });
 export const usePoints = () => useQuery({ queryKey: returnKeys.points, queryFn: () => get<Points>('/account/points') });
 export const useStoreCredit = () =>
   useQuery({ queryKey: returnKeys.credit, queryFn: () => get<StoreCredit>('/account/store-credit') });

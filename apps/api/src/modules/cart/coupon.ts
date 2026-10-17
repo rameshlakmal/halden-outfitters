@@ -12,12 +12,24 @@ import { couponProblem, loadCoupon, toPricingCoupon } from '../promotions/coupon
 type Line = { productId: string; unitPrice: string; qty: number; categoryId: number; onSale: boolean };
 
 async function lines(db: Db, cartId: string): Promise<Line[]> {
-  const rows = await db.query<{ product_id: string; price: string; qty: number; category_id: number; on_sale: boolean }>(
+  const rows = await db.query<{
+    product_id: string;
+    price: string;
+    qty: number;
+    category_id: number;
+    on_sale: boolean;
+  }>(
     `SELECT p.id AS product_id, p.price, ci.qty, p.category_id, p.compare_at_price IS NOT NULL AS on_sale
        FROM cart_items ci JOIN products p ON p.id = ci.product_id WHERE ci.cart_id = $1`,
     [cartId],
   );
-  return rows.map((r) => ({ productId: r.product_id, unitPrice: r.price, qty: r.qty, categoryId: r.category_id, onSale: r.on_sale }));
+  return rows.map((r) => ({
+    productId: r.product_id,
+    unitPrice: r.price,
+    qty: r.qty,
+    categoryId: r.category_id,
+    onSale: r.on_sale,
+  }));
 }
 
 export class CartCoupons {
@@ -29,7 +41,9 @@ export class CartCoupons {
   private async evaluate(cartId: string, code: string, customerId: string | null, now: Date) {
     const coupon = await loadCoupon(this.db.pool, code, customerId);
     const ls = await lines(this.db, cartId);
-    const eligible = coupon ? price({ lines: ls, coupon: toPricingCoupon(coupon), rate: { price: '0', freeFrom: null }, taxRatePercent: 0 }) : null;
+    const eligible = coupon
+      ? price({ lines: ls, coupon: toPricingCoupon(coupon), rate: { price: '0', freeFrom: null }, taxRatePercent: 0 })
+      : null;
     const problem = couponProblem(coupon, {
       now,
       eligibleSubtotalCents: eligible?.eligibleSubtotal ?? 0,
@@ -45,12 +59,20 @@ export class CartCoupons {
   /** Adds the code's state and discount to a cart. */
   async decorate(cart: Cart, cartId: string | null, customerId: string | null, now: Date): Promise<Cart> {
     if (!cartId) return cart;
-    const row = await this.db.one<{ coupon_code: string | null }>('SELECT coupon_code FROM carts WHERE id = $1', [cartId]);
+    const row = await this.db.one<{ coupon_code: string | null }>('SELECT coupon_code FROM carts WHERE id = $1', [
+      cartId,
+    ]);
     if (!row?.coupon_code) return cart;
     const { coupon, problem, discount } = await this.evaluate(cartId, row.coupon_code, customerId, now);
     return {
       ...cart,
-      coupon: { code: row.coupon_code, applied: problem === null, problem, discount: fromCents(discount), kind: coupon?.kind ?? null },
+      coupon: {
+        code: row.coupon_code,
+        applied: problem === null,
+        problem,
+        discount: fromCents(discount),
+        kind: coupon?.kind ?? null,
+      },
       discount: fromCents(discount),
     };
   }

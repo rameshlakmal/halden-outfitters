@@ -54,7 +54,16 @@ export const checkoutRoutes: FastifyPluginAsyncZod = async (app) => {
         security,
         headers: z.object({ 'idempotency-key': z.string().optional() }),
         body: CheckoutInput,
-        response: { 201: CheckoutResult, 202: CheckoutResult, 400: Problem, 401: Problem, 402: Problem, 403: Problem, 409: Problem, 422: Problem },
+        response: {
+          201: CheckoutResult,
+          202: CheckoutResult,
+          400: Problem,
+          401: Problem,
+          402: Problem,
+          403: Problem,
+          409: Problem,
+          422: Problem,
+        },
       },
     },
     async (req, reply) => {

@@ -2,7 +2,19 @@
 import { hashPassword } from '../src/core/crypto.js';
 import type { Db } from '../src/core/db.js';
 import { BUGS } from '../src/core/bugs.js';
-import { ACCOUNTS, ADDRESSES, CATEGORIES, COUNTRIES, COUPONS, GALLERY, PRODUCTS, RATES, SIZED, ZONES, zoneOf } from './seed-data.js';
+import {
+  ACCOUNTS,
+  ADDRESSES,
+  CATEGORIES,
+  COUNTRIES,
+  COUPONS,
+  GALLERY,
+  PRODUCTS,
+  RATES,
+  SIZED,
+  ZONES,
+  zoneOf,
+} from './seed-data.js';
 import { seedOrders } from './seed-orders.js';
 
 /** admin: the admin account. staff: support and warehouse, so their testers can't sign in as admin. */
@@ -94,11 +106,25 @@ export async function seed(db: Db, passwords: SeedPasswords, opts: { orders?: bo
         `INSERT INTO coupons (code, kind, value, min_subtotal, max_uses, per_customer_limit, first_order_only,
                               excludes_sale_items, ends_at, active, description)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-        [c.code, c.kind, c.value, c.minSubtotal ?? '0', c.maxUses ?? null, c.perCustomer ?? null, c.firstOrderOnly ?? false,
-          !c.includeSaleItems, c.endsAt ?? null, c.active ?? true, c.description],
+        [
+          c.code,
+          c.kind,
+          c.value,
+          c.minSubtotal ?? '0',
+          c.maxUses ?? null,
+          c.perCustomer ?? null,
+          c.firstOrderOnly ?? false,
+          !c.includeSaleItems,
+          c.endsAt ?? null,
+          c.active ?? true,
+          c.description,
+        ],
       );
       for (const slug of c.excludeCategories ?? []) {
-        await tx.query('INSERT INTO coupon_excluded_categories (coupon_code, category_id) SELECT $1, id FROM categories WHERE slug = $2', [c.code, slug]);
+        await tx.query(
+          'INSERT INTO coupon_excluded_categories (coupon_code, category_id) SELECT $1, id FROM categories WHERE slug = $2',
+          [c.code, slug],
+        );
       }
     }
     await tx.query('UPDATE products SET sized = true WHERE slug = ANY($1)', [SIZED]);
@@ -120,7 +146,17 @@ export async function seed(db: Db, passwords: SeedPasswords, opts: { orders?: bo
         await tx.query(
           `INSERT INTO addresses (customer_id, name, line1, city, region, postcode, country_code, is_default, label)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-          [rows[0]!.id, ad.name, ad.line1, ad.city, ad.region ?? null, ad.postcode, ad.country, i === 0, i === 0 ? 'Home' : 'Cabin'],
+          [
+            rows[0]!.id,
+            ad.name,
+            ad.line1,
+            ad.city,
+            ad.region ?? null,
+            ad.postcode,
+            ad.country,
+            i === 0,
+            i === 0 ? 'Home' : 'Cabin',
+          ],
         );
       }
     }

@@ -168,7 +168,13 @@ export const accountRoutes: FastifyPluginAsyncZod = async (app) => {
   app.patch(
     '/account/profile',
     {
-      schema: { tags: account, summary: 'Change your name', security, body: UpdateProfile, response: { 200: Me, 400: Problem, 401: Problem } },
+      schema: {
+        tags: account,
+        summary: 'Change your name',
+        security,
+        body: UpdateProfile,
+        response: { 200: Me, 400: Problem, 401: Problem },
+      },
     },
     async (req) => accounts.updateProfile(requireUser(req), req.body.name, req.now),
   );
@@ -194,7 +200,12 @@ export const accountRoutes: FastifyPluginAsyncZod = async (app) => {
   app.get(
     '/account/sessions',
     {
-      schema: { tags: account, summary: 'Devices signed in to your account', security, response: { 200: z.object({ items: z.array(ActiveSession) }), 401: Problem } },
+      schema: {
+        tags: account,
+        summary: 'Devices signed in to your account',
+        security,
+        response: { 200: z.object({ items: z.array(ActiveSession) }), 401: Problem },
+      },
     },
     async (req) => ({ items: await accounts.sessions(requireUser(req), req.now) }),
   );
@@ -253,7 +264,8 @@ export const accountRoutes: FastifyPluginAsyncZod = async (app) => {
         response: { 201: AddressList, 400: Problem, 401: Problem, 409: Problem },
       },
     },
-    async (req, reply) => reply.status(201).send({ items: await accounts.addAddress(requireUser(req).id, req.body, req.now) }),
+    async (req, reply) =>
+      reply.status(201).send({ items: await accounts.addAddress(requireUser(req).id, req.body, req.now) }),
   );
 
   app.put(
@@ -302,7 +314,13 @@ export const accountRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.get(
     '/countries',
-    { schema: { tags: account, summary: 'Countries we ship to', response: { 200: z.object({ items: z.array(Country) }) } } },
+    {
+      schema: {
+        tags: account,
+        summary: 'Countries we ship to',
+        response: { 200: z.object({ items: z.array(Country) }) },
+      },
+    },
     async () => ({ items: await accounts.countries() }),
   );
 };

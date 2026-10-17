@@ -14,9 +14,24 @@ type Templates = {
   order_delivered: { name: string; orderId: string; link: string };
   payment_disputed: { orderId: string; amount: string };
   return_requested: { name: string; returnId: string; orderId: string; link: string };
-  return_approved: { name: string; returnId: string; labelCode: string; labelExpires: string; labelFee: string; link: string };
+  return_approved: {
+    name: string;
+    returnId: string;
+    labelCode: string;
+    labelExpires: string;
+    labelFee: string;
+    link: string;
+  };
   return_rejected: { name: string; returnId: string; reason: string; link: string };
-  return_refunded: { name: string; returnId: string; amount: string; method: string; points: number; lines: string; link: string };
+  return_refunded: {
+    name: string;
+    returnId: string;
+    amount: string;
+    method: string;
+    points: number;
+    lines: string;
+    link: string;
+  };
   return_expired: { name: string; returnId: string; link: string };
   goodwill_refund: { name: string; orderId: string; amount: string; method: string; reason: string; link: string };
   review_hidden: { name: string; product: string; reason: string; link: string };

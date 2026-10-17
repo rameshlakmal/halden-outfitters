@@ -10,7 +10,13 @@ export const CARDS = {
   dispute: '4000000000000259',
 };
 
-export const card = (number: string = CARDS.ok) => ({ number, expMonth: 12, expYear: 2030, cvc: '123', name: 'Test Shopper' });
+export const card = (number: string = CARDS.ok) => ({
+  number,
+  expMonth: 12,
+  expYear: 2030,
+  cvc: '123',
+  name: 'Test Shopper',
+});
 
 export async function signedIn(t: TestApp, email: string, staff = false) {
   const c = new Client(t.app);
@@ -26,7 +32,13 @@ export async function newCustomer(t: TestApp, country = 'US', name = 'Robin Fell
   if (res.statusCode !== 201) throw new Error(res.body);
   await t.db.query('UPDATE customers SET email_verified_at = now() WHERE email = $1', [email]);
   const addr = json(
-    await c.post('/account/addresses', { name, line1: '1 Test Way', city: 'Testville', postcode: '12345', countryCode: country }),
+    await c.post('/account/addresses', {
+      name,
+      line1: '1 Test Way',
+      city: 'Testville',
+      postcode: '12345',
+      countryCode: country,
+    }),
   ).items[0];
   return { client: c, email, addressId: addr.id as string };
 }
@@ -39,7 +51,11 @@ export async function fill(t: TestApp, c: Client, items: [slug: string, qty: num
   }
 }
 
-export function checkout(c: Client, addressId: string, opts: { card?: string; method?: 'standard' | 'express'; key?: string } = {}) {
+export function checkout(
+  c: Client,
+  addressId: string,
+  opts: { card?: string; method?: 'standard' | 'express'; key?: string } = {},
+) {
   return c.post(
     '/checkout',
     { shipTo: { addressId }, shippingMethod: opts.method ?? 'standard', card: card(opts.card) },

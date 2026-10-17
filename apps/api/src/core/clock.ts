@@ -16,7 +16,9 @@ export class Clock {
   /** The shop's current time. Reads the offset at most every 2 seconds, so other instances catch up quickly. */
   async now(): Promise<Date> {
     if (this.realNow() - this.loadedAt > CACHE_MS) {
-      const row = await this.db.one<{ value: number }>("SELECT value FROM qa_settings WHERE key = 'clock_offset_seconds'");
+      const row = await this.db.one<{ value: number }>(
+        "SELECT value FROM qa_settings WHERE key = 'clock_offset_seconds'",
+      );
       this.offsetMs = Number(row?.value ?? 0) * 1000;
       this.loadedAt = this.realNow();
     }
@@ -30,7 +32,9 @@ export class Clock {
 
   /** Pass `client` to move the clock inside a transaction (with its audit row). */
   async setOffsetSeconds(seconds: number, client: Queryable = this.db.pool): Promise<void> {
-    await client.query("UPDATE qa_settings SET value = to_jsonb($1::int) WHERE key = 'clock_offset_seconds'", [seconds]);
+    await client.query("UPDATE qa_settings SET value = to_jsonb($1::int) WHERE key = 'clock_offset_seconds'", [
+      seconds,
+    ]);
     this.loadedAt = -Infinity;
   }
 }

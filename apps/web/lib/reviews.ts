@@ -86,7 +86,8 @@ export function useHelpful(slug: string) {
         : data,
     );
   return useMutation({
-    mutationFn: ({ id, voted }: { id: string; voted: boolean }) => send(voted ? 'PUT' : 'DELETE', `/reviews/${id}/helpful`, voted ? {} : undefined),
+    mutationFn: ({ id, voted }: { id: string; voted: boolean }) =>
+      send(voted ? 'PUT' : 'DELETE', `/reviews/${id}/helpful`, voted ? {} : undefined),
     onMutate: ({ id, voted }) => patchAll(id, voted),
     onError: (err, { id, voted }) => {
       // Already marked elsewhere (another tab): the server's state is "voted", so keep it.

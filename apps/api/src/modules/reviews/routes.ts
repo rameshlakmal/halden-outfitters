@@ -1,4 +1,14 @@
-import { HideReview, Id, OwnReview, Problem, REVIEW_STATUSES, ReviewInput, ReviewPage, ReviewQuery, Slug } from '@halden/contracts';
+import {
+  HideReview,
+  Id,
+  OwnReview,
+  Problem,
+  REVIEW_STATUSES,
+  ReviewInput,
+  ReviewPage,
+  ReviewQuery,
+  Slug,
+} from '@halden/contracts';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { needsUser, requireRole, requireUser } from '../../core/auth.js';
@@ -35,7 +45,8 @@ export const reviewRoutes: FastifyPluginAsyncZod = async (app) => {
       schema: {
         tags,
         summary: 'Review a product you bought',
-        description: 'Verified buyers only, one review per product. Reviews with a link, an email address or a blocked word wait for support.',
+        description:
+          'Verified buyers only, one review per product. Reviews with a link, an email address or a blocked word wait for support.',
         security,
         params: z.object({ slug: Slug }),
         body: ReviewInput,
@@ -71,7 +82,16 @@ export const reviewRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.delete(
     '/reviews/:id',
-    { preValidation: needsUser, schema: { tags, summary: 'Delete your review', security, params, response: { 204: z.null(), 401: Problem, 404: Problem } } },
+    {
+      preValidation: needsUser,
+      schema: {
+        tags,
+        summary: 'Delete your review',
+        security,
+        params,
+        response: { 204: z.null(), 401: Problem, 404: Problem },
+      },
+    },
     async (req, reply) => {
       await reviews.remove(req.params.id, requireUser(req));
       return reply.code(204).send(null);
@@ -81,7 +101,16 @@ export const reviewRoutes: FastifyPluginAsyncZod = async (app) => {
   const vote = (method: 'put' | 'delete', helpful: boolean, summary: string) =>
     app[method](
       '/reviews/:id/helpful',
-      { preValidation: needsUser, schema: { tags, summary, security, params, response: { 204: z.null(), 401: Problem, 403: Problem, 404: Problem, 409: Problem } } },
+      {
+        preValidation: needsUser,
+        schema: {
+          tags,
+          summary,
+          security,
+          params,
+          response: { 204: z.null(), 401: Problem, 403: Problem, 404: Problem, 409: Problem },
+        },
+      },
       async (req, reply) => {
         await reviews.vote(req.params.id, requireUser(req), helpful, req.now);
         return reply.code(204).send(null);
@@ -92,8 +121,17 @@ export const reviewRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.get(
     '/account/reviews',
-    { schema: { tags: ['Account'], summary: 'Your reviews, with their moderation state', security, querystring: listQuery, response: { 200: OwnList, 401: Problem } } },
-    async (req) => reviews.moderationList({ customerId: requireUser(req).id }, false, req.query.cursor ?? null, req.query.limit),
+    {
+      schema: {
+        tags: ['Account'],
+        summary: 'Your reviews, with their moderation state',
+        security,
+        querystring: listQuery,
+        response: { 200: OwnList, 401: Problem },
+      },
+    },
+    async (req) =>
+      reviews.moderationList({ customerId: requireUser(req).id }, false, req.query.cursor ?? null, req.query.limit),
   );
 
   // ---------- moderation ----------
@@ -140,7 +178,13 @@ export const reviewRoutes: FastifyPluginAsyncZod = async (app) => {
     '/staff/reviews/:id/publish',
     {
       preValidation: needsUser,
-      schema: { tags: ['Staff'], summary: 'Publish a held or hidden review (support)', security, params, response: { 200: OwnReview, 401: Problem, 403: Problem, 404: Problem, 409: Problem } },
+      schema: {
+        tags: ['Staff'],
+        summary: 'Publish a held or hidden review (support)',
+        security,
+        params,
+        response: { 200: OwnReview, 401: Problem, 403: Problem, 404: Problem, 409: Problem },
+      },
     },
     async (req) => {
       const user = requireRole(req, 'support', 'admin');

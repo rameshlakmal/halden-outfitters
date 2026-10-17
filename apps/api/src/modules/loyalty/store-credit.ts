@@ -22,20 +22,33 @@ export async function addCredit(
   if (toCents(amount) <= 0) return;
   await db.query(
     'INSERT INTO store_credit_ledger (customer_id, amount, reason, order_id, refund_id, actor_id, note, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
-    [customerId, amount, reason, refs.orderId ?? null, refs.refundId ?? null, refs.actorId ?? null, refs.note ?? null, now],
+    [
+      customerId,
+      amount,
+      reason,
+      refs.orderId ?? null,
+      refs.refundId ?? null,
+      refs.actorId ?? null,
+      refs.note ?? null,
+      now,
+    ],
   );
 }
 
 /** Spends up to `wanted` cents of credit on an order; returns what was used. Caller holds the customer lock. */
-export async function spendCredit(db: Queryable, customerId: string, wantedCents: number, orderId: string, now: Date): Promise<number> {
+export async function spendCredit(
+  db: Queryable,
+  customerId: string,
+  wantedCents: number,
+  orderId: string,
+  now: Date,
+): Promise<number> {
   const have = toCents(await creditBalance(db, customerId));
   const use = Math.min(have, wantedCents);
   if (use <= 0) return 0;
-  await db.query("INSERT INTO store_credit_ledger (customer_id, amount, reason, order_id, created_at) VALUES ($1, $2, 'purchase', $3, $4)", [
-    customerId,
-    fromCents(-use),
-    orderId,
-    now,
-  ]);
+  await db.query(
+    "INSERT INTO store_credit_ledger (customer_id, amount, reason, order_id, created_at) VALUES ($1, $2, 'purchase', $3, $4)",
+    [customerId, fromCents(-use), orderId, now],
+  );
   return use;
 }

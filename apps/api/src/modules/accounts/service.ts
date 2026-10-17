@@ -40,7 +40,9 @@ type CustomerRow = {
   is_demo?: boolean;
 };
 
-export const toMe = (c: Pick<CustomerRow, 'id' | 'name' | 'email' | 'role' | 'email_verified_at' | 'created_at'>): Me => ({
+export const toMe = (
+  c: Pick<CustomerRow, 'id' | 'name' | 'email' | 'role' | 'email_verified_at' | 'created_at'>,
+): Me => ({
   id: c.id,
   name: c.name,
   email: c.email,
@@ -156,7 +158,13 @@ export class AccountService {
         );
         const customer = rows[0]!;
         const token = await this.issueToken(tx, customer.id, 'verify_email', now, VERIFY_HOURS * 3600);
-        await queueEmail(tx, customer.email, 'verify_email', { name: customer.name, link: this.link('/verify-email', token) }, now);
+        await queueEmail(
+          tx,
+          customer.email,
+          'verify_email',
+          { name: customer.name, link: this.link('/verify-email', token) },
+          now,
+        );
         await this.carts.mergeGuestCart(tx, customer.id, req.cookies[CART_COOKIE]);
         const sessionToken = await createSession(tx, customer.id, req, now);
         return { me: toMe(customer), sessionToken };
@@ -235,7 +243,10 @@ export class AccountService {
   }
 
   async logout(sessionId: string, now: Date) {
-    await this.ctx.db.query('UPDATE sessions SET revoked_at = $2 WHERE id = $1 AND revoked_at IS NULL', [sessionId, now]);
+    await this.ctx.db.query('UPDATE sessions SET revoked_at = $2 WHERE id = $1 AND revoked_at IS NULL', [
+      sessionId,
+      now,
+    ]);
   }
 
   async verifyEmail(token: string, now: Date) {
@@ -253,29 +264,43 @@ export class AccountService {
     await this.ctx.limiter.hit(LIMITS.verifyResend, user.id);
     await this.ctx.db.tx(async (tx) => {
       const token = await this.issueToken(tx, user.id, 'verify_email', now, VERIFY_HOURS * 3600);
-      await queueEmail(tx, user.email, 'verify_email', { name: user.name, link: this.link('/verify-email', token) }, now);
+      await queueEmail(
+        tx,
+        user.email,
+        'verify_email',
+        { name: user.name, link: this.link('/verify-email', token) },
+        now,
+      );
     });
   }
 
   async forgotPassword(req: FastifyRequest, email: string) {
     await this.ctx.limiter.hit(LIMITS.resetPerIp, req.ip);
     await this.ctx.limiter.hit(LIMITS.resetPerEmail, email);
-    const customer = await this.ctx.db.one<{ id: string; name: string }>('SELECT id, name FROM customers WHERE email = $1', [
-      email,
-    ]);
+    const customer = await this.ctx.db.one<{ id: string; name: string }>(
+      'SELECT id, name FROM customers WHERE email = $1',
+      [email],
+    );
     if (!customer) return;
     await this.ctx.db.tx(async (tx) => {
       const token = await this.issueToken(tx, customer.id, 'reset_password', req.now, RESET_MINUTES * 60);
-      await queueEmail(tx, email, 'password_reset', { name: customer.name, link: this.link('/reset-password', token) }, req.now);
+      await queueEmail(
+        tx,
+        email,
+        'password_reset',
+        { name: customer.name, link: this.link('/reset-password', token) },
+        req.now,
+      );
     });
   }
 
   async resetPassword(token: string, password: string, now: Date) {
     await this.ctx.db.tx(async (tx) => {
       const customerId = await this.consumeToken(tx, token, 'reset_password', now);
-      const { rows } = await tx.query<{ email: string; name: string }>('SELECT email, name FROM customers WHERE id = $1', [
-        customerId,
-      ]);
+      const { rows } = await tx.query<{ email: string; name: string }>(
+        'SELECT email, name FROM customers WHERE id = $1',
+        [customerId],
+      );
       const c = rows[0]!;
       const problem = passwordProblem(password, c.email, c.name);
       if (problem) throw fieldError('password', problem);
@@ -291,13 +316,18 @@ export class AccountService {
         now,
         'reset_password',
       ]);
-      await tx.query('UPDATE sessions SET revoked_at = $2 WHERE customer_id = $1 AND revoked_at IS NULL', [customerId, now]);
+      await tx.query('UPDATE sessions SET revoked_at = $2 WHERE customer_id = $1 AND revoked_at IS NULL', [
+        customerId,
+        now,
+      ]);
       await queueEmail(tx, c.email, 'password_changed', { name: c.name }, now);
     });
   }
 
   async changePassword(user: CurrentUser, current: string, next: string, now: Date) {
-    const row = await this.ctx.db.one<{ password_hash: string }>('SELECT password_hash FROM customers WHERE id = $1', [user.id]);
+    const row = await this.ctx.db.one<{ password_hash: string }>('SELECT password_hash FROM customers WHERE id = $1', [
+      user.id,
+    ]);
     if (!row || !(await verifyPassword(row.password_hash, current))) {
       throw fieldError('currentPassword', 'That is not your current password.');
     }
@@ -308,7 +338,10 @@ export class AccountService {
     await this.ctx.db.tx(async (tx) => {
       await tx.query('UPDATE customers SET password_hash = $2, updated_at = $3 WHERE id = $1', [user.id, hash, now]);
       // A reset link sent before the change must not still work after it.
-      await tx.query("UPDATE auth_tokens SET used_at = $2 WHERE customer_id = $1 AND kind = 'reset_password' AND used_at IS NULL", [user.id, now]);
+      await tx.query(
+        "UPDATE auth_tokens SET used_at = $2 WHERE customer_id = $1 AND kind = 'reset_password' AND used_at IS NULL",
+        [user.id, now],
+      );
       await tx.query('UPDATE sessions SET revoked_at = $3 WHERE customer_id = $1 AND id <> $2 AND revoked_at IS NULL', [
         user.id,
         user.sessionId,
@@ -396,19 +429,34 @@ export class AccountService {
     return this.ctx.db.tx(async (tx) => {
       await this.lockBook(tx, customerId);
       await this.checkCountry(tx, input.countryCode);
-      const { rows } = await tx.query<{ n: number }>('SELECT count(*)::int AS n FROM addresses WHERE customer_id = $1', [
-        customerId,
-      ]);
+      const { rows } = await tx.query<{ n: number }>(
+        'SELECT count(*)::int AS n FROM addresses WHERE customer_id = $1',
+        [customerId],
+      );
       const count = rows[0]?.n ?? 0;
       if (count >= MAX_ADDRESSES) {
         throw new AppError('address_limit_reached', `You can keep up to ${MAX_ADDRESSES} addresses. Remove one first.`);
       }
       const makeDefault = input.isDefault || count === 0;
-      if (makeDefault) await tx.query('UPDATE addresses SET is_default = false WHERE customer_id = $1 AND is_default', [customerId]);
+      if (makeDefault)
+        await tx.query('UPDATE addresses SET is_default = false WHERE customer_id = $1 AND is_default', [customerId]);
       await tx.query(
         `INSERT INTO addresses (customer_id, label, name, line1, line2, city, region, postcode, country_code, phone, is_default, created_at, updated_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $12)`,
-        [customerId, input.label, input.name, input.line1, input.line2, input.city, input.region, input.postcode, input.countryCode, input.phone, makeDefault, now],
+        [
+          customerId,
+          input.label,
+          input.name,
+          input.line1,
+          input.line2,
+          input.city,
+          input.region,
+          input.postcode,
+          input.countryCode,
+          input.phone,
+          makeDefault,
+          now,
+        ],
       );
       return this.addresses(customerId, tx);
     });
@@ -418,10 +466,10 @@ export class AccountService {
     return this.ctx.db.tx(async (tx) => {
       await this.lockBook(tx, customerId);
       await this.checkCountry(tx, input.countryCode);
-      const { rows } = await tx.query<{ is_default: boolean }>('SELECT is_default FROM addresses WHERE id = $1 AND customer_id = $2', [
-        id,
-        customerId,
-      ]);
+      const { rows } = await tx.query<{ is_default: boolean }>(
+        'SELECT is_default FROM addresses WHERE id = $1 AND customer_id = $2',
+        [id, customerId],
+      );
       const existing = rows[0];
       if (!existing) throw notFound('That address');
       if (existing.is_default && !input.isDefault) {
@@ -434,7 +482,21 @@ export class AccountService {
         `UPDATE addresses SET label = $3, name = $4, line1 = $5, line2 = $6, city = $7, region = $8, postcode = $9,
                 country_code = $10, phone = $11, is_default = $12, updated_at = $13
           WHERE id = $1 AND customer_id = $2`,
-        [id, customerId, input.label, input.name, input.line1, input.line2, input.city, input.region, input.postcode, input.countryCode, input.phone, input.isDefault, now],
+        [
+          id,
+          customerId,
+          input.label,
+          input.name,
+          input.line1,
+          input.line2,
+          input.city,
+          input.region,
+          input.postcode,
+          input.countryCode,
+          input.phone,
+          input.isDefault,
+          now,
+        ],
       );
       return this.addresses(customerId, tx);
     });

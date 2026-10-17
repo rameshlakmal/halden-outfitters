@@ -50,7 +50,12 @@ describe('returnTotal', () => {
 
 describe('restocks', () => {
   it('only sellable conditions go back on the shelf, unless planted bug restock_damaged', () => {
-    expect(['as_new', 'opened', 'damaged_by_customer', 'faulty'].map((c) => restocks(c as never, false))).toEqual([true, true, false, false]);
+    expect(['as_new', 'opened', 'damaged_by_customer', 'faulty'].map((c) => restocks(c as never, false))).toEqual([
+      true,
+      true,
+      false,
+      false,
+    ]);
     expect(restocks('faulty', true)).toBe(true);
   });
 });

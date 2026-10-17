@@ -23,7 +23,9 @@ describe('webhook security', () => {
   it('refuses a missing, wrong or stale signature', async () => {
     const body = JSON.stringify({ id: 'evt_test', type: 'payment.authorized', payload: { intentId: 'pi_x' } });
     expect((await post(body)).statusCode).toBe(401);
-    expect((await post(body, signPayload('whsec_someone_elses_secret', Math.floor(Date.now() / 1000), body))).statusCode).toBe(401);
+    expect(
+      (await post(body, signPayload('whsec_someone_elses_secret', Math.floor(Date.now() / 1000), body))).statusCode,
+    ).toBe(401);
     expect((await post(body, signPayload(SECRET, Math.floor(Date.now() / 1000) - 600, body))).statusCode).toBe(401);
     // A valid signature over different bytes is also refused.
     const sig = signPayload(SECRET, Math.floor(Date.now() / 1000), body);
@@ -37,7 +39,12 @@ describe('repeated delivery', () => {
     const c = await newCustomer(t);
     await fill(t, c.client, [['camp-pillow', 1]]);
     const { orderId, nextAction } = json(await checkout(c.client, c.addressId, { card: CARDS.bank }));
-    await t.app.inject({ method: 'POST', url: '/api/v1/payments/authenticate', headers: { 'content-type': 'application/json' }, payload: { token: new URL(nextAction.url).searchParams.get('token'), approve: true } });
+    await t.app.inject({
+      method: 'POST',
+      url: '/api/v1/payments/authenticate',
+      headers: { 'content-type': 'application/json' },
+      payload: { token: new URL(nextAction.url).searchParams.get('token'), approve: true },
+    });
     const ev = await t.db.one<{ id: string }>("SELECT id FROM haldenpay.events WHERE type = 'payment.authorized'");
     const admin = await signedIn(t, 'admin@halden.test', true);
     expect(json(await admin.post(`/qa/webhooks/${ev!.id}/redeliver`)).delivered).toBe(1);

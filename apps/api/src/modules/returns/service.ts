@@ -103,7 +103,8 @@ const day = 86400_000;
 
 /** Staff don't approve, grade or pay out on their own orders: the four-eyes rule for money leaving the shop. */
 function notOwn(user: CurrentUser, customerId: string) {
-  if (user.id === customerId) throw new AppError('forbidden', "You can't handle your own order or return. Ask a colleague.");
+  if (user.id === customerId)
+    throw new AppError('forbidden', "You can't handle your own order or return. Ask a colleague.");
 }
 const dateText = (d: Date) => d.toISOString().slice(0, 10);
 
@@ -118,7 +119,10 @@ export class ReturnService {
   private orderLink = (id: string) => `${this.ctx.config.APP_URL}/account/orders/${id}`;
 
   private async name(tx: Queryable, customerId: string) {
-    const { rows } = await tx.query<{ name: string; email: string }>('SELECT name, email FROM customers WHERE id = $1', [customerId]);
+    const { rows } = await tx.query<{ name: string; email: string }>(
+      'SELECT name, email FROM customers WHERE id = $1',
+      [customerId],
+    );
     return rows[0] ?? { name: 'there', email: '' };
   }
 
@@ -140,12 +144,20 @@ export class ReturnService {
   }
 
   /** Why this order can't take a new return right now, or null if it can. */
-  async blocker(db: Queryable, o: { id: string; status: string; delivered_at: Date | null; placed_at: Date }, now: Date): Promise<string | null> {
+  async blocker(
+    db: Queryable,
+    o: { id: string; status: string; delivered_at: Date | null; placed_at: Date },
+    now: Date,
+  ): Promise<string | null> {
     if (o.status === 'completed') return 'The return window for this order has closed.';
     if (o.status !== 'delivered' || !o.delivered_at) return 'Orders can be returned once they have been delivered.';
     const from = await this.orders.returnWindowFrom(db, o);
-    if (returnWindowClosed(from, now)) return `The return window for this order closed on ${dateText(returnWindowEnds(from))}.`;
-    const { rows } = await db.query<{ id: string }>("SELECT id FROM returns WHERE order_id = $1 AND status IN ('requested', 'approved')", [o.id]);
+    if (returnWindowClosed(from, now))
+      return `The return window for this order closed on ${dateText(returnWindowEnds(from))}.`;
+    const { rows } = await db.query<{ id: string }>(
+      "SELECT id FROM returns WHERE order_id = $1 AND status IN ('requested', 'approved')",
+      [o.id],
+    );
     if (rows[0]) return `Return ${rows[0].id} for this order is still open. Finish or cancel it first.`;
     return null;
   }
@@ -155,12 +167,25 @@ export class ReturnService {
   async request(
     orderId: string,
     user: CurrentUser,
-    input: { items: { productId: string; qty: number }[]; reason: ReturnReason; note: string | null; refundMethod: 'card' | 'store_credit' },
+    input: {
+      items: { productId: string; qty: number }[];
+      reason: ReturnReason;
+      note: string | null;
+      refundMethod: 'card' | 'store_credit';
+    },
     now: Date,
   ): Promise<string> {
     return this.ctx.db.tx(async (tx) => {
       await this.orders.settle(tx, orderId, now);
-      const { rows } = await tx.query<{ id: string; customer_id: string; status: string; delivered_at: Date | null; placed_at: Date; shipping: string; email: string }>(
+      const { rows } = await tx.query<{
+        id: string;
+        customer_id: string;
+        status: string;
+        delivered_at: Date | null;
+        placed_at: Date;
+        shipping: string;
+        email: string;
+      }>(
         'SELECT id, customer_id, status, delivered_at, placed_at, shipping, email FROM orders WHERE id = $1 FOR UPDATE',
         [orderId],
       );
@@ -180,10 +205,15 @@ export class ReturnService {
         seen.add(want.productId);
         const item = lines.find((l) => l.product_id === want.productId);
         if (!item) throw fieldError(`items.${i}.productId`, 'That product is not in this order.');
-        if (!item.returnable) throw new AppError('return_not_allowed', `${item.name} is final sale and can't be returned.`);
+        if (!item.returnable)
+          throw new AppError('return_not_allowed', `${item.name} is final sale and can't be returned.`);
         const left = item.qty - item.claimed;
         if (want.qty > left) {
-          throw fieldError(`items.${i}.qty`, left > 0 ? `You can return up to ${left}.` : 'Already returned.', `You can return up to ${left} of ${item.name}.`);
+          throw fieldError(
+            `items.${i}.qty`,
+            left > 0 ? `You can return up to ${left}.` : 'Already returned.',
+            `You can return up to ${left} of ${item.name}.`,
+          );
         }
         picked.push({ item, qty: want.qty });
       }
@@ -199,23 +229,44 @@ export class ReturnService {
         "SELECT count(*)::int AS n FROM returns WHERE customer_id = $1 AND requested_at > $2::timestamptz - interval '90 days' AND status <> 'cancelled'",
         [user.id, now],
       );
-      const auto = shopFault && estimate.total <= AUTO_APPROVE_LIMIT_CENTS && (recent[0]?.n ?? 0) < REVIEW_AFTER_RETURNS;
+      const auto =
+        shopFault && estimate.total <= AUTO_APPROVE_LIMIT_CENTS && (recent[0]?.n ?? 0) < REVIEW_AFTER_RETURNS;
 
       const { rows: created } = await tx.query<{ id: string }>(
         `INSERT INTO returns (order_id, customer_id, status, reason, note, shop_fault, refund_method, label_fee, estimate,
                               requested_at, updated_at)
          VALUES ($1, $2, 'requested', $3, $4, $5, $6, $7, $8, $9, $9) RETURNING id`,
-        [orderId, user.id, input.reason, input.note, shopFault, input.refundMethod, fromCents(estimate.labelFee), fromCents(estimate.total), now],
+        [
+          orderId,
+          user.id,
+          input.reason,
+          input.note,
+          shopFault,
+          input.refundMethod,
+          fromCents(estimate.labelFee),
+          fromCents(estimate.total),
+          now,
+        ],
       );
       const returnId = created[0]!.id;
       for (const p of picked) {
-        await tx.query('INSERT INTO return_items (return_id, order_item_id, qty) VALUES ($1, $2, $3)', [returnId, p.item.id, p.qty]);
+        await tx.query('INSERT INTO return_items (return_id, order_item_id, qty) VALUES ($1, $2, $3)', [
+          returnId,
+          p.item.id,
+          p.qty,
+        ]);
       }
       await this.event(tx, returnId, null, 'requested', user.id, input.note, now);
       if (auto) {
         await this.approveLocked(tx, returnId, null, now, true);
       } else {
-        await queueEmail(tx, o.email, 'return_requested', { name: (await this.name(tx, user.id)).name, returnId, orderId, link: this.link(returnId) }, now);
+        await queueEmail(
+          tx,
+          o.email,
+          'return_requested',
+          { name: (await this.name(tx, user.id)).name, returnId, orderId, link: this.link(returnId) },
+          now,
+        );
       }
       return returnId;
     });
@@ -225,7 +276,8 @@ export class ReturnService {
     await this.ctx.db.tx(async (tx) => {
       const r = await this.lock(tx, returnId);
       if (r.customer_id !== user.id) throw notFound('That return');
-      if (!OPEN.includes(r.status)) throw new AppError('invalid_transition', `A return that is ${r.status.replace('_', ' ')} cannot be cancelled.`);
+      if (!OPEN.includes(r.status))
+        throw new AppError('invalid_transition', `A return that is ${r.status.replace('_', ' ')} cannot be cancelled.`);
       await tx.query("UPDATE returns SET status = 'cancelled', updated_at = $2 WHERE id = $1", [returnId, now]);
       await this.event(tx, returnId, r.status, 'cancelled', user.id, null, now);
     });
@@ -240,11 +292,18 @@ export class ReturnService {
     });
   }
 
-  private async approveLocked(tx: pg.PoolClient, returnId: string, actor: CurrentUser | null, now: Date, auto: boolean) {
+  private async approveLocked(
+    tx: pg.PoolClient,
+    returnId: string,
+    actor: CurrentUser | null,
+    now: Date,
+    auto: boolean,
+  ) {
     const actorId = actor?.id ?? null;
     const r = await this.lock(tx, returnId);
     if (actor) notOwn(actor, r.customer_id);
-    if (r.status !== 'requested') throw new AppError('invalid_transition', `A return that is ${r.status} cannot be approved.`);
+    if (r.status !== 'requested')
+      throw new AppError('invalid_transition', `A return that is ${r.status} cannot be approved.`);
     const code = `HRL-${returnId}-${randomBytes(3).toString('hex').toUpperCase()}`;
     const expires = new Date(now.getTime() + LABEL_DAYS * day);
     await tx.query(
@@ -253,13 +312,28 @@ export class ReturnService {
       [returnId, auto, code, expires, now, actorId],
     );
     await this.event(tx, returnId, 'requested', 'approved', actorId, auto ? 'Approved automatically' : null, now);
-    if (actor) await audit(tx, actor, 'return.approve', { type: 'return', id: returnId }, { before: { status: 'requested' }, after: { status: 'approved' } }, now);
+    if (actor)
+      await audit(
+        tx,
+        actor,
+        'return.approve',
+        { type: 'return', id: returnId },
+        { before: { status: 'requested' }, after: { status: 'approved' } },
+        now,
+      );
     const c = await this.name(tx, r.customer_id);
     await queueEmail(
       tx,
       c.email,
       'return_approved',
-      { name: c.name, returnId, labelCode: code, labelExpires: dateText(expires), labelFee: r.label_fee, link: this.link(returnId) },
+      {
+        name: c.name,
+        returnId,
+        labelCode: code,
+        labelExpires: dateText(expires),
+        labelFee: r.label_fee,
+        link: this.link(returnId),
+      },
       now,
     );
   }
@@ -268,15 +342,29 @@ export class ReturnService {
     await this.ctx.db.tx(async (tx) => {
       const r = await this.lock(tx, returnId);
       notOwn(user, r.customer_id);
-      if (r.status !== 'requested') throw new AppError('invalid_transition', `A return that is ${r.status} cannot be rejected.`);
+      if (r.status !== 'requested')
+        throw new AppError('invalid_transition', `A return that is ${r.status} cannot be rejected.`);
       await tx.query(
         "UPDATE returns SET status = 'rejected', rejected_reason = $2, decided_at = $3, decided_by = $4, updated_at = $3 WHERE id = $1",
         [returnId, reason, now, user.id],
       );
       await this.event(tx, returnId, 'requested', 'rejected', user.id, reason, now);
-      await audit(tx, user, 'return.reject', { type: 'return', id: returnId }, { before: { status: 'requested' }, after: { status: 'rejected', reason } }, now);
+      await audit(
+        tx,
+        user,
+        'return.reject',
+        { type: 'return', id: returnId },
+        { before: { status: 'requested' }, after: { status: 'rejected', reason } },
+        now,
+      );
       const c = await this.name(tx, r.customer_id);
-      await queueEmail(tx, c.email, 'return_rejected', { name: c.name, returnId, reason, link: this.link(returnId) }, now);
+      await queueEmail(
+        tx,
+        c.email,
+        'return_rejected',
+        { name: c.name, returnId, reason, link: this.link(returnId) },
+        now,
+      );
     });
   }
 
@@ -289,7 +377,12 @@ export class ReturnService {
       const r = await this.lock(tx, returnId);
       notOwn(user, r.customer_id);
       if (r.status !== 'approved') {
-        throw new AppError('invalid_transition', r.status === 'requested' ? 'This return has not been approved yet.' : `A return that is ${r.status} cannot be received.`);
+        throw new AppError(
+          'invalid_transition',
+          r.status === 'requested'
+            ? 'This return has not been approved yet.'
+            : `A return that is ${r.status} cannot be received.`,
+        );
       }
       await tx.query('SELECT 1 FROM orders WHERE id = $1 FOR UPDATE', [r.order_id]);
       const lines = await this.items(tx, r.order_id);
@@ -326,15 +419,16 @@ export class ReturnService {
         pointsEarned += unit.pointsEarned;
         refunds.push(g.refund);
         const restocked = restocks(condition, restockDamaged);
-        await tx.query('UPDATE return_items SET condition = $2, refund_amount = $3, points_refund = $4, restocked = $5 WHERE id = $1', [
-          m.id,
-          condition,
-          fromCents(g.refund),
-          g.pointsBack,
-          restocked,
-        ]);
+        await tx.query(
+          'UPDATE return_items SET condition = $2, refund_amount = $3, points_refund = $4, restocked = $5 WHERE id = $1',
+          [m.id, condition, fromCents(g.refund), g.pointsBack, restocked],
+        );
         if (restocked) {
-          await tx.query('UPDATE inventory SET on_hand = on_hand + $2, updated_at = $3 WHERE product_id = $1', [item.product_id, m.qty, now]);
+          await tx.query('UPDATE inventory SET on_hand = on_hand + $2, updated_at = $3 WHERE product_id = $1', [
+            item.product_id,
+            m.qty,
+            now,
+          ]);
           await tx.query(
             "INSERT INTO stock_movements (product_id, change, reason, order_id, actor_id, note, created_at) VALUES ($1, $2, 'return', $3, $4, $5, $6)",
             [item.product_id, m.qty, r.order_id, user.id, `Return ${returnId}: ${condition}`, now],
@@ -345,7 +439,10 @@ export class ReturnService {
       }
 
       // Shipping comes back when the shop was at fault and this return completes the whole order.
-      const { rows: ord } = await tx.query<{ shipping: string; email: string }>('SELECT shipping, email FROM orders WHERE id = $1', [r.order_id]);
+      const { rows: ord } = await tx.query<{ shipping: string; email: string }>(
+        'SELECT shipping, email FROM orders WHERE id = $1',
+        [r.order_id],
+      );
       const all = lines.every((l) => l.processed >= l.qty);
       const shippingRefund = r.shop_fault && all ? toCents(ord[0]!.shipping) : 0;
       const total = returnTotal(refunds, toCents(r.label_fee), shippingRefund);
@@ -354,7 +451,16 @@ export class ReturnService {
       await tx.query(
         `UPDATE returns SET status = $2, received_at = $3, refunded_at = $3, label_fee = $4, restocking_fee = $5, shipping_refund = $6,
                 refund_total = $7, points_refund = $8, updated_at = $3 WHERE id = $1`,
-        [returnId, status, now, fromCents(total.labelFee), fromCents(restockingFee), fromCents(shippingRefund), fromCents(total.total), pointsBack],
+        [
+          returnId,
+          status,
+          now,
+          fromCents(total.labelFee),
+          fromCents(restockingFee),
+          fromCents(shippingRefund),
+          fromCents(total.total),
+          pointsBack,
+        ],
       );
       await this.event(tx, returnId, 'approved', 'received', user.id, null, now);
       await payOut(
@@ -372,11 +478,25 @@ export class ReturnService {
         },
         now,
       );
-      await giveBack(tx, r.customer_id, pointsBack, 'redeem_reversal', { orderId: r.order_id, returnId, note: `Return ${returnId}` }, now);
+      await giveBack(
+        tx,
+        r.customer_id,
+        pointsBack,
+        'redeem_reversal',
+        { orderId: r.order_id, returnId, note: `Return ${returnId}` },
+        now,
+      );
       // Planted bug: returned_keeps_points.
       if (!keepPoints) await reversePending(tx, r.customer_id, r.order_id, returnId, pointsEarned, now);
       await this.event(tx, returnId, 'received', status, user.id, `Refund ${fromCents(total.total)}`, now);
-      await audit(tx, user, 'return.receive', { type: 'return', id: returnId }, { before: { status: 'approved' }, after: { status, refundTotal: fromCents(total.total), lines: summary } }, now);
+      await audit(
+        tx,
+        user,
+        'return.receive',
+        { type: 'return', id: returnId },
+        { before: { status: 'approved' }, after: { status, refundTotal: fromCents(total.total), lines: summary } },
+        now,
+      );
 
       const c = await this.name(tx, r.customer_id);
       await queueEmail(
@@ -401,7 +521,12 @@ export class ReturnService {
 
   // ---------- goodwill ----------
 
-  async goodwill(orderId: string, user: CurrentUser, input: { amount: string; reason: string; method: 'card' | 'store_credit' }, now: Date) {
+  async goodwill(
+    orderId: string,
+    user: CurrentUser,
+    input: { amount: string; reason: string; method: 'card' | 'store_credit' },
+    now: Date,
+  ) {
     await this.ctx.db.tx(async (tx) => {
       const { rows } = await tx.query<{ id: string; customer_id: string; status: string; email: string }>(
         'SELECT id, customer_id, status, email FROM orders WHERE id = $1 FOR UPDATE',
@@ -411,7 +536,10 @@ export class ReturnService {
       if (!o) throw notFound('That order');
       notOwn(user, o.customer_id);
       if (!['shipped', 'delivered', 'completed'].includes(o.status)) {
-        throw new AppError('invalid_transition', 'Goodwill refunds are for orders that have shipped. Cancel the order instead.');
+        throw new AppError(
+          'invalid_transition',
+          'Goodwill refunds are for orders that have shipped. Cancel the order instead.',
+        );
       }
       const amount = toCents(input.amount);
       if (user.role === 'support' && !(await this.ctx.bugs.enabled('support_goodwill_unlimited', tx))) {
@@ -432,17 +560,39 @@ export class ReturnService {
       await payOut(
         this.ctx,
         tx,
-        { orderId, customerId: o.customer_id, amountCents: amount, method: input.method, kind: 'goodwill', reason: input.reason, actor: { id: user.id, role: user.role } },
+        {
+          orderId,
+          customerId: o.customer_id,
+          amountCents: amount,
+          method: input.method,
+          kind: 'goodwill',
+          reason: input.reason,
+          actor: { id: user.id, role: user.role },
+        },
         now,
         { skipLimit },
       );
-      await audit(tx, user, 'refund.goodwill', { type: 'order', id: orderId }, { after: { amount: fromCents(amount), method: input.method, reason: input.reason } }, now);
+      await audit(
+        tx,
+        user,
+        'refund.goodwill',
+        { type: 'order', id: orderId },
+        { after: { amount: fromCents(amount), method: input.method, reason: input.reason } },
+        now,
+      );
       const c = await this.name(tx, o.customer_id);
       await queueEmail(
         tx,
         o.email,
         'goodwill_refund',
-        { name: c.name, orderId, amount: fromCents(amount), method: input.method === 'card' ? 'card' : 'store credit', reason: input.reason, link: this.orderLink(orderId) },
+        {
+          name: c.name,
+          orderId,
+          amount: fromCents(amount),
+          method: input.method === 'card' ? 'card' : 'store credit',
+          reason: input.reason,
+          link: this.orderLink(orderId),
+        },
         now,
       );
     });
@@ -465,7 +615,10 @@ export class ReturnService {
   }
 
   async sweep(now: Date): Promise<number> {
-    const due = await this.ctx.db.query<{ id: string }>("SELECT id FROM returns WHERE status = 'approved' AND label_expires_at <= $1 ORDER BY id", [now]);
+    const due = await this.ctx.db.query<{ id: string }>(
+      "SELECT id FROM returns WHERE status = 'approved' AND label_expires_at <= $1 ORDER BY id",
+      [now],
+    );
     let n = 0;
     for (const d of due) if (await this.ctx.db.tx((tx) => this.settleReturn(tx, d.id, now))) n++;
     return n;
@@ -479,15 +632,19 @@ export class ReturnService {
     return rows[0];
   }
 
-  private async event(tx: Queryable, id: string, from: ReturnStatus | null, to: ReturnStatus, actorId: string | null, note: string | null, at: Date) {
-    await tx.query('INSERT INTO return_events (return_id, from_status, to_status, actor_id, note, created_at) VALUES ($1, $2, $3, $4, $5, $6)', [
-      id,
-      from,
-      to,
-      actorId,
-      note,
-      at,
-    ]);
+  private async event(
+    tx: Queryable,
+    id: string,
+    from: ReturnStatus | null,
+    to: ReturnStatus,
+    actorId: string | null,
+    note: string | null,
+    at: Date,
+  ) {
+    await tx.query(
+      'INSERT INTO return_events (return_id, from_status, to_status, actor_id, note, created_at) VALUES ($1, $2, $3, $4, $5, $6)',
+      [id, from, to, actorId, note, at],
+    );
   }
 
   private actions(r: ReturnRow, user: CurrentUser): ReturnAction[] {
@@ -503,15 +660,28 @@ export class ReturnService {
     const r = await this.ctx.db.one<ReturnRow>('SELECT * FROM returns WHERE id = $1', [returnId]);
     if (!r || (r.customer_id !== user.id && !isStaff(user))) throw notFound('That return');
     const [lines, events] = await Promise.all([
-      this.ctx.db.query<{ product_id: string; name: string; image: string; qty: number; condition: Condition | null; refund_amount: string; points_refund: number; restocked: boolean }>(
+      this.ctx.db.query<{
+        product_id: string;
+        name: string;
+        image: string;
+        qty: number;
+        condition: Condition | null;
+        refund_amount: string;
+        points_refund: number;
+        restocked: boolean;
+      }>(
         `SELECT oi.product_id, oi.name, oi.image, ri.qty, ri.condition, ri.refund_amount, ri.points_refund, ri.restocked
            FROM return_items ri JOIN order_items oi ON oi.id = ri.order_item_id WHERE ri.return_id = $1 ORDER BY ri.id`,
         [returnId],
       ),
-      this.ctx.db.query<{ from_status: ReturnStatus | null; to_status: ReturnStatus; note: string | null; created_at: Date }>(
-        'SELECT from_status, to_status, note, created_at FROM return_events WHERE return_id = $1 ORDER BY id',
-        [returnId],
-      ),
+      this.ctx.db.query<{
+        from_status: ReturnStatus | null;
+        to_status: ReturnStatus;
+        note: string | null;
+        created_at: Date;
+      }>('SELECT from_status, to_status, note, created_at FROM return_events WHERE return_id = $1 ORDER BY id', [
+        returnId,
+      ]),
     ]);
     return {
       id: r.id,
@@ -538,13 +708,19 @@ export class ReturnService {
       shippingRefund: r.shipping_refund,
       refundTotal: r.refund_total,
       pointsRefund: r.points_refund,
-      label: r.label_code && r.label_expires_at ? { code: r.label_code, expiresAt: r.label_expires_at.toISOString() } : null,
+      label:
+        r.label_code && r.label_expires_at ? { code: r.label_code, expiresAt: r.label_expires_at.toISOString() } : null,
       rejectedReason: r.rejected_reason,
       requestedAt: r.requested_at.toISOString(),
       decidedAt: r.decided_at?.toISOString() ?? null,
       receivedAt: r.received_at?.toISOString() ?? null,
       refundedAt: r.refunded_at?.toISOString() ?? null,
-      events: events.map((e) => ({ from: e.from_status, to: e.to_status, note: e.note, at: e.created_at.toISOString() })),
+      events: events.map((e) => ({
+        from: e.from_status,
+        to: e.to_status,
+        note: e.note,
+        at: e.created_at.toISOString(),
+      })),
       allowedActions: this.actions(r, user),
     };
   }
@@ -565,7 +741,15 @@ export class ReturnService {
       where.push(`r.id < $${params.length}`);
     }
     params.push(limit + 1);
-    const rows = await this.ctx.db.query<{ id: string; order_id: string; status: ReturnStatus; reason: ReturnReason; requested_at: Date; refund_total: string; item_count: number }>(
+    const rows = await this.ctx.db.query<{
+      id: string;
+      order_id: string;
+      status: ReturnStatus;
+      reason: ReturnReason;
+      requested_at: Date;
+      refund_total: string;
+      item_count: number;
+    }>(
       `SELECT r.id, r.order_id, r.status, r.reason, r.requested_at, r.refund_total,
               (SELECT sum(qty)::int FROM return_items WHERE return_id = r.id) AS item_count
          FROM returns r ${where.length ? `WHERE ${where.join(' AND ')}` : ''}

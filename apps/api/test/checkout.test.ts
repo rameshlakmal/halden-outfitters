@@ -16,10 +16,23 @@ const quote = (c: Client, addressId: string, method: 'standard' | 'express' = 's
 describe('quote', () => {
   it('charges domestic shipping under 75.00 and 8% tax on the goods only', async () => {
     const { client, addressId } = await newCustomer(t, 'US');
-    await fill(t, client, [['camp-pillow', 1], ['insulated-mug', 1]]); // 60.00
+    await fill(t, client, [
+      ['camp-pillow', 1],
+      ['insulated-mug', 1],
+    ]); // 60.00
     const q = json(await quote(client, addressId));
     expect(q.zone.code).toBe('domestic');
-    expect(q.totals).toEqual({ subtotal: '60.00', discount: '0.00', pointsDiscount: '0.00', storeCredit: '0.00', amountDue: '72.75', shipping: '7.95', tax: '4.80', taxRate: '8.00', total: '72.75' });
+    expect(q.totals).toEqual({
+      subtotal: '60.00',
+      discount: '0.00',
+      pointsDiscount: '0.00',
+      storeCredit: '0.00',
+      amountDue: '72.75',
+      shipping: '7.95',
+      tax: '4.80',
+      taxRate: '8.00',
+      total: '72.75',
+    });
     expect(q.toFreeShipping).toBe('15.00');
     expect(q.shippingOptions.map((o: { method: string; price: string }) => [o.method, o.price])).toEqual([
       ['standard', '7.95'],
@@ -29,14 +42,20 @@ describe('quote', () => {
 
   it('ships free from 75.00 domestic, but express is never free', async () => {
     const { client, addressId } = await newCustomer(t, 'US');
-    await fill(t, client, [['ember-stove', 1], ['camp-pillow', 1]]); // 101.00
+    await fill(t, client, [
+      ['ember-stove', 1],
+      ['camp-pillow', 1],
+    ]); // 101.00
     expect(json(await quote(client, addressId)).totals.shipping).toBe('0.00');
     expect(json(await quote(client, addressId, 'express')).totals.shipping).toBe('14.95');
   });
 
   it('uses the zone of the address: Europe and the rest of the world', async () => {
     const eu = await newCustomer(t, 'SE');
-    await fill(t, eu.client, [['ember-stove', 1], ['camp-pillow', 1]]); // 101.00, under Europe's 150.00
+    await fill(t, eu.client, [
+      ['ember-stove', 1],
+      ['camp-pillow', 1],
+    ]); // 101.00, under Europe's 150.00
     expect(json(await quote(eu.client, eu.addressId)).totals.shipping).toBe('14.95');
     const world = await newCustomer(t, 'JP');
     await fill(t, world.client, [['ridgeline-2p-tent', 1]]);
@@ -59,8 +78,20 @@ describe('placing an order', () => {
   it('needs a session, a confirmed email and an Idempotency-Key', async () => {
     expect((await new Client(t.app).post('/checkout', {})).statusCode).toBe(401);
     const c = new Client(t.app);
-    await c.post('/auth/register', { name: 'Unverified', email: 'unverified@example.com', password: 'a long walk in the woods' });
-    const a = json(await c.post('/account/addresses', { name: 'U', line1: '1 Way', city: 'X', postcode: '12345', countryCode: 'US' })).items[0];
+    await c.post('/auth/register', {
+      name: 'Unverified',
+      email: 'unverified@example.com',
+      password: 'a long walk in the woods',
+    });
+    const a = json(
+      await c.post('/account/addresses', {
+        name: 'U',
+        line1: '1 Way',
+        city: 'X',
+        postcode: '12345',
+        countryCode: 'US',
+      }),
+    ).items[0];
     await fill(t, c, [['camp-pillow', 1]]);
     expect(json(await checkout(c, a.id)).code).toBe('email_not_verified');
     const { client, addressId } = await newCustomer(t);
@@ -81,7 +112,13 @@ describe('placing an order', () => {
 
     const order = json(await client.get(`/orders/${orderId}`));
     expect(order.totals).toEqual(q.totals);
-    expect(order.payment).toMatchObject({ status: 'authorized', amount: q.totals.total, captured: '0.00', cardLast4: '4242', cardBrand: 'visa' });
+    expect(order.payment).toMatchObject({
+      status: 'authorized',
+      amount: q.totals.total,
+      captured: '0.00',
+      cardLast4: '4242',
+      cardBrand: 'visa',
+    });
     expect(order.lines[0]).toMatchObject({ qty: 2, unitPrice: '64.00', lineTotal: '128.00' });
     expect(order.allowedActions).toEqual(['cancel']);
     expect(await available(t, 'drift-hammock')).toBe(1); // 3 on hand, 2 held
@@ -103,7 +140,11 @@ describe('placing an order', () => {
     expect(json(again).orderId).toBe(json(a.statusCode === 201 ? a : b).orderId);
     const n = await t.db.one<{ n: number }>('SELECT count(*)::int AS n FROM orders');
     expect(n?.n).toBe(1);
-    const other = await client.post('/checkout', { shipTo: { addressId }, shippingMethod: 'express', card: card() }, { 'idempotency-key': key });
+    const other = await client.post(
+      '/checkout',
+      { shipTo: { addressId }, shippingMethod: 'express', card: card() },
+      { 'idempotency-key': key },
+    );
     expect(json(other).code).toBe('idempotency_key_reused');
   });
 
@@ -121,7 +162,7 @@ describe('placing an order', () => {
     expect(json(insufficient).detail).toBe('Your card has insufficient funds. Try another card.');
   });
 
-  it("refuses a card number that fails the check digit, without creating an order", async () => {
+  it('refuses a card number that fails the check digit, without creating an order', async () => {
     const { client, addressId } = await newCustomer(t);
     await fill(t, client, [['camp-pillow', 1]]);
     const res = await checkout(client, addressId, { card: '4242424242424241' });
@@ -132,14 +173,21 @@ describe('placing an order', () => {
   it('refuses a cart with a problem line', async () => {
     const { client, addressId } = await newCustomer(t);
     await fill(t, client, [['drift-hammock', 3]]);
-    await t.db.query("UPDATE inventory SET on_hand = 2 WHERE product_id = (SELECT id FROM products WHERE slug = 'drift-hammock')");
+    await t.db.query(
+      "UPDATE inventory SET on_hand = 2 WHERE product_id = (SELECT id FROM products WHERE slug = 'drift-hammock')",
+    );
     const res = await checkout(client, addressId);
     expect(res.statusCode).toBe(409);
-    expect(json(res)).toMatchObject({ code: 'cart_has_problems', detail: 'Only 2 Drift Hammock left. Change the quantity to continue.' });
+    expect(json(res)).toMatchObject({
+      code: 'cart_has_problems',
+      detail: 'Only 2 Drift Hammock left. Change the quantity to continue.',
+    });
   });
 
   it('two shoppers, one last unit: exactly one order is placed', async () => {
-    await t.db.query("UPDATE inventory SET on_hand = 1 WHERE product_id = (SELECT id FROM products WHERE slug = 'ember-stove')");
+    await t.db.query(
+      "UPDATE inventory SET on_hand = 1 WHERE product_id = (SELECT id FROM products WHERE slug = 'ember-stove')",
+    );
     const a = await newCustomer(t);
     const b = await newCustomer(t);
     await fill(t, a.client, [['ember-stove', 1]]);
@@ -155,7 +203,9 @@ describe('placing an order', () => {
     const res = await client.post(
       '/checkout',
       {
-        shipTo: { address: { name: 'Robin Fell', line1: '9 Fjord Road', city: 'Bergen', postcode: '5003', countryCode: 'NO' } },
+        shipTo: {
+          address: { name: 'Robin Fell', line1: '9 Fjord Road', city: 'Bergen', postcode: '5003', countryCode: 'NO' },
+        },
         shippingMethod: 'standard',
         card: card(),
       },
@@ -195,7 +245,9 @@ describe('the bank step', () => {
     await fill(t, client, [['drift-hammock', 1]]);
     const { orderId, nextAction } = json(await checkout(client, addressId, { card: CARDS.bank }));
     const token = new URL(nextAction.url).searchParams.get('token');
-    expect(json(await new Client(t.app).post('/payments/authenticate', { token, approve: false })).status).toBe('cancelled');
+    expect(json(await new Client(t.app).post('/payments/authenticate', { token, approve: false })).status).toBe(
+      'cancelled',
+    );
     expect(json(await client.get(`/orders/${orderId}`)).cancel.reason).toBe('payment_failed');
     expect(await available(t, 'drift-hammock')).toBe(3);
   });

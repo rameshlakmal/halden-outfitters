@@ -27,7 +27,11 @@ const asUser = (p: Person): CurrentUser => ({
 
 export async function seedOrders(db: Db): Promise<number> {
   const ctx: AppContext = {
-    config: loadConfig({ DATABASE_URL: 'postgres://seed/seed', APP_URL: process.env.APP_URL ?? 'http://localhost:3001', NODE_ENV: 'development' }),
+    config: loadConfig({
+      DATABASE_URL: 'postgres://seed/seed',
+      APP_URL: process.env.APP_URL ?? 'http://localhost:3001',
+      NODE_ENV: 'development',
+    }),
     db,
     clock: new Clock(db),
     limiter: new RateLimiter(db, false),
@@ -52,14 +56,25 @@ export async function seedOrders(db: Db): Promise<number> {
     );
     await db.query('DELETE FROM cart_items WHERE cart_id = $1', [cart!.id]);
     for (const [slug, qty] of o.items) {
-      await db.query('INSERT INTO cart_items (cart_id, product_id, qty) SELECT $1, id, $3 FROM products WHERE slug = $2', [cart!.id, slug, qty]);
+      await db.query(
+        'INSERT INTO cart_items (cart_id, product_id, qty) SELECT $1, id, $3 FROM products WHERE slug = $2',
+        [cart!.id, slug, qty],
+      );
     }
     await db.query('UPDATE carts SET coupon_code = $2 WHERE id = $1', [cart!.id, o.coupon ?? null]);
-    const address = await db.one<{ id: string }>('SELECT id FROM addresses WHERE customer_id = $1 AND is_default', [customer.id]);
+    const address = await db.one<{ id: string }>('SELECT id FROM addresses WHERE customer_id = $1 AND is_default', [
+      customer.id,
+    ]);
 
     const placed = await checkout.place(
       asUser(customer),
-      { shipTo: { addressId: address!.id }, shippingMethod: o.method ?? 'standard', pointsToRedeem: 0, useStoreCredit: false, card: { number: o.card ?? '4242424242424242' } },
+      {
+        shipTo: { addressId: address!.id },
+        shippingMethod: o.method ?? 'standard',
+        pointsToRedeem: 0,
+        useStoreCredit: false,
+        card: { number: o.card ?? '4242424242424242' },
+      },
       at,
     );
     const id = placed.orderId;
@@ -84,7 +99,12 @@ export async function seedOrders(db: Db): Promise<number> {
   const reviews = new ReviewService(ctx);
   for (const r of DEMO_REVIEWS) {
     const slug = r.slug;
-    await reviews.create(slug, asUser(by(r.email)), { rating: r.rating, title: r.title, body: r.body, fit: null }, new Date(Date.now() - r.daysAgo * day));
+    await reviews.create(
+      slug,
+      asUser(by(r.email)),
+      { rating: r.rating, title: r.title, body: r.body, fit: null },
+      new Date(Date.now() - r.daysAgo * day),
+    );
   }
   return DEMO_ORDERS.length;
 }

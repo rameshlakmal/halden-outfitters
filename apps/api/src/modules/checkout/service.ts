@@ -74,7 +74,16 @@ export class CheckoutService {
       return rows[0];
     }
     const a = shipTo.address;
-    return { name: a.name, line1: a.line1, line2: a.line2, city: a.city, region: a.region, postcode: a.postcode, country_code: a.countryCode, phone: a.phone };
+    return {
+      name: a.name,
+      line1: a.line1,
+      line2: a.line2,
+      city: a.city,
+      region: a.region,
+      postcode: a.postcode,
+      country_code: a.countryCode,
+      phone: a.phone,
+    };
   }
 
   private async zoneAndRates(db: Queryable, countryCode: string) {
@@ -83,22 +92,37 @@ export class CheckoutService {
       [countryCode],
     );
     const zone = rows[0];
-    if (!zone?.zone_code || !zone.zone_name) throw new AppError('shipping_unavailable', 'We do not ship to that country yet.');
+    if (!zone?.zone_code || !zone.zone_name)
+      throw new AppError('shipping_unavailable', 'We do not ship to that country yet.');
     // Planted bug: eu_domestic_rate charges Europe the domestic rates.
-    const rateZone = zone.zone_code === 'europe' && (await this.ctx.bugs.enabled('eu_domestic_rate', db)) ? 'domestic' : zone.zone_code;
-    const { rows: rates } = await db.query<{ method: 'standard' | 'express'; price: string; free_from: string | null; days_min: number; days_max: number }>(
-      'SELECT method, price, free_from, days_min, days_max FROM shipping_rates WHERE zone_code = $1 ORDER BY price',
-      [rateZone],
-    );
+    const rateZone =
+      zone.zone_code === 'europe' && (await this.ctx.bugs.enabled('eu_domestic_rate', db))
+        ? 'domestic'
+        : zone.zone_code;
+    const { rows: rates } = await db.query<{
+      method: 'standard' | 'express';
+      price: string;
+      free_from: string | null;
+      days_min: number;
+      days_max: number;
+    }>('SELECT method, price, free_from, days_min, days_max FROM shipping_rates WHERE zone_code = $1 ORDER BY price', [
+      rateZone,
+    ]);
     return { zone: { code: zone.zone_code, name: zone.zone_name }, rates };
   }
 
   private async taxRate(db: Queryable): Promise<number> {
-    const { rows } = await db.query<{ value: unknown }>("SELECT value FROM shop_settings WHERE key = 'tax_rate_percent'");
+    const { rows } = await db.query<{ value: unknown }>(
+      "SELECT value FROM shop_settings WHERE key = 'tax_rate_percent'",
+    );
     return Number(rows[0]?.value ?? 8);
   }
 
-  private async cartLines(db: Queryable, customerId: string, lock: boolean): Promise<{ cartId: string | null; couponCode: string | null; lines: CheckoutLine[] }> {
+  private async cartLines(
+    db: Queryable,
+    customerId: string,
+    lock: boolean,
+  ): Promise<{ cartId: string | null; couponCode: string | null; lines: CheckoutLine[] }> {
     const { rows: carts } = await db.query<{ id: string; coupon_code: string | null }>(
       `SELECT id, coupon_code FROM carts WHERE customer_id = $1 ${lock ? 'FOR UPDATE' : ''}`,
       [customerId],
@@ -155,7 +179,21 @@ export class CheckoutService {
   }
 
   /** Prices the cart for an address and method, without placing anything. */
-  async quote(user: CurrentUser, input: Input, now: Date, client: Queryable = this.ctx.db.pool): Promise<Quote & { _lines: CheckoutLine[]; _cents: ReturnType<typeof price>; _address: ShipAddress; _couponCode: string | null; _cartId: string | null; _taxRate: number }> {
+  async quote(
+    user: CurrentUser,
+    input: Input,
+    now: Date,
+    client: Queryable = this.ctx.db.pool,
+  ): Promise<
+    Quote & {
+      _lines: CheckoutLine[];
+      _cents: ReturnType<typeof price>;
+      _address: ShipAddress;
+      _couponCode: string | null;
+      _cartId: string | null;
+      _taxRate: number;
+    }
+  > {
     const address = await this.address(client, user.id, input.shipTo);
     const { zone, rates } = await this.zoneAndRates(client, address.country_code);
     const rate = rates.find((r) => r.method === input.shippingMethod);
@@ -167,21 +205,40 @@ export class CheckoutService {
     let problem: string | null = null;
     if (couponCode) {
       const eligibleSubtotal = coupon
-        ? price({ lines, coupon: toPricingCoupon(coupon), rate: { price: '0', freeFrom: null }, taxRatePercent: 0 }).eligibleSubtotal
+        ? price({ lines, coupon: toPricingCoupon(coupon), rate: { price: '0', freeFrom: null }, taxRatePercent: 0 })
+            .eligibleSubtotal
         : 0;
-      problem = couponProblem(coupon, { now, eligibleSubtotalCents: eligibleSubtotal, signedIn: true, bugs: await this.couponBugs(client) });
+      problem = couponProblem(coupon, {
+        now,
+        eligibleSubtotalCents: eligibleSubtotal,
+        signedIn: true,
+        bugs: await this.couponBugs(client),
+      });
       if (problem) coupon = undefined;
     }
     const couponTwice = await this.ctx.bugs.enabled('coupon_twice', client);
     const pricingCoupon = coupon ? toPricingCoupon(coupon) : null;
-    const base = price({ lines, coupon: pricingCoupon, rate: { price: rate.price, freeFrom: rate.free_from }, taxRatePercent: taxRate, bugs: { couponTwice } });
+    const base = price({
+      lines,
+      coupon: pricingCoupon,
+      rate: { price: rate.price, freeFrom: rate.free_from },
+      taxRatePercent: taxRate,
+      bugs: { couponTwice },
+    });
 
     // Halden Points: checked against the balance and the half-of-the-order limit.
     const points = await balance(client, user.id, now);
-    const maxRedeemable = Math.min(maxRedeemablePoints(base.subtotal - base.discount), Math.floor(points.available / 100) * 100);
-    if (input.pointsToRedeem > points.available) throw fieldError('pointsToRedeem', `You have ${points.available} points.`);
+    const maxRedeemable = Math.min(
+      maxRedeemablePoints(base.subtotal - base.discount),
+      Math.floor(points.available / 100) * 100,
+    );
+    if (input.pointsToRedeem > points.available)
+      throw fieldError('pointsToRedeem', `You have ${points.available} points.`);
     if (input.pointsToRedeem > maxRedeemablePoints(base.subtotal - base.discount)) {
-      throw fieldError('pointsToRedeem', `Points can pay at most half of this order: up to ${maxRedeemablePoints(base.subtotal - base.discount)} points.`);
+      throw fieldError(
+        'pointsToRedeem',
+        `Points can pay at most half of this order: up to ${maxRedeemablePoints(base.subtotal - base.discount)} points.`,
+      );
     }
     const result = price({
       lines,
@@ -194,15 +251,35 @@ export class CheckoutService {
     const creditCents = toCents(await creditBalance(client, user.id));
     const credit = input.useStoreCredit ? Math.min(creditCents, result.total) : 0;
     const options = rates.map((r) => {
-      const p = price({ lines, coupon: pricingCoupon, rate: { price: r.price, freeFrom: r.free_from }, taxRatePercent: taxRate, points: input.pointsToRedeem, bugs: { couponTwice } });
-      return { method: r.method, price: fromCents(p.shipping), free: p.shipping === 0, freeFrom: r.free_from, daysMin: r.days_min, daysMax: r.days_max };
+      const p = price({
+        lines,
+        coupon: pricingCoupon,
+        rate: { price: r.price, freeFrom: r.free_from },
+        taxRatePercent: taxRate,
+        points: input.pointsToRedeem,
+        bugs: { couponTwice },
+      });
+      return {
+        method: r.method,
+        price: fromCents(p.shipping),
+        free: p.shipping === 0,
+        freeFrom: r.free_from,
+        daysMin: r.days_min,
+        daysMax: r.days_max,
+      };
     });
     return {
       zone,
       shippingOptions: options,
       shippingMethod: input.shippingMethod,
-      coupon: couponCode ? { code: couponCode, applied: !problem && Boolean(coupon), problem, discount: fromCents(result.discount) } : null,
-      totals: { ...amounts(result, taxRate), storeCredit: fromCents(credit), amountDue: fromCents(result.total - credit) },
+      coupon: couponCode
+        ? { code: couponCode, applied: !problem && Boolean(coupon), problem, discount: fromCents(result.discount) }
+        : null,
+      totals: {
+        ...amounts(result, taxRate),
+        storeCredit: fromCents(credit),
+        amountDue: fromCents(result.total - credit),
+      },
       toFreeShipping: result.toFreeShipping === null ? null : fromCents(result.toFreeShipping),
       points: { available: points.available, maxRedeemable, redeemed: input.pointsToRedeem },
       storeCredit: { balance: fromCents(creditCents), applied: fromCents(credit) },
@@ -218,9 +295,13 @@ export class CheckoutService {
   /** Places the order and authorizes the card. Returns the order id and, for the bank step, where to go. */
   async place(user: CurrentUser, input: Input & { card?: { number: string } | undefined }, now: Date) {
     if (!user.emailVerified) {
-      throw new AppError('email_not_verified', 'Confirm your email address before your first order. We sent you a link.');
+      throw new AppError(
+        'email_not_verified',
+        'Confirm your email address before your first order. We sent you a link.',
+      );
     }
-    if (input.card && !luhnValid(input.card.number)) throw fieldError('card.number', 'That card number is not valid.', 'Please check the card number.');
+    if (input.card && !luhnValid(input.card.number))
+      throw fieldError('card.number', 'That card number is not valid.', 'Please check the card number.');
     await this.ctx.limiter.hit(LIMITS.checkoutPerCustomer, user.id);
     const orderId = await this.ctx.db.tx(async (tx) => {
       // Lock the customer's points and store credit first, so two checkouts can't spend them twice.
@@ -231,7 +312,10 @@ export class CheckoutService {
         [user.id, now],
       );
       if ((open[0]?.n ?? 0) >= MAX_UNPAID_ORDERS) {
-        throw new AppError('conflict', 'You have unpaid orders waiting for the bank check. Finish or cancel one of them first.');
+        throw new AppError(
+          'conflict',
+          'You have unpaid orders waiting for the bank check. Finish or cancel one of them first.',
+        );
       }
       const { lines } = await this.cartLines(tx, user.id, true);
       if (lines.length === 0) throw new AppError('cart_empty', 'Your cart is empty.');
@@ -239,24 +323,41 @@ export class CheckoutService {
       if (bad) {
         throw new AppError(
           'cart_has_problems',
-          !bad.active ? `${bad.name} is no longer sold. Remove it to continue.` : bad.available <= 0 ? `${bad.name} has just sold out.` : `Only ${bad.available} ${bad.name} left. Change the quantity to continue.`,
+          !bad.active
+            ? `${bad.name} is no longer sold. Remove it to continue.`
+            : bad.available <= 0
+              ? `${bad.name} has just sold out.`
+              : `Only ${bad.available} ${bad.name} left. Change the quantity to continue.`,
         );
       }
       // Lock the coupon row so its use limit holds when two orders race for the last use.
-      const { rows: cartRow } = await tx.query<{ coupon_code: string | null }>('SELECT coupon_code FROM carts WHERE customer_id = $1', [user.id]);
+      const { rows: cartRow } = await tx.query<{ coupon_code: string | null }>(
+        'SELECT coupon_code FROM carts WHERE customer_id = $1',
+        [user.id],
+      );
       const code = cartRow[0]?.coupon_code;
       if (code) {
         const locked = await loadCoupon(tx, code, user.id, true);
-        const eligible = locked ? price({ lines, coupon: toPricingCoupon(locked), rate: { price: '0', freeFrom: null }, taxRatePercent: 0 }).eligibleSubtotal : 0;
-        const problem = couponProblem(locked, { now, eligibleSubtotalCents: eligible, signedIn: true, bugs: await this.couponBugs(tx) });
+        const eligible = locked
+          ? price({ lines, coupon: toPricingCoupon(locked), rate: { price: '0', freeFrom: null }, taxRatePercent: 0 })
+              .eligibleSubtotal
+          : 0;
+        const problem = couponProblem(locked, {
+          now,
+          eligibleSubtotalCents: eligible,
+          signedIn: true,
+          bugs: await this.couponBugs(tx),
+        });
         if (problem) throw new AppError('coupon_invalid', `Code ${code}: ${problem} Remove it to continue.`);
       }
       const q = await this.quote(user, input, now, tx);
       // The quote re-reads the coupon after the lock. If it no longer applies (another order took the last use),
       // say so instead of quietly charging full price.
-      if (code && !q._couponCode) throw new AppError('coupon_invalid', `Code ${code} can no longer be used. Remove it to continue.`);
+      if (code && !q._couponCode)
+        throw new AppError('coupon_invalid', `Code ${code} can no longer be used. Remove it to continue.`);
       const a = q._address;
-      if (toCents(q.totals.amountDue) > 0 && !input.card) throw fieldError('card', 'Enter a card for the amount left to pay.');
+      if (toCents(q.totals.amountDue) > 0 && !input.card)
+        throw fieldError('card', 'Enter a card for the amount left to pay.');
       if ('address' in input.shipTo) await this.saveAddress(tx, user.id, input.shipTo.address, now);
 
       const expires = addSeconds(now, PAYMENT_MINUTES * 60);
@@ -268,9 +369,30 @@ export class CheckoutService {
          VALUES ($1, $2, 'pending_payment', $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $21, $22, $23, $24)
          RETURNING id`,
         [
-          user.id, user.email, q.totals.subtotal, q.totals.discount, q.totals.shipping, q.totals.tax, q.totals.total, q.totals.taxRate,
-          q._couponCode, q.zone.code, input.shippingMethod, a.name, a.line1, a.line2, a.city, a.region, a.postcode, a.country_code, a.phone,
-          expires, now, input.pointsToRedeem, q.totals.pointsDiscount, q.totals.storeCredit,
+          user.id,
+          user.email,
+          q.totals.subtotal,
+          q.totals.discount,
+          q.totals.shipping,
+          q.totals.tax,
+          q.totals.total,
+          q.totals.taxRate,
+          q._couponCode,
+          q.zone.code,
+          input.shippingMethod,
+          a.name,
+          a.line1,
+          a.line2,
+          a.city,
+          a.region,
+          a.postcode,
+          a.country_code,
+          a.phone,
+          expires,
+          now,
+          input.pointsToRedeem,
+          q.totals.pointsDiscount,
+          q.totals.storeCredit,
         ],
       );
       const id = rows[0]!.id;
@@ -282,17 +404,34 @@ export class CheckoutService {
           `INSERT INTO order_items (order_id, product_id, sku, name, image, category_id, unit_price, qty, line_total,
                                     discount_alloc, points_alloc, tax_alloc, returnable, on_sale)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
-          [id, l.productId, l.sku, l.name, l.image, l.categoryId, l.unitPrice, l.qty, fromCents(priced.lineTotal), fromCents(priced.discount), fromCents(priced.points), fromCents(priced.tax), l.returnable, l.onSale],
+          [
+            id,
+            l.productId,
+            l.sku,
+            l.name,
+            l.image,
+            l.categoryId,
+            l.unitPrice,
+            l.qty,
+            fromCents(priced.lineTotal),
+            fromCents(priced.discount),
+            fromCents(priced.points),
+            fromCents(priced.tax),
+            l.returnable,
+            l.onSale,
+          ],
         );
-        await tx.query('INSERT INTO stock_reservations (order_id, product_id, qty, expires_at, created_at) VALUES ($1, $2, $3, $4, $5)', [
-          id, l.productId, l.qty, expires, now,
-        ]);
+        await tx.query(
+          'INSERT INTO stock_reservations (order_id, product_id, qty, expires_at, created_at) VALUES ($1, $2, $3, $4, $5)',
+          [id, l.productId, l.qty, expires, now],
+        );
         await lowStockCheck(this.ctx, tx, l.productId, now);
       }
       if (q._couponCode) {
-        await tx.query('INSERT INTO coupon_redemptions (coupon_code, customer_id, order_id, created_at) VALUES ($1, $2, $3, $4)', [
-          q._couponCode, user.id, id, now,
-        ]);
+        await tx.query(
+          'INSERT INTO coupon_redemptions (coupon_code, customer_id, order_id, created_at) VALUES ($1, $2, $3, $4)',
+          [q._couponCode, user.id, id, now],
+        );
       }
       await tx.query(
         'INSERT INTO order_events (order_id, from_status, to_status, actor_id, actor_role, note, created_at) VALUES ($1, NULL, $2, $3, $4, $5, $6)',
@@ -309,33 +448,38 @@ export class CheckoutService {
     const amount = (await this.ctx.bugs.enabled('payment_misses_shipping'))
       ? fromCents(Math.max(1, toCents(orderId.due) - toCents(orderId.shipping)))
       : orderId.due;
-    const result = await this.ctx.db.tx(async (tx) => {
-      const r = await this.ctx.gateway.authorize(tx, {
-        orderId: orderId.id,
-        amount,
-        cardNumber: card.number,
-        returnUrl: `${this.ctx.config.APP_URL}/checkout/authenticate`,
-      });
-      const status = r.status === 'authorized' ? 'authorized' : r.status === 'requires_action' ? 'requires_action' : 'failed';
-      await tx.query(
-        `INSERT INTO payments (order_id, intent_id, status, amount, card_brand, card_last4, failure_code, created_at, updated_at)
+    const result = await this.ctx.db
+      .tx(async (tx) => {
+        const r = await this.ctx.gateway.authorize(tx, {
+          orderId: orderId.id,
+          amount,
+          cardNumber: card.number,
+          returnUrl: `${this.ctx.config.APP_URL}/checkout/authenticate`,
+        });
+        const status =
+          r.status === 'authorized' ? 'authorized' : r.status === 'requires_action' ? 'requires_action' : 'failed';
+        await tx.query(
+          `INSERT INTO payments (order_id, intent_id, status, amount, card_brand, card_last4, failure_code, created_at, updated_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8)`,
-        [orderId.id, r.intentId, status, amount, r.brand, r.last4, r.status === 'failed' ? r.code : null, now],
-      );
-      if (r.status === 'authorized') await this.orders.confirm(tx, orderId.id, now);
-      if (r.status === 'failed') await this.orders.failPayment(tx, orderId.id, r.code, now);
-      return r;
-    }).catch(async (err: unknown) => {
-      // Something unexpected: don't leave the order holding stock. Cancel it and pass the error on.
-      await this.ctx.db.tx((tx) => this.orders.failPayment(tx, orderId.id, 'invalid_card', now));
-      throw err;
-    });
+          [orderId.id, r.intentId, status, amount, r.brand, r.last4, r.status === 'failed' ? r.code : null, now],
+        );
+        if (r.status === 'authorized') await this.orders.confirm(tx, orderId.id, now);
+        if (r.status === 'failed') await this.orders.failPayment(tx, orderId.id, r.code, now);
+        return r;
+      })
+      .catch(async (err: unknown) => {
+        // Something unexpected: don't leave the order holding stock. Cancel it and pass the error on.
+        await this.ctx.db.tx((tx) => this.orders.failPayment(tx, orderId.id, 'invalid_card', now));
+        throw err;
+      });
     await this.ctx.deliverWebhooks();
 
     if (result.status === 'failed') {
       throw new AppError(
         'payment_declined',
-        result.code === 'insufficient_funds' ? 'Your card has insufficient funds. Try another card.' : 'Your card was declined. Try another card.',
+        result.code === 'insufficient_funds'
+          ? 'Your card has insufficient funds. Try another card.'
+          : 'Your card was declined. Try another card.',
       );
     }
     return {
@@ -356,8 +500,15 @@ export class CheckoutService {
     return { orderId: row!.order_id, status: row!.status };
   }
 
-  private async saveAddress(tx: pg.PoolClient, customerId: string, a: Extract<Input['shipTo'], { address: unknown }>['address'], now: Date) {
-    const { rows } = await tx.query<{ n: number }>('SELECT count(*)::int AS n FROM addresses WHERE customer_id = $1', [customerId]);
+  private async saveAddress(
+    tx: pg.PoolClient,
+    customerId: string,
+    a: Extract<Input['shipTo'], { address: unknown }>['address'],
+    now: Date,
+  ) {
+    const { rows } = await tx.query<{ n: number }>('SELECT count(*)::int AS n FROM addresses WHERE customer_id = $1', [
+      customerId,
+    ]);
     const count = rows[0]?.n ?? 0;
     if (count >= 5) return; // book full: the order keeps its copy
     await tx.query(

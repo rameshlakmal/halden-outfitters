@@ -66,7 +66,8 @@ export function couponProblem(
   if (!c.active) return 'This code is no longer active.';
   if (c.starts_at && c.starts_at > ctx.now) return 'This code is not valid yet.';
   if (c.ends_at && c.ends_at <= ctx.now) return 'This code has expired.';
-  if (ctx.eligibleSubtotalCents <= 0) return 'Nothing in your cart can use this code (sale items and some categories are excluded).';
+  if (ctx.eligibleSubtotalCents <= 0)
+    return 'Nothing in your cart can use this code (sale items and some categories are excluded).';
   if (ctx.eligibleSubtotalCents < toCents(c.min_subtotal)) {
     return `This code needs ${c.min_subtotal} of eligible items (you have ${fromCents(ctx.eligibleSubtotalCents)}).`;
   }
@@ -75,7 +76,9 @@ export function couponProblem(
   if (ctx.signedIn) {
     // Planted bug: coupon_customer_limit_ignored.
     if (c.per_customer_limit !== null && c.customer_uses >= c.per_customer_limit && !ctx.bugs.customerLimitIgnored) {
-      return c.per_customer_limit === 1 ? 'You have already used this code.' : 'You have used this code as often as allowed.';
+      return c.per_customer_limit === 1
+        ? 'You have already used this code.'
+        : 'You have used this code as often as allowed.';
     }
     if (c.first_order_only && c.customer_orders > 0) return 'This code is for a first order only.';
   }

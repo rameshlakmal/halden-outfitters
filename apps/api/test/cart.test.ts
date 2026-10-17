@@ -33,7 +33,8 @@ describe('guest cart', () => {
   it('is kept in an HttpOnly cookie and adds up quantities', async () => {
     const c = new Client(t.app);
     const first = await add(c, 'ridgeline-2p-tent');
-    const cookie = first.cookies.find((k) => k.name === 'halden_cart') as { httpOnly?: boolean; sameSite?: string } | undefined;
+    const cookie = first.cookies.find((k) => k.name === 'halden_cart') as
+      { httpOnly?: boolean; sameSite?: string } | undefined;
     expect(cookie?.httpOnly).toBe(true);
     expect(cookie?.sameSite).toBe('Lax');
     const cart = json(await add(c, 'ridgeline-2p-tent', 2));
@@ -128,7 +129,11 @@ describe('lines that went bad', () => {
     await t.db.query('UPDATE products SET active = false WHERE id = $1', [ids['ridgeline-2p-tent']]);
     const cart = json(await c.get('/cart'));
     const problems = Object.fromEntries(cart.lines.map((l: { slug: string; problem: string }) => [l.slug, l.problem]));
-    expect(problems).toEqual({ 'drift-hammock': 'not_enough_stock', 'camp-pillow': 'out_of_stock', 'ridgeline-2p-tent': 'unavailable' });
+    expect(problems).toEqual({
+      'drift-hammock': 'not_enough_stock',
+      'camp-pillow': 'out_of_stock',
+      'ridgeline-2p-tent': 'unavailable',
+    });
     expect(cart.canCheckOut).toBe(false);
   });
 
@@ -164,7 +169,11 @@ describe('signing in merges the browser cart', () => {
   it('keeps the cart when the shopper registers', async () => {
     const browser = new Client(t.app);
     await add(browser, 'camp-pillow', 2);
-    await browser.post('/auth/register', { name: 'Lena Moss', email: 'lena@example.com', password: 'a long walk in the woods' });
+    await browser.post('/auth/register', {
+      name: 'Lena Moss',
+      email: 'lena@example.com',
+      password: 'a long walk in the woods',
+    });
     expect(json(await browser.get('/cart')).itemCount).toBe(2);
   });
 

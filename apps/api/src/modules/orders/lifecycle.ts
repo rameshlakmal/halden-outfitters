@@ -39,7 +39,10 @@ export function allowedActions(status: OrderStatus, viewer: Viewer): OrderAction
   const actions: OrderAction[] = [];
   const staffCancel = viewer.role === 'support' || viewer.role === 'admin';
   if (viewer.isOwner && status === 'pending_payment') actions.push('pay');
-  if ((viewer.isOwner && CANCELLABLE_BY.customer.includes(status)) || (staffCancel && CANCELLABLE_BY.support.includes(status))) {
+  if (
+    (viewer.isOwner && CANCELLABLE_BY.customer.includes(status)) ||
+    (staffCancel && CANCELLABLE_BY.support.includes(status))
+  ) {
     actions.push('cancel');
   }
   const warehouse = viewer.role === 'warehouse' || viewer.role === 'admin';

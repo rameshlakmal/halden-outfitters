@@ -23,10 +23,22 @@ async function order(items: [string, number][], opts: { coupon?: string; country
 
 describe('planted bugs', () => {
   it('coupon_twice doubles the discount with two eligible products', async () => {
-    const off = await order([['camp-pillow', 1], ['insulated-mug', 1]], { coupon: 'CAMP20' });
+    const off = await order(
+      [
+        ['camp-pillow', 1],
+        ['insulated-mug', 1],
+      ],
+      { coupon: 'CAMP20' },
+    );
     expect(off.order.totals.discount).toBe('12.00');
     await bug(t, 'coupon_twice');
-    const on = await order([['camp-pillow', 1], ['insulated-mug', 1]], { coupon: 'CAMP20' });
+    const on = await order(
+      [
+        ['camp-pillow', 1],
+        ['insulated-mug', 1],
+      ],
+      { coupon: 'CAMP20' },
+    );
     expect(on.order.totals.discount).toBe('24.00');
   });
 
@@ -57,7 +69,9 @@ describe('planted bugs', () => {
       await c.client.post('/cart/coupon', { code: 'ALLIN25' });
       expect((await checkout(c.client, c.addressId)).statusCode).toBe(201);
     }
-    const uses = await t.db.one<{ n: number }>("SELECT count(*)::int AS n FROM coupon_redemptions WHERE coupon_code = 'ALLIN25'");
+    const uses = await t.db.one<{ n: number }>(
+      "SELECT count(*)::int AS n FROM coupon_redemptions WHERE coupon_code = 'ALLIN25'",
+    );
     expect(uses?.n).toBe(3); // limit is 2 per customer
   });
 
@@ -68,7 +82,9 @@ describe('planted bugs', () => {
     const o = await order([['drift-hammock', 2]], { coupon: 'WELCOME10' });
     await o.client.post(`/orders/${o.id}/cancel`, { reason: 'changed_mind' });
     expect(await available(t, 'drift-hammock')).toBe(1); // still held
-    expect((await t.db.one<{ n: number }>('SELECT count(*)::int AS n FROM coupon_redemptions WHERE released_at IS NULL'))?.n).toBe(1);
+    expect(
+      (await t.db.one<{ n: number }>('SELECT count(*)::int AS n FROM coupon_redemptions WHERE released_at IS NULL'))?.n,
+    ).toBe(1);
     expect(json(await o.client.get(`/orders/${o.id}`)).payment.status).toBe('authorized');
   });
 

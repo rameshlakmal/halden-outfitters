@@ -51,7 +51,11 @@ const admin = () => signedIn(t, 'admin@halden.test', true);
 const goodwill = (c: Client, orderId: string, amount: string) =>
   c.post(`/staff/orders/${orderId}/goodwill`, { amount, reason: 'Late delivery' }, { 'idempotency-key': randomUUID() });
 
-async function returnLine(d: Awaited<ReturnType<typeof deliveredOrder>>, slug: string, opts: { reason?: string; condition?: string; method?: string } = {}) {
+async function returnLine(
+  d: Awaited<ReturnType<typeof deliveredOrder>>,
+  slug: string,
+  opts: { reason?: string; condition?: string; method?: string } = {},
+) {
   const order = json(await d.client.get(`/orders/${d.orderId}`));
   const line = order.lines.find((l: { slug: string }) => l.slug === slug);
   const res = await d.client.post(`/orders/${d.orderId}/returns`, {
@@ -62,7 +66,9 @@ async function returnLine(d: Awaited<ReturnType<typeof deliveredOrder>>, slug: s
   if (res.statusCode !== 201) throw new Error(res.body);
   const r = json(res);
   if (r.status === 'requested') await (await support()).post(`/staff/returns/${r.id}/approve`);
-  const done = await d.warehouse.post(`/staff/returns/${r.id}/receive`, { items: [{ productId: line.productId, condition: opts.condition ?? 'as_new' }] });
+  const done = await d.warehouse.post(`/staff/returns/${r.id}/receive`, {
+    items: [{ productId: line.productId, condition: opts.condition ?? 'as_new' }],
+  });
   if (done.statusCode !== 200) throw new Error(done.body);
   return json(done);
 }
@@ -80,7 +86,10 @@ async function couponOrder(code: string, items: [string, number][], c?: Awaited<
 /** What each planted bug needs to show itself. */
 const SCENARIOS: Record<BugKey, () => Promise<void>> = {
   coupon_twice: async () => {
-    await couponOrder('CAMP20', [['titanium-pot', 1], ['headlamp-400', 1]]);
+    await couponOrder('CAMP20', [
+      ['titanium-pot', 1],
+      ['headlamp-400', 1],
+    ]);
   },
   cancel_keeps_reservation: async () => {
     const c = await newCustomer(t);
@@ -117,9 +126,13 @@ const SCENARIOS: Record<BugKey, () => Promise<void>> = {
     await checkout(c.client, c.addressId);
   },
   refund_ignores_discount: async () => {
-    const o = await couponOrder('CAMP20', [['titanium-pot', 1], ['headlamp-400', 1]]);
+    const o = await couponOrder('CAMP20', [
+      ['titanium-pot', 1],
+      ['headlamp-400', 1],
+    ]);
     const w = await signedIn(t, 'warehouse@halden.test', true);
-    for (const step of ['pack', 'ship', 'deliver']) await w.post(`/staff/orders/${o.orderId}/${step}`, step === 'ship' ? { trackingNumber: 'HX12345678' } : {});
+    for (const step of ['pack', 'ship', 'deliver'])
+      await w.post(`/staff/orders/${o.orderId}/${step}`, step === 'ship' ? { trackingNumber: 'HX12345678' } : {});
     await returnLine({ ...o, warehouse: w }, 'titanium-pot');
   },
   refund_over_captured: async () => {
@@ -133,11 +146,19 @@ const SCENARIOS: Record<BugKey, () => Promise<void>> = {
       await t.advance(step * 86400);
       await d.client.get('/auth/session');
     }
-    const first = json(await d.client.post(`/orders/${d.orderId}/returns`, { items: [{ productId: productIdPot, qty: 1 }], reason: 'changed_mind' }));
+    const first = json(
+      await d.client.post(`/orders/${d.orderId}/returns`, {
+        items: [{ productId: productIdPot, qty: 1 }],
+        reason: 'changed_mind',
+      }),
+    );
     await d.client.post(`/returns/${first.id}/cancel`);
     await t.advance(10 * 86400);
     await d.client.get('/auth/session');
-    const late = await d.client.post(`/orders/${d.orderId}/returns`, { items: [{ productId: productIdPot, qty: 1 }], reason: 'changed_mind' });
+    const late = await d.client.post(`/orders/${d.orderId}/returns`, {
+      items: [{ productId: productIdPot, qty: 1 }],
+      reason: 'changed_mind',
+    });
     if (late.statusCode !== 201) throw new Error(late.body);
   },
   restock_damaged: async () => {
@@ -145,23 +166,38 @@ const SCENARIOS: Record<BugKey, () => Promise<void>> = {
     await returnLine(d, 'titanium-pot', { condition: 'faulty' });
   },
   store_credit_double: async () => {
-    const d = await deliveredOrder(t, [['titanium-pot', 1], ['headlamp-400', 1]]);
+    const d = await deliveredOrder(t, [
+      ['titanium-pot', 1],
+      ['headlamp-400', 1],
+    ]);
     await returnLine(d, 'titanium-pot', { method: 'store_credit' });
   },
   support_goodwill_unlimited: async () => {
-    const d = await deliveredOrder(t, [['ember-stove', 1], ['headlamp-400', 1]]);
+    const d = await deliveredOrder(t, [
+      ['ember-stove', 1],
+      ['headlamp-400', 1],
+    ]);
     await goodwill(await support(), d.orderId, '80.00');
   },
   points_on_tax_shipping: async () => {
     await deliveredOrder(t, [['insulated-mug', 1]]);
   },
   returned_keeps_points: async () => {
-    const d = await deliveredOrder(t, [['titanium-pot', 1], ['headlamp-400', 1]]);
+    const d = await deliveredOrder(t, [
+      ['titanium-pot', 1],
+      ['headlamp-400', 1],
+    ]);
     await returnLine(d, 'titanium-pot');
   },
   hidden_reviews_counted: async () => {
     const d = await deliveredOrder(t, [['titanium-pot', 1]]);
-    const r = json(await d.client.post('/products/titanium-pot/reviews', { rating: 1, title: 'Not for me', body: 'It was fine but not what I wanted at all.' }));
+    const r = json(
+      await d.client.post('/products/titanium-pot/reviews', {
+        rating: 1,
+        title: 'Not for me',
+        body: 'It was fine but not what I wanted at all.',
+      }),
+    );
     await (await support()).post(`/staff/reviews/${r.id}/hide`, { reason: 'Off topic' });
   },
   price_edit_rewrites_orders: async () => {
@@ -176,7 +212,12 @@ const SCENARIOS: Record<BugKey, () => Promise<void>> = {
 describe('qa/rules.sql', () => {
   it('has one tagged rule per planted bug', () => {
     expect(rules.length).toBeGreaterThan(30);
-    expect(rules.filter((r) => r.bug).map((r) => r.bug).sort()).toEqual(BUGS.map((b) => b.key).sort());
+    expect(
+      rules
+        .filter((r) => r.bug)
+        .map((r) => r.bug)
+        .sort(),
+    ).toEqual(BUGS.map((b) => b.key).sort());
     for (const b of BUGS) expect(ruleFor(b.key)).toBeTruthy();
   });
 
@@ -193,11 +234,18 @@ describe('qa/rules.sql', () => {
       await run();
     }
     // Store credit and points at checkout, a partial return, a goodwill refund, an order paid by credit only.
-    const d = await deliveredOrder(t, [['roll-top-dry-bag', 2], ['titanium-pot', 1]]);
+    const d = await deliveredOrder(t, [
+      ['roll-top-dry-bag', 2],
+      ['titanium-pot', 1],
+    ]);
     await returnLine(d, 'roll-top-dry-bag', { reason: 'changed_mind', condition: 'opened', method: 'store_credit' });
     await goodwill(await support(), d.orderId, '5.00');
     await fill(t, d.client, [['roll-top-dry-bag', 1]]);
-    const paid = await d.client.post('/checkout', { shipTo: { addressId: d.addressId }, useStoreCredit: true, card: card() }, { 'idempotency-key': randomUUID() });
+    const paid = await d.client.post(
+      '/checkout',
+      { shipTo: { addressId: d.addressId }, useStoreCredit: true, card: card() },
+      { 'idempotency-key': randomUUID() },
+    );
     expect(json(paid).status).toBe('confirmed');
     expect(json(await d.client.get(`/orders/${json(paid).orderId}`)).totals.storeCredit).not.toBe('0.00');
     expect(await broken()).toEqual([]);

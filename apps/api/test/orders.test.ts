@@ -63,8 +63,12 @@ describe('cancelling', () => {
     const a = await placed();
     expect((await a.client.post(`/orders/${a.orderId}/cancel`, {})).statusCode).toBe(400);
     expect(json(await a.client.post(`/orders/${a.orderId}/cancel`, { reason: 'other' })).errors[0].path).toBe('note');
-    expect(json(await a.client.post(`/orders/${a.orderId}/cancel`, { reason: 'fraud_suspected' })).errors[0].path).toBe('reason');
-    expect((await a.client.post(`/orders/${a.orderId}/cancel`, { reason: 'other', note: 'Bought it in town' })).statusCode).toBe(200);
+    expect(json(await a.client.post(`/orders/${a.orderId}/cancel`, { reason: 'fraud_suspected' })).errors[0].path).toBe(
+      'reason',
+    );
+    expect(
+      (await a.client.post(`/orders/${a.orderId}/cancel`, { reason: 'other', note: 'Bought it in town' })).statusCode,
+    ).toBe(200);
   });
 
   it('once packed only support can cancel; once shipped nobody can', async () => {
@@ -75,7 +79,9 @@ describe('cancelling', () => {
     expect(mine.statusCode).toBe(409);
     expect(json(mine).detail).toMatch(/being packed/);
     const support = await signedIn(t, 'support@halden.test', true);
-    expect(json(await support.post(`/orders/${a.orderId}/cancel`, { reason: 'out_of_stock' })).status).toBe('cancelled');
+    expect(json(await support.post(`/orders/${a.orderId}/cancel`, { reason: 'out_of_stock' })).status).toBe(
+      'cancelled',
+    );
 
     const b = await placed([['camp-pillow', 1]]);
     await warehouse.post(`/staff/orders/${b.orderId}/pack`);
@@ -88,7 +94,9 @@ describe('cancelling', () => {
   it("a cancelled order can't be cancelled again", async () => {
     const a = await placed();
     await a.client.post(`/orders/${a.orderId}/cancel`, { reason: 'changed_mind' });
-    expect(json(await a.client.post(`/orders/${a.orderId}/cancel`, { reason: 'changed_mind' })).detail).toBe('This order is already cancelled.');
+    expect(json(await a.client.post(`/orders/${a.orderId}/cancel`, { reason: 'changed_mind' })).detail).toBe(
+      'This order is already cancelled.',
+    );
   });
 });
 
@@ -117,7 +125,9 @@ describe('the warehouse', () => {
   it('refuses steps out of order, and refuses support doing warehouse work', async () => {
     const a = await placed();
     const w = await signedIn(t, 'warehouse@halden.test', true);
-    expect(json(await w.post(`/staff/orders/${a.orderId}/ship`, { trackingNumber: 'HX12345678' })).code).toBe('invalid_transition');
+    expect(json(await w.post(`/staff/orders/${a.orderId}/ship`, { trackingNumber: 'HX12345678' })).code).toBe(
+      'invalid_transition',
+    );
     expect(json(await w.post(`/staff/orders/${a.orderId}/deliver`)).code).toBe('invalid_transition');
     const support = await signedIn(t, 'support@halden.test', true);
     expect((await support.post(`/staff/orders/${a.orderId}/pack`)).statusCode).toBe(403);

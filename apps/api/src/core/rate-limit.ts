@@ -39,7 +39,9 @@ export class RateLimiter {
     }
     if ((row?.hits ?? 0) > limit.max) {
       const retryAfterSeconds = Math.ceil((windowStart.getTime() + limit.windowSeconds * 1000 - nowMs) / 1000);
-      throw new AppError('rate_limited', 'Too many attempts. Please wait a little and try again.', { retryAfterSeconds });
+      throw new AppError('rate_limited', 'Too many attempts. Please wait a little and try again.', {
+        retryAfterSeconds,
+      });
     }
   }
 }

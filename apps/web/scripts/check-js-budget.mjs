@@ -20,12 +20,20 @@ const chunk = (src) => readFileSync(new URL(`../.next/static/chunks/${src.split(
 let failed = false;
 for (const { path, kb } of BUDGETS) {
   const html = await (await fetch(BASE + path)).text();
-  const scripts = [...new Set([...html.matchAll(/<script src="(\/_next\/static\/chunks\/[^"]+\.js)"([^>]*)>/g)].filter((m) => !/noModule/i.test(m[2])).map((m) => m[1]))];
+  const scripts = [
+    ...new Set(
+      [...html.matchAll(/<script src="(\/_next\/static\/chunks\/[^"]+\.js)"([^>]*)>/g)]
+        .filter((m) => !/noModule/i.test(m[2]))
+        .map((m) => m[1]),
+    ),
+  ];
   const bytes = scripts.reduce((n, s) => n + gzipSync(chunk(s), { level: 9 }).length, 0);
   const size = bytes / 1024;
   const ok = size <= kb;
   failed ||= !ok;
-  console.log(`${ok ? 'ok  ' : 'OVER'} ${path.padEnd(30)} ${size.toFixed(1).padStart(6)} kB of ${kb} kB (${scripts.length} scripts)`);
+  console.log(
+    `${ok ? 'ok  ' : 'OVER'} ${path.padEnd(30)} ${size.toFixed(1).padStart(6)} kB of ${kb} kB (${scripts.length} scripts)`,
+  );
 }
 if (failed) {
   console.error('\nFirst-load JavaScript is over budget. See docs/DESIGN.md section 5.5.');

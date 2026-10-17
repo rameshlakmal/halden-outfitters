@@ -25,7 +25,8 @@ export function verifySignature(secret: string, header: string | undefined, body
 
 type Event = { id: string; type: string; payload: { intentId: string; amount?: string; code?: string } };
 
-export const webhookRoutes = (ctx: AppContext): FastifyPluginAsync =>
+export const webhookRoutes =
+  (ctx: AppContext): FastifyPluginAsync =>
   async (app) => {
     const orders = new OrderService(ctx);
     // This scope keeps the raw body: the signature is over the exact bytes that were sent.
@@ -42,7 +43,14 @@ export const webhookRoutes = (ctx: AppContext): FastifyPluginAsync =>
     app.post('/webhooks/haldenpay', { schema: { hide: true } }, async (req, reply) => {
       const raw = (req as { rawBody?: string }).rawBody ?? '';
       const header = req.headers['haldenpay-signature'];
-      if (!verifySignature(ctx.config.HALDENPAY_WEBHOOK_SECRET, typeof header === 'string' ? header : undefined, raw, Math.floor(Date.now() / 1000))) {
+      if (
+        !verifySignature(
+          ctx.config.HALDENPAY_WEBHOOK_SECRET,
+          typeof header === 'string' ? header : undefined,
+          raw,
+          Math.floor(Date.now() / 1000),
+        )
+      ) {
         throw new AppError('webhook_signature_invalid', 'The webhook signature is missing or wrong.');
       }
       const event = req.body as Event;
@@ -52,7 +60,9 @@ export const webhookRoutes = (ctx: AppContext): FastifyPluginAsync =>
           [event.id, 'haldenpay', event.type, JSON.stringify(event.payload)],
         );
         if (rowCount === 0) return 'duplicate';
-        const { rows } = await tx.query<{ order_id: string }>('SELECT order_id FROM payments WHERE intent_id = $1', [event.payload.intentId]);
+        const { rows } = await tx.query<{ order_id: string }>('SELECT order_id FROM payments WHERE intent_id = $1', [
+          event.payload.intentId,
+        ]);
         const orderId = rows[0]?.order_id;
         if (!orderId) return 'unknown_payment';
         const now = await ctx.clock.now();
@@ -70,7 +80,13 @@ export const webhookRoutes = (ctx: AppContext): FastifyPluginAsync =>
                SELECT id, status, status, NULL, NULL, 'The card holder disputed this payment', $2 FROM orders WHERE id = $1`,
               [orderId, now],
             );
-            await queueEmail(tx, 'support@halden.test', 'payment_disputed', { orderId, amount: event.payload.amount ?? '' }, now);
+            await queueEmail(
+              tx,
+              'support@halden.test',
+              'payment_disputed',
+              { orderId, amount: event.payload.amount ?? '' },
+              now,
+            );
             break;
           default:
             break; // captured, voided, refunded: the shop already recorded these when it made the call
@@ -94,13 +110,16 @@ export async function deliverWebhooks(app: FastifyInstance, ctx: AppContext, lim
     const res = await app.inject({
       method: 'POST',
       url: '/api/v1/webhooks/haldenpay',
-      headers: { 'content-type': 'application/json', 'haldenpay-signature': signPayload(ctx.config.HALDENPAY_WEBHOOK_SECRET, Math.floor(Date.now() / 1000), body) },
+      headers: {
+        'content-type': 'application/json',
+        'haldenpay-signature': signPayload(ctx.config.HALDENPAY_WEBHOOK_SECRET, Math.floor(Date.now() / 1000), body),
+      },
       payload: body,
     });
-    await ctx.db.query('UPDATE haldenpay.events SET attempts = attempts + 1, delivered_at = CASE WHEN $2 THEN now() END WHERE id = $1', [
-      e.id,
-      res.statusCode < 300,
-    ]);
+    await ctx.db.query(
+      'UPDATE haldenpay.events SET attempts = attempts + 1, delivered_at = CASE WHEN $2 THEN now() END WHERE id = $1',
+      [e.id, res.statusCode < 300],
+    );
     if (res.statusCode < 300) delivered++;
   }
   return delivered;

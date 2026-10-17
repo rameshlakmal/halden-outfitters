@@ -59,7 +59,13 @@ export const REASON_LABEL: Record<CancelReason, string> = {
   payment_timeout: 'The payment was not completed in time',
 };
 
-export const CUSTOMER_REASONS: CancelReason[] = ['changed_mind', 'ordered_by_mistake', 'found_cheaper', 'delivery_too_slow', 'other'];
+export const CUSTOMER_REASONS: CancelReason[] = [
+  'changed_mind',
+  'ordered_by_mistake',
+  'found_cheaper',
+  'delivery_too_slow',
+  'other',
+];
 
 export const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });

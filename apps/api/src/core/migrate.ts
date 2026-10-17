@@ -34,13 +34,18 @@ export async function migrate(db: Db, dir = MIGRATIONS_DIR, log: (msg: string) =
       const checksum = createHash('sha256').update(sql).digest('hex');
       const done = applied.get(version);
       if (done) {
-        if (done !== checksum) throw new Error(`Migration ${file} was changed after it ran. Add a new migration instead.`);
+        if (done !== checksum)
+          throw new Error(`Migration ${file} was changed after it ran. Add a new migration instead.`);
         continue;
       }
       await client.query('BEGIN');
       try {
         await client.query(sql);
-        await client.query('INSERT INTO schema_migrations (version, name, checksum) VALUES ($1, $2, $3)', [version, file, checksum]);
+        await client.query('INSERT INTO schema_migrations (version, name, checksum) VALUES ($1, $2, $3)', [
+          version,
+          file,
+          checksum,
+        ]);
         await client.query('COMMIT');
       } catch (err) {
         await client.query('ROLLBACK');
@@ -50,7 +55,8 @@ export async function migrate(db: Db, dir = MIGRATIONS_DIR, log: (msg: string) =
       ran.push(file);
     }
     const known = new Set(files.map((f) => Number(f.slice(0, 4))));
-    for (const v of applied.keys()) if (!known.has(v)) log(`warning: migration ${v} is in the database but not in ${dir}`);
+    for (const v of applied.keys())
+      if (!known.has(v)) log(`warning: migration ${v} is in the database but not in ${dir}`);
     return ran;
   } finally {
     await client.query('SELECT pg_advisory_unlock($1)', [LOCK_KEY]).catch(() => {});

@@ -88,7 +88,13 @@ export function price(input: PricingInput): PricingResult {
   const shipping = lines.length === 0 || freeByThreshold || freeByCoupon ? 0 : toCents(rate.price);
   const tax = percentOf(afterDiscount, taxRatePercent);
 
-  const discountParts = discount > 0 ? allocate(discount, totals.map((t, i) => (eligible[i] ? t : 0))) : totals.map(() => 0);
+  const discountParts =
+    discount > 0
+      ? allocate(
+          discount,
+          totals.map((t, i) => (eligible[i] ? t : 0)),
+        )
+      : totals.map(() => 0);
   const afterCoupon = totals.map((t, i) => t - (discountParts[i] ?? 0));
   const pointsParts = pointsDiscount > 0 ? allocate(pointsDiscount, afterCoupon) : totals.map(() => 0);
   const taxBase = afterCoupon.map((t, i) => t - (pointsParts[i] ?? 0));
@@ -120,7 +126,8 @@ export const pointsToCents = (points: number) => Math.floor(points / POINTS_PER_
 /** Points can pay at most half of the subtotal after the coupon, in whole 5.00 blocks. */
 export const maxPointsDiscount = (afterCouponCents: number) =>
   Math.floor(Math.floor(afterCouponCents / 2) / CENTS_PER_BLOCK) * CENTS_PER_BLOCK;
-export const maxRedeemablePoints = (afterCouponCents: number) => (maxPointsDiscount(afterCouponCents) / CENTS_PER_BLOCK) * POINTS_PER_BLOCK;
+export const maxRedeemablePoints = (afterCouponCents: number) =>
+  (maxPointsDiscount(afterCouponCents) / CENTS_PER_BLOCK) * POINTS_PER_BLOCK;
 
 export const amounts = (r: PricingResult, taxRatePercent: number) => ({
   subtotal: fromCents(r.subtotal),

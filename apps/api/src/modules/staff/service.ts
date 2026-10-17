@@ -130,21 +130,29 @@ export class StaffService {
   }
 
   async editProduct(id: string, user: CurrentUser, ifMatch: number | null, edit: ProductEdit, now: Date) {
-    if (ifMatch === null) throw new AppError('precondition_required', 'Send If-Match with the version you loaded, so a newer save is not overwritten.');
-    if (Number.isNaN(ifMatch)) throw new AppError('precondition_required', 'If-Match must be the version number, like "3".');
-    await this.ctx.db.tx(async (tx) => {
-      const { rows } = await tx.query<{ version: number; price: string; compare_at_price: string | null } & Record<string, unknown>>(
-        'SELECT * FROM products WHERE id = $1 FOR UPDATE',
-        [id],
+    if (ifMatch === null)
+      throw new AppError(
+        'precondition_required',
+        'Send If-Match with the version you loaded, so a newer save is not overwritten.',
       );
+    if (Number.isNaN(ifMatch))
+      throw new AppError('precondition_required', 'If-Match must be the version number, like "3".');
+    await this.ctx.db.tx(async (tx) => {
+      const { rows } = await tx.query<
+        { version: number; price: string; compare_at_price: string | null } & Record<string, unknown>
+      >('SELECT * FROM products WHERE id = $1 FOR UPDATE', [id]);
       const p = rows[0];
       if (!p) throw notFound('That product');
       if (p.version !== ifMatch) {
-        throw new AppError('precondition_failed', `Someone else saved this product (now version ${p.version}). Reload it and make your change again.`);
+        throw new AppError(
+          'precondition_failed',
+          `Someone else saved this product (now version ${p.version}). Reload it and make your change again.`,
+        );
       }
       const price = edit.price ?? p.price;
       const compare = edit.compareAtPrice === undefined ? p.compare_at_price : edit.compareAtPrice;
-      if (compare !== null && toCents(compare) <= toCents(price)) throw fieldError('compareAtPrice', 'The old price must be above the price.');
+      if (compare !== null && toCents(compare) <= toCents(price))
+        throw fieldError('compareAtPrice', 'The old price must be above the price.');
 
       const current = Object.fromEntries(Object.entries(COLUMNS).map(([k, col]) => [k, p[col]]));
       const changes = diff(current, edit);
@@ -157,15 +165,30 @@ export class StaffService {
       );
       // Planted bug: price_edit_rewrites_orders. Orders keep the price they were placed at; this rewrites them.
       if (edit.price && edit.price !== p.price && (await this.ctx.bugs.enabled('price_edit_rewrites_orders', tx))) {
-        await tx.query('UPDATE order_items SET unit_price = $2::numeric, line_total = $2::numeric * qty WHERE product_id = $1', [id, edit.price]);
+        await tx.query(
+          'UPDATE order_items SET unit_price = $2::numeric, line_total = $2::numeric * qty WHERE product_id = $1',
+          [id, edit.price],
+        );
       }
-      await audit(tx, user, 'product.update', { type: 'product', id }, { before: changes.before, after: changes.after }, now);
+      await audit(
+        tx,
+        user,
+        'product.update',
+        { type: 'product', id },
+        { before: changes.before, after: changes.after },
+        now,
+      );
     });
     return this.product(id);
   }
 
   /** Stock arriving, counted or written off. Stock held for orders can't be adjusted away. */
-  async adjustStock(id: string, user: CurrentUser, input: { change: number; reason: 'restock' | 'adjustment' | 'write_off'; note?: string }, now: Date) {
+  async adjustStock(
+    id: string,
+    user: CurrentUser,
+    input: { change: number; reason: 'restock' | 'adjustment' | 'write_off'; note?: string },
+    now: Date,
+  ) {
     await this.ctx.db.tx(async (tx) => {
       const { rows } = await tx.query<{ on_hand: number; name: string; sku: string; low_stock_threshold: number }>(
         `SELECT i.on_hand, p.name, p.sku, p.low_stock_threshold FROM inventory i JOIN products p ON p.id = i.product_id
@@ -176,31 +199,63 @@ export class StaffService {
       if (!row) throw notFound('That product');
       if (input.reason === 'restock' && input.change < 0) throw fieldError('change', 'A restock adds stock.');
       if (input.reason === 'write_off' && input.change > 0) throw fieldError('change', 'A write-off removes stock.');
-      const { rows: lv } = await tx.query<{ reserved: number }>('SELECT reserved FROM stock_levels WHERE product_id = $1', [id]);
+      const { rows: lv } = await tx.query<{ reserved: number }>(
+        'SELECT reserved FROM stock_levels WHERE product_id = $1',
+        [id],
+      );
       const reserved = lv[0]?.reserved ?? 0;
       const free = row.on_hand - reserved;
       if (input.change < 0 && -input.change > free) {
-        throw fieldError('change', `Only ${free} can be removed: ${reserved} are held for orders.`, `Only ${free} units are not held for orders.`);
+        throw fieldError(
+          'change',
+          `Only ${free} can be removed: ${reserved} are held for orders.`,
+          `Only ${free} units are not held for orders.`,
+        );
       }
-      await tx.query('UPDATE inventory SET on_hand = on_hand + $2, updated_at = $3 WHERE product_id = $1', [id, input.change, now]);
+      await tx.query('UPDATE inventory SET on_hand = on_hand + $2, updated_at = $3 WHERE product_id = $1', [
+        id,
+        input.change,
+        now,
+      ]);
       await tx.query(
         'INSERT INTO stock_movements (product_id, change, reason, actor_id, note, created_at) VALUES ($1, $2, $3, $4, $5, $6)',
         [id, input.change, input.reason, user.id, input.note ?? null, now],
       );
-      await audit(tx, user, `stock.${input.reason}`, { type: 'product', id }, { before: { onHand: row.on_hand }, after: { onHand: row.on_hand + input.change } }, now);
+      await audit(
+        tx,
+        user,
+        `stock.${input.reason}`,
+        { type: 'product', id },
+        { before: { onHand: row.on_hand }, after: { onHand: row.on_hand + input.change } },
+        now,
+      );
       await lowStockCheck(this.ctx, tx, id, now);
     });
     return this.product(id);
   }
 
   async movements(id: string, limit = 50) {
-    const rows = await this.ctx.db.query<{ change: number; reason: string; order_id: string | null; note: string | null; by: string | null; created_at: Date }>(
+    const rows = await this.ctx.db.query<{
+      change: number;
+      reason: string;
+      order_id: string | null;
+      note: string | null;
+      by: string | null;
+      created_at: Date;
+    }>(
       `SELECT m.change, m.reason, m.order_id, m.note, c.name AS by, m.created_at
          FROM stock_movements m LEFT JOIN customers c ON c.id = m.actor_id
         WHERE m.product_id = $1 ORDER BY m.id DESC LIMIT $2`,
       [id, limit],
     );
-    return rows.map((r) => ({ change: r.change, reason: r.reason, orderId: r.order_id, note: r.note, by: r.by, at: r.created_at.toISOString() }));
+    return rows.map((r) => ({
+      change: r.change,
+      reason: r.reason,
+      orderId: r.order_id,
+      note: r.note,
+      by: r.by,
+      at: r.created_at.toISOString(),
+    }));
   }
 
   // ---------- coupons ----------
@@ -241,21 +296,36 @@ export class StaffService {
     }));
   }
 
-  async editCoupon(code: string, user: CurrentUser, edit: { active?: boolean; maxUses?: number | null; endsAt?: string | null; description?: string }, now: Date) {
+  async editCoupon(
+    code: string,
+    user: CurrentUser,
+    edit: { active?: boolean; maxUses?: number | null; endsAt?: string | null; description?: string },
+    now: Date,
+  ) {
     await this.ctx.db.tx(async (tx) => {
-      const { rows } = await tx.query<{ active: boolean; max_uses: number | null; ends_at: Date | null; description: string }>(
-        'SELECT active, max_uses, ends_at, description FROM coupons WHERE code = $1 FOR UPDATE',
-        [code],
-      );
+      const { rows } = await tx.query<{
+        active: boolean;
+        max_uses: number | null;
+        ends_at: Date | null;
+        description: string;
+      }>('SELECT active, max_uses, ends_at, description FROM coupons WHERE code = $1 FOR UPDATE', [code]);
       const c = rows[0];
       if (!c) throw notFound('That coupon');
-      const before = { active: c.active, maxUses: c.max_uses, endsAt: c.ends_at?.toISOString() ?? null, description: c.description };
+      const before = {
+        active: c.active,
+        maxUses: c.max_uses,
+        endsAt: c.ends_at?.toISOString() ?? null,
+        description: c.description,
+      };
       const changes = diff(before, edit);
       if (!changes.changed) return;
-      await tx.query(
-        `UPDATE coupons SET active = $2, max_uses = $3, ends_at = $4, description = $5 WHERE code = $1`,
-        [code, edit.active ?? c.active, edit.maxUses === undefined ? c.max_uses : edit.maxUses, edit.endsAt === undefined ? c.ends_at : edit.endsAt, edit.description ?? c.description],
-      );
+      await tx.query(`UPDATE coupons SET active = $2, max_uses = $3, ends_at = $4, description = $5 WHERE code = $1`, [
+        code,
+        edit.active ?? c.active,
+        edit.maxUses === undefined ? c.max_uses : edit.maxUses,
+        edit.endsAt === undefined ? c.ends_at : edit.endsAt,
+        edit.description ?? c.description,
+      ]);
       await audit(tx, user, 'coupon.update', { type: 'coupon', id: code }, changes, now);
     });
     return (await this.coupons()).find((c) => c.code === code)!;
@@ -264,14 +334,36 @@ export class StaffService {
   // ---------- shipping and tax ----------
 
   async rates() {
-    const rows = await this.ctx.db.query<{ zone_code: string; zone_name: string; method: 'standard' | 'express'; price: string; free_from: string | null; days_min: number; days_max: number }>(
+    const rows = await this.ctx.db.query<{
+      zone_code: string;
+      zone_name: string;
+      method: 'standard' | 'express';
+      price: string;
+      free_from: string | null;
+      days_min: number;
+      days_max: number;
+    }>(
       `SELECT r.zone_code, z.name AS zone_name, r.method, r.price, r.free_from, r.days_min, r.days_max
          FROM shipping_rates r JOIN shipping_zones z ON z.code = r.zone_code ORDER BY z.position, r.method`,
     );
-    return rows.map((r) => ({ zone: r.zone_code, zoneName: r.zone_name, method: r.method, price: r.price, freeFrom: r.free_from, daysMin: r.days_min, daysMax: r.days_max }));
+    return rows.map((r) => ({
+      zone: r.zone_code,
+      zoneName: r.zone_name,
+      method: r.method,
+      price: r.price,
+      freeFrom: r.free_from,
+      daysMin: r.days_min,
+      daysMax: r.days_max,
+    }));
   }
 
-  async editRate(zone: string, method: 'standard' | 'express', user: CurrentUser, edit: { price: string; freeFrom: string | null }, now: Date) {
+  async editRate(
+    zone: string,
+    method: 'standard' | 'express',
+    user: CurrentUser,
+    edit: { price: string; freeFrom: string | null },
+    now: Date,
+  ) {
     await this.ctx.db.tx(async (tx) => {
       const { rows } = await tx.query<{ price: string; free_from: string | null }>(
         'SELECT price, free_from FROM shipping_rates WHERE zone_code = $1 AND method = $2 FOR UPDATE',
@@ -279,15 +371,30 @@ export class StaffService {
       );
       const r = rows[0];
       if (!r) throw notFound('That shipping rate');
-      if (edit.freeFrom !== null && toCents(edit.freeFrom) <= 0) throw fieldError('freeFrom', 'Above 0.00, or leave empty for never free.');
-      await tx.query('UPDATE shipping_rates SET price = $3, free_from = $4 WHERE zone_code = $1 AND method = $2', [zone, method, edit.price, edit.freeFrom]);
-      await audit(tx, user, 'shipping_rate.update', { type: 'shipping_rate', id: `${zone}/${method}` }, { before: { price: r.price, freeFrom: r.free_from }, after: edit }, now);
+      if (edit.freeFrom !== null && toCents(edit.freeFrom) <= 0)
+        throw fieldError('freeFrom', 'Above 0.00, or leave empty for never free.');
+      await tx.query('UPDATE shipping_rates SET price = $3, free_from = $4 WHERE zone_code = $1 AND method = $2', [
+        zone,
+        method,
+        edit.price,
+        edit.freeFrom,
+      ]);
+      await audit(
+        tx,
+        user,
+        'shipping_rate.update',
+        { type: 'shipping_rate', id: `${zone}/${method}` },
+        { before: { price: r.price, freeFrom: r.free_from }, after: edit },
+        now,
+      );
     });
     return (await this.rates()).find((r) => r.zone === zone && r.method === method)!;
   }
 
   async taxRate(): Promise<string> {
-    const row = await this.ctx.db.one<{ value: unknown }>("SELECT value FROM shop_settings WHERE key = 'tax_rate_percent'");
+    const row = await this.ctx.db.one<{ value: unknown }>(
+      "SELECT value FROM shop_settings WHERE key = 'tax_rate_percent'",
+    );
     return String(row?.value ?? '8');
   }
 
@@ -297,7 +404,14 @@ export class StaffService {
     await this.ctx.db.tx(async (tx) => {
       const before = await this.taxRate();
       await tx.query("UPDATE shop_settings SET value = $1 WHERE key = 'tax_rate_percent'", [JSON.stringify(rate)]);
-      await audit(tx, user, 'tax_rate.update', { type: 'setting', id: 'tax_rate_percent' }, { before, after: String(rate) }, now);
+      await audit(
+        tx,
+        user,
+        'tax_rate.update',
+        { type: 'setting', id: 'tax_rate_percent' },
+        { before, after: String(rate) },
+        now,
+      );
     });
     return this.taxRate();
   }
@@ -320,7 +434,16 @@ export class StaffService {
       where.push(`c.id < $${params.length}`);
     }
     params.push(limit + 1);
-    const rows = await this.ctx.db.query<{ id: string; name: string; email: string; role: Role; email_verified_at: Date | null; locked_until: Date | null; created_at: Date; order_count: number }>(
+    const rows = await this.ctx.db.query<{
+      id: string;
+      name: string;
+      email: string;
+      role: Role;
+      email_verified_at: Date | null;
+      locked_until: Date | null;
+      created_at: Date;
+      order_count: number;
+    }>(
       `SELECT c.id, c.name, c.email, c.role, c.email_verified_at, c.locked_until, c.created_at,
               (SELECT count(*)::int FROM orders o WHERE o.customer_id = c.id) AS order_count
          FROM customers c ${where.length ? `WHERE ${where.join(' AND ')}` : ''} ORDER BY c.id DESC LIMIT $${params.length}`,
@@ -351,13 +474,24 @@ export class StaffService {
       await tx.query('UPDATE customers SET role = $2, updated_at = $3 WHERE id = $1', [id, role, now]);
       // A role change signs the account out everywhere, so the new permissions apply at once.
       await tx.query('DELETE FROM sessions WHERE customer_id = $1', [id]);
-      await audit(tx, user, 'customer.role', { type: 'customer', id }, { before: { role: rows[0].role }, after: { role } }, now);
+      await audit(
+        tx,
+        user,
+        'customer.role',
+        { type: 'customer', id },
+        { before: { role: rows[0].role }, after: { role } },
+        now,
+      );
     });
   }
 
   // ---------- audit ----------
 
-  async auditLog(q: { entityType?: string; entityId?: string; actorId?: string }, cursor: string | null, limit: number) {
+  async auditLog(
+    q: { entityType?: string; entityId?: string; actorId?: string },
+    cursor: string | null,
+    limit: number,
+  ) {
     const params: unknown[] = [];
     const where: string[] = [];
     for (const [col, v] of [
@@ -429,7 +563,13 @@ export async function lowStockCheck(ctx: AppContext, db: Queryable, productId: s
     db,
     'warehouse@halden.test',
     'low_stock',
-    { product: p.name, sku: p.sku, available: p.available, threshold: p.threshold, link: `${ctx.config.APP_URL}/staff/products/${productId}` },
+    {
+      product: p.name,
+      sku: p.sku,
+      available: p.available,
+      threshold: p.threshold,
+      link: `${ctx.config.APP_URL}/staff/products/${productId}`,
+    },
     now,
   );
 }

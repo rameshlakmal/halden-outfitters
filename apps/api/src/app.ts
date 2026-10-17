@@ -45,7 +45,12 @@ export type BuildOptions = {
   rateLimits?: boolean;
 };
 
-export async function buildApp({ config, db, clock, rateLimits = config.RATE_LIMITS }: BuildOptions): Promise<FastifyInstance> {
+export async function buildApp({
+  config,
+  db,
+  clock,
+  rateLimits = config.RATE_LIMITS,
+}: BuildOptions): Promise<FastifyInstance> {
   const database = db ?? new Db(config.DATABASE_URL, config.DB_POOL_MAX);
   const ctx: AppContext = {
     config,
@@ -150,7 +155,12 @@ export async function buildApp({ config, db, clock, rateLimits = config.RATE_LIM
   });
 
   app.setNotFoundHandler((req, reply) => {
-    const problem = makeProblem(req, 'route_not_found', 404, `There is no API route for ${req.method} ${req.url.split('?')[0]}.`);
+    const problem = makeProblem(
+      req,
+      'route_not_found',
+      404,
+      `There is no API route for ${req.method} ${req.url.split('?')[0]}.`,
+    );
     return reply.status(404).type('application/problem+json').send(problem);
   });
 
@@ -181,7 +191,14 @@ export async function buildApp({ config, db, clock, rateLimits = config.RATE_LIM
 }
 
 function makeProblem(req: FastifyRequest, code: Problem['code'], status: number, detail: string): Problem {
-  return { type: `https://halden-outfitters.vercel.app/problems/${code}`, title: problemTitle(code), status, detail, code, requestId: req.id };
+  return {
+    type: `https://halden-outfitters.vercel.app/problems/${code}`,
+    title: problemTitle(code),
+    status,
+    detail,
+    code,
+    requestId: req.id,
+  };
 }
 
 function toProblem(err: FastifyError, req: FastifyRequest): Problem {
@@ -200,7 +217,12 @@ function toProblem(err: FastifyError, req: FastifyRequest): Problem {
   }
   switch (err.code) {
     case 'FST_ERR_CTP_INVALID_MEDIA_TYPE':
-      return makeProblem(req, 'unsupported_media_type', 415, 'Send the request body as JSON (Content-Type: application/json).');
+      return makeProblem(
+        req,
+        'unsupported_media_type',
+        415,
+        'Send the request body as JSON (Content-Type: application/json).',
+      );
     case 'FST_ERR_CTP_BODY_TOO_LARGE':
       return makeProblem(req, 'payload_too_large', 413, 'That request is too large.');
     case 'FST_ERR_CTP_INVALID_JSON_BODY':

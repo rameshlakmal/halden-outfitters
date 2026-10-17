@@ -18,7 +18,10 @@ const review = (rating = 5, extra: Record<string, unknown> = {}) => ({
 });
 
 async function rating(slug: string) {
-  return t.db.one<{ rating_avg: string | null; rating_count: number }>('SELECT rating_avg, rating_count FROM products WHERE slug = $1', [slug]);
+  return t.db.one<{ rating_avg: string | null; rating_count: number }>(
+    'SELECT rating_avg, rating_count FROM products WHERE slug = $1',
+    [slug],
+  );
 }
 
 describe('moderation rules', () => {
@@ -41,7 +44,13 @@ describe('writing reviews', () => {
     const d = await deliveredOrder(t, [['titanium-pot', 1]]);
     const res = await d.client.post('/products/titanium-pot/reviews', review(4));
     expect(res.statusCode).toBe(201);
-    expect(json(res)).toMatchObject({ status: 'published', rating: 4, author: 'Robin F.', mine: true, verifiedBuyer: true });
+    expect(json(res)).toMatchObject({
+      status: 'published',
+      rating: 4,
+      author: 'Robin F.',
+      mine: true,
+      verifiedBuyer: true,
+    });
     expect(await rating('titanium-pot')).toEqual({ rating_avg: '4.0', rating_count: 1 });
     const page = json(await d.client.get('/products/titanium-pot/reviews'));
     expect(page.summary).toMatchObject({ average: 4, count: 1, distribution: { 4: 1 } });
@@ -64,7 +73,9 @@ describe('writing reviews', () => {
   it('refuses a customer who returned and was refunded for every unit', async () => {
     const d = await deliveredOrder(t, [['titanium-pot', 1]]);
     const productId = json(await d.client.get(`/orders/${d.orderId}`)).lines[0].productId;
-    const r = json(await d.client.post(`/orders/${d.orderId}/returns`, { items: [{ productId, qty: 1 }], reason: 'damaged' }));
+    const r = json(
+      await d.client.post(`/orders/${d.orderId}/returns`, { items: [{ productId, qty: 1 }], reason: 'damaged' }),
+    );
     await d.warehouse.post(`/staff/returns/${r.id}/receive`, { items: [{ productId, condition: 'as_new' }] });
     const res = await d.client.post('/products/titanium-pot/reviews', review());
     expect(res.statusCode).toBe(403);
@@ -83,19 +94,30 @@ describe('writing reviews', () => {
     const d = await deliveredOrder(t, [['titanium-pot', 1]]);
     const bad = await d.client.post('/products/titanium-pot/reviews', { rating: 6, title: 'Hi', body: 'Short' });
     expect(bad.statusCode).toBe(400);
-    expect(json(bad).errors.map((e: { path: string }) => e.path).sort()).toEqual(['body', 'rating', 'title']);
+    expect(
+      json(bad)
+        .errors.map((e: { path: string }) => e.path)
+        .sort(),
+    ).toEqual(['body', 'rating', 'title']);
     const fit = await d.client.post('/products/titanium-pot/reviews', review(5, { fit: 'true_to_size' }));
     expect(json(fit).errors[0].path).toBe('fit');
   });
 
   it('a review with a link waits for support; publishing it counts it', async () => {
     const d = await deliveredOrder(t, [['titanium-pot', 1]]);
-    const r = json(await d.client.post('/products/titanium-pot/reviews', review(2, { body: 'It dented on day one, details on www.example.com' })));
+    const r = json(
+      await d.client.post(
+        '/products/titanium-pot/reviews',
+        review(2, { body: 'It dented on day one, details on www.example.com' }),
+      ),
+    );
     expect(r).toMatchObject({ status: 'pending', heldFor: 'Contains a link' });
     expect(await rating('titanium-pot')).toEqual({ rating_avg: null, rating_count: 0 });
     expect(json(await d.client.get('/products/titanium-pot/reviews')).items).toEqual([]);
     const support = await signedIn(t, 'support@halden.test', true);
-    expect(json(await support.get('/staff/reviews?status=pending')).items.map((x: { id: string }) => x.id)).toContain(r.id);
+    expect(json(await support.get('/staff/reviews?status=pending')).items.map((x: { id: string }) => x.id)).toContain(
+      r.id,
+    );
     expect(json(await support.post(`/staff/reviews/${r.id}/publish`)).status).toBe('published');
     expect(await rating('titanium-pot')).toEqual({ rating_avg: '2.0', rating_count: 1 });
   });
@@ -107,7 +129,9 @@ describe('writing reviews', () => {
     expect(edited).toMatchObject({ rating: 3, status: 'published' });
     expect(edited.editedAt).toBeTruthy();
     expect(await rating('titanium-pot')).toMatchObject({ rating_avg: '3.0' });
-    const held = json(await d.client.put(`/reviews/${r.id}`, review(3, { body: 'Write to me at robin@example.com for photos.' })));
+    const held = json(
+      await d.client.put(`/reviews/${r.id}`, review(3, { body: 'Write to me at robin@example.com for photos.' })),
+    );
     expect(held.status).toBe('pending');
     for (let i = 0; i < 3; i++) {
       await t.advance(10 * 86400 + 3600);
@@ -142,7 +166,10 @@ describe('ratings and votes', () => {
     expect(hidden).toMatchObject({ status: 'hidden', hiddenReason: 'Off topic' });
     expect(await rating('titanium-pot')).toEqual({ rating_avg: '4.5', rating_count: 2 });
     expect((await lastEmail(t.db, c.email))?.template).toBe('review_hidden');
-    expect(json(await c.client.get('/account/reviews')).items[0]).toMatchObject({ status: 'hidden', hiddenReason: 'Off topic' });
+    expect(json(await c.client.get('/account/reviews')).items[0]).toMatchObject({
+      status: 'hidden',
+      hiddenReason: 'Off topic',
+    });
     expect((await c.client.put(`/reviews/${low.id}`, review(2))).statusCode).toBe(409);
   });
 
@@ -158,9 +185,13 @@ describe('ratings and votes', () => {
     expect(helpful.items.map((r: { id: string }) => r.id)).toEqual([rb.id, ra.id]);
     expect(helpful.items[0]).toMatchObject({ helpfulCount: 1, votedHelpful: true });
     expect(json(await a.client.get('/products/titanium-pot/reviews?sort=highest')).items[0].id).toBe(ra.id);
-    expect(json(await a.client.get('/products/titanium-pot/reviews?rating=3')).items.map((r: { id: string }) => r.id)).toEqual([rb.id]);
+    expect(
+      json(await a.client.get('/products/titanium-pot/reviews?rating=3')).items.map((r: { id: string }) => r.id),
+    ).toEqual([rb.id]);
     expect((await a.client.delete(`/reviews/${rb.id}/helpful`)).statusCode).toBe(204);
-    const after = json(await a.client.get('/products/titanium-pot/reviews')).items.find((r: { id: string }) => r.id === rb.id);
+    const after = json(await a.client.get('/products/titanium-pot/reviews')).items.find(
+      (r: { id: string }) => r.id === rb.id,
+    );
     expect(after.helpfulCount).toBe(0);
     const anon = await newCustomer(t);
     await anon.client.post('/auth/logout');
@@ -182,7 +213,9 @@ describe('ratings and votes', () => {
 describe('seeded reviews', () => {
   it('match the demo orders and hold one for moderation', async () => {
     await t.reseed({ orders: true });
-    const rows = await t.db.query<{ slug: string; status: string }>('SELECT p.slug, r.status FROM reviews r JOIN products p ON p.id = r.product_id ORDER BY r.id');
+    const rows = await t.db.query<{ slug: string; status: string }>(
+      'SELECT p.slug, r.status FROM reviews r JOIN products p ON p.id = r.product_id ORDER BY r.id',
+    );
     expect(rows.filter((r) => r.status === 'pending').map((r) => r.slug)).toEqual(['camp-pillow']);
     expect(await rating('camp-pillow')).toEqual({ rating_avg: '3.0', rating_count: 1 });
   });

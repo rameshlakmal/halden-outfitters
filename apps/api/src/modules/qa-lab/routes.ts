@@ -16,7 +16,14 @@ import { OrderService } from '../orders/service.js';
 import { ReturnService } from '../returns/service.js';
 import { expire } from '../loyalty/points.js';
 
-type OutboxRow = { id: string; to_email: string; template: string; subject: string; body_text: string; created_at: Date };
+type OutboxRow = {
+  id: string;
+  to_email: string;
+  template: string;
+  subject: string;
+  body_text: string;
+  created_at: Date;
+};
 
 const LINK = /https?:\/\/[^\s]+/g;
 const TEST_DOMAIN = /@(?:[^@]+\.)?(?:[^@.]+\.(?:test|example|invalid|localhost)|example\.(?:com|net|org))$/;
@@ -42,7 +49,9 @@ export const qaRoutes: FastifyPluginAsyncZod = async (app) => {
     if (req.user?.role === 'admin') return true;
     if (req.user?.email === email) return true;
     if (!TEST_DOMAIN.test(email)) return false;
-    const guarded = await db.one("SELECT 1 FROM customers WHERE email = $1 AND (is_demo OR role <> 'customer')", [email]);
+    const guarded = await db.one("SELECT 1 FROM customers WHERE email = $1 AND (is_demo OR role <> 'customer')", [
+      email,
+    ]);
     return !guarded;
   };
 
@@ -52,7 +61,7 @@ export const qaRoutes: FastifyPluginAsyncZod = async (app) => {
       schema: {
         tags,
         summary: 'Emails sent to an address, newest first',
-        description: "Mail to the seeded demo accounts is only shown to admins.",
+        description: 'Mail to the seeded demo accounts is only shown to admins.',
         querystring: z.object({ email: Email, limit: z.coerce.number().int().min(1).max(50).default(20) }),
         response: { 200: z.object({ items: z.array(InboxEmail) }), 400: Problem, 404: Problem },
       },
@@ -96,7 +105,13 @@ export const qaRoutes: FastifyPluginAsyncZod = async (app) => {
       const before = await clock.offsetSeconds();
       await db.tx(async (tx) => {
         await clock.setOffsetSeconds(req.body.offsetSeconds, tx);
-        await audit(tx, user, 'qa.clock', { type: 'setting', id: 'clock_offset_seconds' }, { before, after: req.body.offsetSeconds });
+        await audit(
+          tx,
+          user,
+          'qa.clock',
+          { type: 'setting', id: 'clock_offset_seconds' },
+          { before, after: req.body.offsetSeconds },
+        );
       });
       return { now: (await clock.now()).toISOString(), offsetSeconds: req.body.offsetSeconds };
     },
@@ -116,13 +131,35 @@ export const qaRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.get(
     '/qa/bugs',
-    { schema: { tags, summary: 'Planted bugs and whether each is on', response: { 200: z.object({ items: z.array(Bug) }), 404: Problem } } },
+    {
+      schema: {
+        tags,
+        summary: 'Planted bugs and whether each is on',
+        response: { 200: z.object({ items: z.array(Bug) }), 404: Problem },
+      },
+    },
     async () => {
       enabled();
-      const rows = await db.query<{ key: string; phase: number; title: string; description: string; how_to_see: string; rule: string; enabled: boolean }>(
-        'SELECT key, phase, title, description, how_to_see, rule, enabled FROM qa_bugs ORDER BY position',
-      );
-      return { items: rows.map((r) => ({ key: r.key, phase: r.phase, title: r.title, description: r.description, howToSee: r.how_to_see, rule: r.rule, enabled: r.enabled })) };
+      const rows = await db.query<{
+        key: string;
+        phase: number;
+        title: string;
+        description: string;
+        how_to_see: string;
+        rule: string;
+        enabled: boolean;
+      }>('SELECT key, phase, title, description, how_to_see, rule, enabled FROM qa_bugs ORDER BY position');
+      return {
+        items: rows.map((r) => ({
+          key: r.key,
+          phase: r.phase,
+          title: r.title,
+          description: r.description,
+          howToSee: r.how_to_see,
+          rule: r.rule,
+          enabled: r.enabled,
+        })),
+      };
     },
   );
 
@@ -142,7 +179,15 @@ export const qaRoutes: FastifyPluginAsyncZod = async (app) => {
       enabled();
       const user = requireRole(req, 'admin');
       const row = await db.tx(async (tx) => {
-        const { rows } = await tx.query<{ key: string; phase: number; title: string; description: string; how_to_see: string; rule: string; enabled: boolean }>(
+        const { rows } = await tx.query<{
+          key: string;
+          phase: number;
+          title: string;
+          description: string;
+          how_to_see: string;
+          rule: string;
+          enabled: boolean;
+        }>(
           'UPDATE qa_bugs SET enabled = $2 WHERE key = $1 RETURNING key, phase, title, description, how_to_see, rule, enabled',
           [req.params.key, req.body.enabled],
         );
@@ -152,7 +197,15 @@ export const qaRoutes: FastifyPluginAsyncZod = async (app) => {
         return r;
       });
       app.ctx.bugs.forget();
-      return { key: row.key, phase: row.phase, title: row.title, description: row.description, howToSee: row.how_to_see, rule: row.rule, enabled: row.enabled };
+      return {
+        key: row.key,
+        phase: row.phase,
+        title: row.title,
+        description: row.description,
+        howToSee: row.how_to_see,
+        rule: row.rule,
+        enabled: row.enabled,
+      };
     },
   );
 
@@ -180,7 +233,8 @@ export const qaRoutes: FastifyPluginAsyncZod = async (app) => {
       schema: {
         tags,
         summary: 'Run the time-based rules now (admin)',
-        description: 'Cancels unpaid orders past their 30 minutes, expires unused return labels, completes orders past their return window, expires 12-month-old points, delivers queued webhooks.',
+        description:
+          'Cancels unpaid orders past their 30 minutes, expires unused return labels, completes orders past their return window, expires 12-month-old points, delivers queued webhooks.',
         security: [{ session: [] }],
         response: { 200: Sweep, 401: Problem, 403: Problem, 404: Problem },
       },
@@ -219,7 +273,16 @@ export const qaRoutes: FastifyPluginAsyncZod = async (app) => {
     async (req) => {
       enabled();
       requireRole(req, 'admin');
-      const rows = await db.query<{ id: string; type: string; order_id: string | null; payload: unknown; attempts: number; created_at: Date; delivered_at: Date | null; processed: boolean }>(
+      const rows = await db.query<{
+        id: string;
+        type: string;
+        order_id: string | null;
+        payload: unknown;
+        attempts: number;
+        created_at: Date;
+        delivered_at: Date | null;
+        processed: boolean;
+      }>(
         `SELECT e.id, e.type, i.merchant_ref AS order_id, e.payload, e.attempts, e.created_at, e.delivered_at,
                 EXISTS (SELECT 1 FROM webhook_events w WHERE w.id = e.id) AS processed
            FROM haldenpay.events e JOIN haldenpay.intents i ON i.id = e.intent_id
@@ -257,7 +320,10 @@ export const qaRoutes: FastifyPluginAsyncZod = async (app) => {
     async (req) => {
       enabled();
       const user = requireRole(req, 'admin');
-      const rows = await db.query("UPDATE haldenpay.events SET delivered_at = NULL, deliver_after = now() WHERE id = $1 RETURNING id", [req.params.id]);
+      const rows = await db.query(
+        'UPDATE haldenpay.events SET delivered_at = NULL, deliver_after = now() WHERE id = $1 RETURNING id',
+        [req.params.id],
+      );
       if (rows.length === 0) throw new AppError('not_found', 'No webhook event with that id.');
       await audit(db.pool, user, 'qa.webhook_redeliver', { type: 'webhook_event', id: req.params.id });
       return { delivered: await app.ctx.deliverWebhooks() };
@@ -270,7 +336,8 @@ export const qaRoutes: FastifyPluginAsyncZod = async (app) => {
     const given = Buffer.from(String(req.headers.authorization ?? ''));
     const expected = Buffer.from(`Bearer ${secret}`);
     // Constant-time, so the secret can't be guessed one character at a time from response times.
-    if (!secret || given.length !== expected.length || !timingSafeEqual(given, expected)) throw new AppError('forbidden', 'Not allowed.');
+    if (!secret || given.length !== expected.length || !timingSafeEqual(given, expected))
+      throw new AppError('forbidden', 'Not allowed.');
     return runSweep(req.now);
   });
 };

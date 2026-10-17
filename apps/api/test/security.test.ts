@@ -3,7 +3,17 @@ import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { buildApp } from '../src/app.js';
 import { loadConfig } from '../src/config.js';
-import { APP_URL, Client, json, lastEmail, PASSWORDS, startApp, testDbUrl, tokenFrom, type TestApp } from './helpers.js';
+import {
+  APP_URL,
+  Client,
+  json,
+  lastEmail,
+  PASSWORDS,
+  startApp,
+  testDbUrl,
+  tokenFrom,
+  type TestApp,
+} from './helpers.js';
 import { card, CARDS, checkout, deliveredOrder, fill, newCustomer, signedIn } from './shop.js';
 
 let t: TestApp;
@@ -32,8 +42,16 @@ describe('denial of service', () => {
 describe('fake inbox', () => {
   it("anyone can read a test-domain inbox, but not someone's real address", async () => {
     const anon = new Client(t.app);
-    await anon.post('/auth/register', { name: 'Real Person', email: 'real.person@gmail.com', password: 'a long walk in the woods' });
-    await new Client(t.app).post('/auth/register', { name: 'Tess Ter', email: 'tess@halden.test', password: 'a long walk in the woods' });
+    await anon.post('/auth/register', {
+      name: 'Real Person',
+      email: 'real.person@gmail.com',
+      password: 'a long walk in the woods',
+    });
+    await new Client(t.app).post('/auth/register', {
+      name: 'Tess Ter',
+      email: 'tess@halden.test',
+      password: 'a long walk in the woods',
+    });
     const stranger = new Client(t.app);
     expect(json(await inbox(stranger, 'real.person@gmail.com')).items).toHaveLength(0);
     expect(json(await inbox(stranger, 'tess@halden.test')).items.length).toBeGreaterThan(0);
@@ -60,8 +78,14 @@ describe('accounts', () => {
     const c = await signedIn(t, 'maya@halden.test');
     await new Client(t.app).post('/auth/forgot-password', { email: 'maya@halden.test' });
     const token = tokenFrom((await lastEmail(t.db, 'maya@halden.test', 'password_reset'))!.body_text);
-    expect((await c.post('/account/password', { currentPassword: PASSWORDS.shopper, newPassword: 'a brand new password' })).statusCode).toBe(200);
-    const reset = await new Client(t.app).post('/auth/reset-password', { token, password: 'the attacker chose this one' });
+    expect(
+      (await c.post('/account/password', { currentPassword: PASSWORDS.shopper, newPassword: 'a brand new password' }))
+        .statusCode,
+    ).toBe(200);
+    const reset = await new Client(t.app).post('/auth/reset-password', {
+      token,
+      password: 'the attacker chose this one',
+    });
     expect(reset.statusCode).toBe(410);
   });
 
@@ -77,9 +101,15 @@ describe('accounts', () => {
     try {
       const attacker = new Client(limited.app);
       for (let i = 0; i < 11; i++) {
-        await attacker.post('/auth/login', { email: 'maya@halden.test', password: 'wrong' }, { 'x-forwarded-for': '203.0.113.9' });
+        await attacker.post(
+          '/auth/login',
+          { email: 'maya@halden.test', password: 'wrong' },
+          { 'x-forwarded-for': '203.0.113.9' },
+        );
       }
-      expect((await attacker.post('/auth/login', { email: 'maya@halden.test', password: 'wrong' })).statusCode).toBe(429);
+      expect((await attacker.post('/auth/login', { email: 'maya@halden.test', password: 'wrong' })).statusCode).toBe(
+        429,
+      );
       // Without a trusted proxy, inject's address is the same for both clients; the limit is keyed per address,
       // so a different address (another IP) still signs in.
       const owner = await limited.app.inject({
@@ -96,7 +126,14 @@ describe('accounts', () => {
   });
 
   it('behind one proxy hop, a client-written X-Forwarded-For does not change the IP the limits see', async () => {
-    const config = loadConfig({ ...process.env, NODE_ENV: 'test', DATABASE_URL: testDbUrl(), APP_URL, LOG_LEVEL: 'silent', TRUST_PROXY: '1' });
+    const config = loadConfig({
+      ...process.env,
+      NODE_ENV: 'test',
+      DATABASE_URL: testDbUrl(),
+      APP_URL,
+      LOG_LEVEL: 'silent',
+      TRUST_PROXY: '1',
+    });
     expect(config.TRUST_PROXY).toBe(1);
     const app = await buildApp({ config, db: t.db, clock: t.clock, rateLimits: false });
     try {
@@ -128,9 +165,17 @@ describe('payments', () => {
     return { ...c, orderId: body.orderId as string, token: new URL(body.nextAction.url).searchParams.get('token')! };
   }
   const authenticate = (token: string) =>
-    t.app.inject({ method: 'POST', url: '/api/v1/payments/authenticate', headers: { 'content-type': 'application/json' }, payload: { token, approve: true } });
+    t.app.inject({
+      method: 'POST',
+      url: '/api/v1/payments/authenticate',
+      headers: { 'content-type': 'application/json' },
+      payload: { token, approve: true },
+    });
   const intentStatus = async (orderId: string) =>
-    (await t.db.one<{ status: string }>('SELECT i.status FROM haldenpay.intents i JOIN payments p ON p.intent_id = i.id WHERE p.order_id = $1', [orderId]))!.status;
+    (await t.db.one<{ status: string }>(
+      'SELECT i.status FROM haldenpay.intents i JOIN payments p ON p.intent_id = i.id WHERE p.order_id = $1',
+      [orderId],
+    ))!.status;
 
   it('approving the bank step after the 30 minutes cancels the order instead of confirming it', async () => {
     const o = await bankOrder();
@@ -151,7 +196,8 @@ describe('payments', () => {
   it('one customer can hold at most 3 unpaid orders', async () => {
     const c = await newCustomer(t);
     await fill(t, c.client, [['titanium-pot', 1]]);
-    for (let i = 0; i < 3; i++) expect((await checkout(c.client, c.addressId, { card: CARDS.bank })).statusCode).toBe(202);
+    for (let i = 0; i < 3; i++)
+      expect((await checkout(c.client, c.addressId, { card: CARDS.bank })).statusCode).toBe(202);
     expect((await checkout(c.client, c.addressId, { card: CARDS.bank })).statusCode).toBe(409);
   });
 });
@@ -165,7 +211,11 @@ describe('points', () => {
     );
   }
   const pay = (c: Client, addressId: string, pointsToRedeem: number) =>
-    c.post('/checkout', { shipTo: { addressId }, shippingMethod: 'standard', card: card(), pointsToRedeem }, { 'idempotency-key': randomUUID() });
+    c.post(
+      '/checkout',
+      { shipTo: { addressId }, shippingMethod: 'standard', card: card(), pointsToRedeem },
+      { 'idempotency-key': randomUUID() },
+    );
 
   it('expired points that the sweep has not written off yet cannot be spent', async () => {
     const c = await newCustomer(t);
@@ -182,7 +232,9 @@ describe('points', () => {
     await fill(t, c.client, [['titanium-pot', 2]]);
     const res = await pay(c.client, c.addressId, 200);
     expect(res.statusCode).toBe(201);
-    expect((await c.client.post(`/orders/${json(res).orderId}/cancel`, { reason: 'changed_mind' })).statusCode).toBe(200);
+    expect((await c.client.post(`/orders/${json(res).orderId}/cancel`, { reason: 'changed_mind' })).statusCode).toBe(
+      200,
+    );
     const back = await t.db.one<{ days: number }>(
       `SELECT round(extract(epoch FROM expires_at - now()) / 86400)::int AS days FROM loyalty_ledger l
          JOIN customers c ON c.id = l.customer_id WHERE c.email = $1 AND kind = 'redeem_reversal'`,
@@ -195,9 +247,16 @@ describe('points', () => {
 describe('staff', () => {
   it("support can't pay themselves goodwill on their own order", async () => {
     const o = await deliveredOrder(t, [['titanium-pot', 1]]);
-    await t.db.query("UPDATE orders SET customer_id = (SELECT id FROM customers WHERE email = 'support@halden.test') WHERE id = $1", [o.orderId]);
+    await t.db.query(
+      "UPDATE orders SET customer_id = (SELECT id FROM customers WHERE email = 'support@halden.test') WHERE id = $1",
+      [o.orderId],
+    );
     const support = await signedIn(t, 'support@halden.test', true);
-    const res = await support.post(`/staff/orders/${o.orderId}/goodwill`, { amount: '20.00', reason: 'Arrived late', method: 'store_credit' }, { 'idempotency-key': randomUUID() });
+    const res = await support.post(
+      `/staff/orders/${o.orderId}/goodwill`,
+      { amount: '20.00', reason: 'Arrived late', method: 'store_credit' },
+      { 'idempotency-key': randomUUID() },
+    );
     expect(res.statusCode).toBe(403);
   });
 });
@@ -217,7 +276,11 @@ describe('reviews', () => {
     const a = await deliveredOrder(t, [['titanium-pot', 1]]);
     const r = json(await a.client.post('/products/titanium-pot/reviews', { ...review, rating: 5 }));
     const fresh = new Client(t.app);
-    await fresh.post('/auth/register', { name: 'New Voter', email: 'voter@halden.test', password: 'a long walk in the woods' });
+    await fresh.post('/auth/register', {
+      name: 'New Voter',
+      email: 'voter@halden.test',
+      password: 'a long walk in the woods',
+    });
     const res = await fresh.put(`/reviews/${r.id}/helpful`, {});
     expect(res.statusCode).toBe(403);
     expect(json(res).code).toBe('email_not_verified');

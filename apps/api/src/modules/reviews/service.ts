@@ -70,7 +70,10 @@ export class ReviewService {
   constructor(private readonly ctx: AppContext) {}
 
   private async product(db: Queryable, slug: string) {
-    const { rows } = await db.query<{ id: string; sized: boolean; name: string }>('SELECT id, sized, name FROM products WHERE slug = $1 AND active', [slug]);
+    const { rows } = await db.query<{ id: string; sized: boolean; name: string }>(
+      'SELECT id, sized, name FROM products WHERE slug = $1 AND active',
+      [slug],
+    );
     if (!rows[0]) throw notFound('That product');
     return rows[0];
   }
@@ -95,7 +98,9 @@ export class ReviewService {
 
   /** Recomputes a product's stored rating from its reviews. Planted bug hidden_reviews_counted keeps hidden ones in. */
   async rerate(tx: Queryable, productId: string) {
-    const counted = (await this.ctx.bugs.enabled('hidden_reviews_counted', tx)) ? "('published', 'hidden')" : "('published')";
+    const counted = (await this.ctx.bugs.enabled('hidden_reviews_counted', tx))
+      ? "('published', 'hidden')"
+      : "('published')";
     await tx.query(
       `UPDATE products p SET rating_avg = s.avg, rating_count = s.n, updated_at = now()
          FROM (SELECT round(avg(rating), 1) AS avg, count(*)::int AS n FROM reviews WHERE product_id = $1 AND status IN ${counted}) s
@@ -122,7 +127,8 @@ export class ReviewService {
         await this.rerate(tx, p.id);
         return rows[0]!.id;
       } catch (err) {
-        if ((err as pg.DatabaseError).code === '23505') throw new AppError('already_reviewed', 'You have already reviewed this product. Edit your review instead.');
+        if ((err as pg.DatabaseError).code === '23505')
+          throw new AppError('already_reviewed', 'You have already reviewed this product. Edit your review instead.');
         throw err;
       }
     });
@@ -132,7 +138,8 @@ export class ReviewService {
     await this.ctx.db.tx(async (tx) => {
       const r = await this.lock(tx, id);
       if (r.customer_id !== user.id) throw notFound('That review');
-      if (r.status === 'hidden') throw new AppError('invalid_transition', 'A hidden review cannot be edited. You can delete it.');
+      if (r.status === 'hidden')
+        throw new AppError('invalid_transition', 'A hidden review cannot be edited. You can delete it.');
       if (now.getTime() > r.created_at.getTime() + REVIEW_EDIT_DAYS * day) {
         throw new AppError('invalid_transition', `Reviews can be edited for ${REVIEW_EDIT_DAYS} days after posting.`);
       }
@@ -154,16 +161,22 @@ export class ReviewService {
       const staff = user.role === 'support' || user.role === 'admin';
       if (r.customer_id !== user.id && !staff) throw notFound('That review');
       // A hidden review stays (and keeps its product slot), or deleting and posting it again would undo moderation.
-      if (r.status === 'hidden' && !staff) throw new AppError('forbidden', 'This review was hidden by our team, so it cannot be deleted. Contact support.');
+      if (r.status === 'hidden' && !staff)
+        throw new AppError(
+          'forbidden',
+          'This review was hidden by our team, so it cannot be deleted. Contact support.',
+        );
       await tx.query('DELETE FROM reviews WHERE id = $1', [id]);
       await this.rerate(tx, r.product_id);
-      if (r.customer_id !== user.id) await audit(tx, user, 'review.delete', { type: 'review', id }, { before: this.snapshot(r) });
+      if (r.customer_id !== user.id)
+        await audit(tx, user, 'review.delete', { type: 'review', id }, { before: this.snapshot(r) });
     });
   }
 
   async vote(id: string, user: CurrentUser, helpful: boolean, now: Date) {
     // Only confirmed accounts vote, which makes stuffing votes from throwaway accounts slower.
-    if (!user.emailVerified) throw new AppError('email_not_verified', 'Confirm your email address before voting on reviews.');
+    if (!user.emailVerified)
+      throw new AppError('email_not_verified', 'Confirm your email address before voting on reviews.');
     await this.ctx.db.tx(async (tx) => {
       const r = await this.lock(tx, id);
       if (r.status !== 'published') throw notFound('That review');
@@ -177,7 +190,10 @@ export class ReviewService {
       } else {
         await tx.query('DELETE FROM review_votes WHERE review_id = $1 AND customer_id = $2', [id, user.id]);
       }
-      await tx.query('UPDATE reviews SET helpful_count = (SELECT count(*) FROM review_votes WHERE review_id = $1) WHERE id = $1', [id]);
+      await tx.query(
+        'UPDATE reviews SET helpful_count = (SELECT count(*) FROM review_votes WHERE review_id = $1) WHERE id = $1',
+        [id],
+      );
     });
   }
 
@@ -187,9 +203,19 @@ export class ReviewService {
     await this.ctx.db.tx(async (tx) => {
       const r = await this.lock(tx, id);
       if (r.status === 'hidden') throw new AppError('invalid_transition', 'This review is already hidden.');
-      await tx.query("UPDATE reviews SET status = 'hidden', hidden_reason = $2, moderated_by = $3, updated_at = $4 WHERE id = $1", [id, reason, user.id, now]);
+      await tx.query(
+        "UPDATE reviews SET status = 'hidden', hidden_reason = $2, moderated_by = $3, updated_at = $4 WHERE id = $1",
+        [id, reason, user.id, now],
+      );
       await this.rerate(tx, r.product_id);
-      await audit(tx, user, 'review.hide', { type: 'review', id }, { before: { status: r.status }, after: { status: 'hidden', reason } }, now);
+      await audit(
+        tx,
+        user,
+        'review.hide',
+        { type: 'review', id },
+        { before: { status: r.status }, after: { status: 'hidden', reason } },
+        now,
+      );
       const { rows } = await tx.query<{ email: string; name: string; product: string; slug: string }>(
         'SELECT c.email, c.name, p.name AS product, p.slug FROM customers c, products p WHERE c.id = $1 AND p.id = $2',
         [r.customer_id, r.product_id],
@@ -214,7 +240,14 @@ export class ReviewService {
         [id, user.id, now],
       );
       await this.rerate(tx, r.product_id);
-      await audit(tx, user, 'review.publish', { type: 'review', id }, { before: { status: r.status }, after: { status: 'published' } }, now);
+      await audit(
+        tx,
+        user,
+        'review.publish',
+        { type: 'review', id },
+        { before: { status: r.status }, after: { status: 'published' } },
+        now,
+      );
     });
   }
 
@@ -245,7 +278,11 @@ export class ReviewService {
     };
   }
 
-  async page(slug: string, viewer: CurrentUser | null, q: { sort: ReviewSort; rating?: number; cursor?: string; limit: number }) {
+  async page(
+    slug: string,
+    viewer: CurrentUser | null,
+    q: { sort: ReviewSort; rating?: number; cursor?: string; limit: number },
+  ) {
     const p = await this.product(this.ctx.db.pool, slug);
     const offset = Number(q.cursor ?? 0);
     const params: unknown[] = [p.id];
@@ -264,10 +301,10 @@ export class ReviewService {
     const voted = viewer
       ? new Set(
           (
-            await this.ctx.db.query<{ review_id: string }>('SELECT review_id FROM review_votes WHERE customer_id = $1 AND review_id = ANY($2)', [
-              viewer.id,
-              page.map((r) => r.id),
-            ])
+            await this.ctx.db.query<{ review_id: string }>(
+              'SELECT review_id FROM review_votes WHERE customer_id = $1 AND review_id = ANY($2)',
+              [viewer.id, page.map((r) => r.id)],
+            )
           ).map((v) => v.review_id),
         )
       : new Set<string>();
@@ -276,7 +313,10 @@ export class ReviewService {
       "SELECT rating, fit, count(*)::int AS n FROM reviews WHERE product_id = $1 AND status = 'published' GROUP BY rating, fit",
       [p.id],
     );
-    const product = await this.ctx.db.one<{ rating_avg: string | null; rating_count: number }>('SELECT rating_avg, rating_count FROM products WHERE id = $1', [p.id]);
+    const product = await this.ctx.db.one<{ rating_avg: string | null; rating_count: number }>(
+      'SELECT rating_avg, rating_count FROM products WHERE id = $1',
+      [p.id],
+    );
     const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } as Record<1 | 2 | 3 | 4 | 5, number>;
     const fit = { runs_small: 0, true_to_size: 0, runs_large: 0 };
     for (const s of stats) {
@@ -286,8 +326,13 @@ export class ReviewService {
 
     let viewerInfo = null;
     if (viewer) {
-      const mine = await this.ctx.db.one<{ id: string }>('SELECT id FROM reviews WHERE product_id = $1 AND customer_id = $2', [p.id, viewer.id]);
-      const blocked = mine ? 'You have already reviewed this product.' : await this.blocker(this.ctx.db.pool, viewer.id, p.id);
+      const mine = await this.ctx.db.one<{ id: string }>(
+        'SELECT id FROM reviews WHERE product_id = $1 AND customer_id = $2',
+        [p.id, viewer.id],
+      );
+      const blocked = mine
+        ? 'You have already reviewed this product.'
+        : await this.blocker(this.ctx.db.pool, viewer.id, p.id);
       viewerInfo = { canReview: !blocked, reason: blocked, myReviewId: mine?.id ?? null };
     }
     return {
@@ -305,7 +350,12 @@ export class ReviewService {
   }
 
   /** A customer's own reviews, or (staff) reviews by status. */
-  async moderationList(filter: { customerId?: string; status?: ReviewStatus }, staff: boolean, cursor: string | null, limit: number): Promise<{ items: OwnReview[]; nextCursor: string | null }> {
+  async moderationList(
+    filter: { customerId?: string; status?: ReviewStatus },
+    staff: boolean,
+    cursor: string | null,
+    limit: number,
+  ): Promise<{ items: OwnReview[]; nextCursor: string | null }> {
     const params: unknown[] = [];
     const where: string[] = [];
     if (filter.customerId) {
@@ -321,7 +371,9 @@ export class ReviewService {
       where.push(`r.id < $${params.length}`);
     }
     params.push(limit + 1);
-    const rows = await this.ctx.db.query<Row & { email: string; slug: string; product_name: string; sized: boolean; image: string | null }>(
+    const rows = await this.ctx.db.query<
+      Row & { email: string; slug: string; product_name: string; sized: boolean; image: string | null }
+    >(
       `SELECT r.*, c.name AS author_name, c.email, p.slug, p.name AS product_name, p.sized,
               (SELECT url FROM product_images WHERE product_id = p.id ORDER BY position LIMIT 1) AS image
          FROM reviews r JOIN customers c ON c.id = r.customer_id JOIN products p ON p.id = r.product_id
@@ -336,7 +388,8 @@ export class ReviewService {
         status: r.status,
         heldFor: r.held_for,
         hiddenReason: r.hidden_reason,
-        editableUntil: r.status === 'hidden' ? null : new Date(r.created_at.getTime() + REVIEW_EDIT_DAYS * day).toISOString(),
+        editableUntil:
+          r.status === 'hidden' ? null : new Date(r.created_at.getTime() + REVIEW_EDIT_DAYS * day).toISOString(),
         product: { id: r.product_id, slug: r.slug, name: r.product_name, image: r.image ?? '', sized: r.sized },
         customer: staff ? { id: r.customer_id, name: r.author_name, email: r.email } : null,
       })),

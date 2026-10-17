@@ -35,7 +35,13 @@ export async function refundable(db: Queryable, orderId: string): Promise<number
   return r ? toCents(r.paid) - toCents(r.refunded) : 0;
 }
 
-export async function payOut(ctx: AppContext, tx: Queryable, input: RefundInput, now: Date, opts: { skipLimit?: boolean } = {}) {
+export async function payOut(
+  ctx: AppContext,
+  tx: Queryable,
+  input: RefundInput,
+  now: Date,
+  opts: { skipLimit?: boolean } = {},
+) {
   if (input.amountCents <= 0) return null;
   const { rows: pays } = await tx.query<PaymentRow>(
     'SELECT intent_id, status, amount_captured, amount_refunded FROM payments WHERE order_id = $1 FOR UPDATE',
@@ -44,13 +50,26 @@ export async function payOut(ctx: AppContext, tx: Queryable, input: RefundInput,
   const pay = pays[0];
   const left = await refundable(tx, input.orderId);
   if (!opts.skipLimit && input.amountCents > left) {
-    throw new AppError('refund_limit_exceeded', `Only ${fromCents(Math.max(left, 0))} can still be refunded on this order.`);
+    throw new AppError(
+      'refund_limit_exceeded',
+      `Only ${fromCents(Math.max(left, 0))} can still be refunded on this order.`,
+    );
   }
   const amount = fromCents(input.amountCents);
   const { rows } = await tx.query<{ id: string }>(
     `INSERT INTO refunds (order_id, return_id, kind, method, amount, reason, actor_id, actor_role, created_at)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
-    [input.orderId, input.returnId ?? null, input.kind, input.method, amount, input.reason, input.actor.id, input.actor.role, now],
+    [
+      input.orderId,
+      input.returnId ?? null,
+      input.kind,
+      input.method,
+      amount,
+      input.reason,
+      input.actor.id,
+      input.actor.role,
+      now,
+    ],
   );
   const refundId = rows[0]!.id;
 
@@ -60,7 +79,8 @@ export async function payOut(ctx: AppContext, tx: Queryable, input: RefundInput,
   // The card never takes back more than it was charged (the provider would refuse), so anything over goes to credit.
   if (input.method === 'card') toCard = Math.min(input.amountCents, Math.max(cardRoom, 0));
   // Planted bug: store_credit_double.
-  else if (captured && (await ctx.bugs.enabled('store_credit_double', tx))) toCard = Math.min(input.amountCents, Math.max(cardRoom, 0));
+  else if (captured && (await ctx.bugs.enabled('store_credit_double', tx)))
+    toCard = Math.min(input.amountCents, Math.max(cardRoom, 0));
   const toCredit = input.method === 'store_credit' ? input.amountCents : input.amountCents - toCard;
 
   if (toCard > 0 && pay) {

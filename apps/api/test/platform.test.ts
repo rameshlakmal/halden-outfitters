@@ -15,7 +15,12 @@ describe('errors', () => {
     expect(res.statusCode).toBe(404);
     expect(res.headers['content-type']).toMatch(/^application\/problem\+json/);
     const body = json(res);
-    expect(body).toMatchObject({ code: 'route_not_found', status: 404, title: expect.any(String), detail: expect.any(String) });
+    expect(body).toMatchObject({
+      code: 'route_not_found',
+      status: 404,
+      title: expect.any(String),
+      detail: expect.any(String),
+    });
     expect(body.requestId).toBe(res.headers['x-request-id']);
   });
 
@@ -52,7 +57,12 @@ describe('cross-site request defences', () => {
 
   it('allow reads from anywhere and changes without an Origin (API clients)', async () => {
     expect((await new Client(t.app).get('/categories', { origin: 'https://evil.example' })).statusCode).toBe(200);
-    const res = await t.app.inject({ method: 'POST', url: '/api/v1/auth/logout', headers: { 'content-type': 'application/json' }, payload: '{}' });
+    const res = await t.app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/logout',
+      headers: { 'content-type': 'application/json' },
+      payload: '{}',
+    });
     expect(res.statusCode).toBe(200);
   });
 

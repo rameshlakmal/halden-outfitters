@@ -29,7 +29,11 @@ describe('needs a session', () => {
     ['PATCH', '/account/profile'],
     ['POST', '/account/password'],
   ] as const)('%s %s', async (method, url) => {
-    const res = await new Client(t.app).req(method, url, method === 'GET' ? undefined : { name: 'x', currentPassword: 'x', newPassword: 'xxxxxxxxxxxx' });
+    const res = await new Client(t.app).req(
+      method,
+      url,
+      method === 'GET' ? undefined : { name: 'x', currentPassword: 'x', newPassword: 'xxxxxxxxxxxx' },
+    );
     expect(res.statusCode).toBe(401);
     expect(json(res).code).toBe('unauthenticated');
   });
@@ -45,13 +49,26 @@ describe('profile and password', () => {
     const laptop = new Client(t.app);
     await laptop.login('maya@halden.test', PASSWORDS.shopper);
 
-    const wrong = await maya.post('/account/password', { currentPassword: 'not my password', newPassword: 'a brand new password' });
+    const wrong = await maya.post('/account/password', {
+      currentPassword: 'not my password',
+      newPassword: 'a brand new password',
+    });
     expect(json(wrong).errors[0].path).toBe('currentPassword');
 
-    const same = await maya.post('/account/password', { currentPassword: PASSWORDS.shopper, newPassword: PASSWORDS.shopper });
+    const same = await maya.post('/account/password', {
+      currentPassword: PASSWORDS.shopper,
+      newPassword: PASSWORDS.shopper,
+    });
     expect(json(same).errors[0].path).toBe('newPassword');
 
-    expect((await maya.post('/account/password', { currentPassword: PASSWORDS.shopper, newPassword: 'a brand new password' })).statusCode).toBe(200);
+    expect(
+      (
+        await maya.post('/account/password', {
+          currentPassword: PASSWORDS.shopper,
+          newPassword: 'a brand new password',
+        })
+      ).statusCode,
+    ).toBe(200);
     expect(json(await maya.get('/auth/session')).customer).not.toBeNull();
     expect(json(await laptop.get('/auth/session')).customer).toBeNull();
   });
@@ -101,17 +118,25 @@ describe('address book', () => {
 
   it('the first address of a new customer becomes the default', async () => {
     const c = new Client(t.app);
-    await c.post('/auth/register', { name: 'Lena Moss', email: 'lena@example.com', password: 'a long walk in the woods' });
+    await c.post('/auth/register', {
+      name: 'Lena Moss',
+      email: 'lena@example.com',
+      password: 'a long walk in the woods',
+    });
     const list = json(await c.post('/account/addresses', address())).items;
     expect(list[0]).toMatchObject({ isDefault: true, countryCode: 'US' });
   });
 
   it('a new default replaces the old one: always exactly one', async () => {
     const list = json(await maya.post('/account/addresses', address({ isDefault: true }))).items;
-    expect(list.filter((a: { isDefault: boolean }) => a.isDefault).map((a: { city: string }) => a.city)).toEqual(['Eugene']);
+    expect(list.filter((a: { isDefault: boolean }) => a.isDefault).map((a: { city: string }) => a.city)).toEqual([
+      'Eugene',
+    ]);
     const bend = list.find((a: { city: string }) => a.city === 'Bend');
     const after = json(await maya.post(`/account/addresses/${bend.id}/default`)).items;
-    expect(after.filter((a: { isDefault: boolean }) => a.isDefault).map((a: { city: string }) => a.city)).toEqual(['Bend']);
+    expect(after.filter((a: { isDefault: boolean }) => a.isDefault).map((a: { city: string }) => a.city)).toEqual([
+      'Bend',
+    ]);
   });
 
   it('removing the default promotes the newest remaining address', async () => {
@@ -128,7 +153,8 @@ describe('address book', () => {
   });
 
   it('holds at most 5 addresses', async () => {
-    for (const city of ['A-town', 'B-town', 'C-town']) expect((await maya.post('/account/addresses', address({ city }))).statusCode).toBe(201);
+    for (const city of ['A-town', 'B-town', 'C-town'])
+      expect((await maya.post('/account/addresses', address({ city }))).statusCode).toBe(201);
     const res = await maya.post('/account/addresses', address({ city: 'F-town' }));
     expect(res.statusCode).toBe(409);
     expect(json(res).code).toBe('address_limit_reached');
@@ -137,14 +163,27 @@ describe('address book', () => {
   it('two requests at once still stop at 5', async () => {
     await maya.post('/account/addresses', address({ city: 'C1' }));
     await maya.post('/account/addresses', address({ city: 'C2' }));
-    const results = await Promise.all([1, 2, 3].map((i) => maya.post('/account/addresses', address({ city: `R${i}` }))));
+    const results = await Promise.all(
+      [1, 2, 3].map((i) => maya.post('/account/addresses', address({ city: `R${i}` }))),
+    );
     expect(results.filter((r) => r.statusCode === 201)).toHaveLength(1);
     expect(json(await maya.get('/account/addresses')).items).toHaveLength(5);
   });
 
   it('checks every field and the country', async () => {
-    const res = await maya.post('/account/addresses', { name: '', line1: '', city: '', postcode: '1', countryCode: 'x', phone: 'call me' });
-    expect(json(res).errors.map((e: { path: string }) => e.path).sort()).toEqual(['city', 'countryCode', 'line1', 'name', 'phone', 'postcode']);
+    const res = await maya.post('/account/addresses', {
+      name: '',
+      line1: '',
+      city: '',
+      postcode: '1',
+      countryCode: 'x',
+      phone: 'call me',
+    });
+    expect(
+      json(res)
+        .errors.map((e: { path: string }) => e.path)
+        .sort(),
+    ).toEqual(['city', 'countryCode', 'line1', 'name', 'phone', 'postcode']);
     expect(json(await maya.post('/account/addresses', address({ countryCode: 'ZZ' }))).errors[0]).toEqual({
       path: 'countryCode',
       message: 'Choose a country from the list.',
@@ -163,9 +202,16 @@ describe('address book', () => {
 
 describe('QA lab', () => {
   it('shows mail for addresses testers create, but hides the demo accounts from non-admins', async () => {
-    await new Client(t.app).post('/auth/register', { name: 'Lena Moss', email: 'lena@example.com', password: 'a long walk in the woods' });
+    await new Client(t.app).post('/auth/register', {
+      name: 'Lena Moss',
+      email: 'lena@example.com',
+      password: 'a long walk in the woods',
+    });
     const inbox = json(await new Client(t.app).get('/qa/inbox?email=lena@example.com')).items;
-    expect(inbox[0]).toMatchObject({ template: 'verify_email', links: [expect.stringContaining('/verify-email?token=')] });
+    expect(inbox[0]).toMatchObject({
+      template: 'verify_email',
+      links: [expect.stringContaining('/verify-email?token=')],
+    });
 
     await new Client(t.app).post('/auth/forgot-password', { email: 'maya@halden.test' });
     expect(json(await new Client(t.app).get('/qa/inbox?email=maya@halden.test')).items).toEqual([]);

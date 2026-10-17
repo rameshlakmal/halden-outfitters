@@ -24,7 +24,9 @@ export async function withIdempotency<T>(
     throw new AppError('idempotency_key_missing', 'Send an Idempotency-Key header (8 to 100 letters, digits, - or _).');
   }
   const route = `${req.method} ${req.routeOptions.url}`;
-  const hash = createHash('sha256').update(JSON.stringify(req.body ?? null)).digest('hex');
+  const hash = createHash('sha256')
+    .update(JSON.stringify(req.body ?? null))
+    .digest('hex');
 
   try {
     await db.query('INSERT INTO idempotency_keys (customer_id, key, route, request_hash) VALUES ($1, $2, $3, $4)', [
@@ -65,12 +67,15 @@ export async function withIdempotency<T>(
     // Errors the client can see (declined card, stock gone) are remembered like successes, so a retry with the
     // same key gets the same answer. Anything unexpected frees the key for a real retry.
     if (err instanceof AppError) {
-      await db.query('UPDATE idempotency_keys SET status_code = $3, response = $4 WHERE customer_id = $1 AND key = $2', [
-        customerId,
-        key,
-        err.status,
-        JSON.stringify({ __error: { code: err.code, message: err.message, extra: err.extra } }),
-      ]);
+      await db.query(
+        'UPDATE idempotency_keys SET status_code = $3, response = $4 WHERE customer_id = $1 AND key = $2',
+        [
+          customerId,
+          key,
+          err.status,
+          JSON.stringify({ __error: { code: err.code, message: err.message, extra: err.extra } }),
+        ],
+      );
     } else {
       await db.query('DELETE FROM idempotency_keys WHERE customer_id = $1 AND key = $2', [customerId, key]);
     }
@@ -80,6 +85,7 @@ export async function withIdempotency<T>(
 
 /** A stored error response is replayed as the same AppError. */
 export function replayError(stored: unknown): void {
-  const e = (stored as { __error?: { code: AppError['code']; message: string; extra: AppError['extra'] } } | null)?.__error;
+  const e = (stored as { __error?: { code: AppError['code']; message: string; extra: AppError['extra'] } } | null)
+    ?.__error;
   if (e) throw new AppError(e.code, e.message, e.extra);
 }

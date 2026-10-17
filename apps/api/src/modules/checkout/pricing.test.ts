@@ -20,8 +20,20 @@ const pct = (value: string, extra: Partial<PricingCoupon> = {}): PricingCoupon =
 
 describe('totals', () => {
   it('adds lines, shipping under the threshold and 8% tax on goods', () => {
-    const r = price({ lines: [line('1', '32.00'), line('2', '28.00')], coupon: null, rate: DOMESTIC, taxRatePercent: 8 });
-    expect(r).toMatchObject({ subtotal: 6000, discount: 0, shipping: 795, tax: 480, total: 7275, toFreeShipping: 1500 });
+    const r = price({
+      lines: [line('1', '32.00'), line('2', '28.00')],
+      coupon: null,
+      rate: DOMESTIC,
+      taxRatePercent: 8,
+    });
+    expect(r).toMatchObject({
+      subtotal: 6000,
+      discount: 0,
+      shipping: 795,
+      tax: 480,
+      total: 7275,
+      toFreeShipping: 1500,
+    });
   });
 
   it('ships free from the threshold, counted after the discount', () => {
@@ -71,11 +83,18 @@ describe('coupons', () => {
 
   it('can include sale items when the coupon allows it', () => {
     const lines = [line('1', '100.00', 1, 1, true)];
-    expect(price({ lines, coupon: pct('10', { excludesSaleItems: false }), rate: DOMESTIC, taxRatePercent: 8 }).discount).toBe(1000);
+    expect(
+      price({ lines, coupon: pct('10', { excludesSaleItems: false }), rate: DOMESTIC, taxRatePercent: 8 }).discount,
+    ).toBe(1000);
   });
 
   it('free_shipping makes the chosen method free but discounts nothing', () => {
-    const coupon: PricingCoupon = { kind: 'free_shipping', value: '0', excludesSaleItems: true, excludedCategoryIds: [] };
+    const coupon: PricingCoupon = {
+      kind: 'free_shipping',
+      value: '0',
+      excludesSaleItems: true,
+      excludedCategoryIds: [],
+    };
     const r = price({ lines: [line('1', '20.00')], coupon, rate: ROW, taxRatePercent: 8 });
     expect(r).toMatchObject({ discount: 0, shipping: 0, toFreeShipping: null });
   });
@@ -101,7 +120,12 @@ describe('allocations', () => {
   });
 
   it('gives an ineligible line no discount but its share of the tax', () => {
-    const r = price({ lines: [line('1', '100.00', 1, 1, true), line('2', '100.00')], coupon: pct('50'), rate: DOMESTIC, taxRatePercent: 8 });
+    const r = price({
+      lines: [line('1', '100.00', 1, 1, true), line('2', '100.00')],
+      coupon: pct('50'),
+      rate: DOMESTIC,
+      taxRatePercent: 8,
+    });
     expect(r.lines[0]).toMatchObject({ discount: 0, tax: 800 });
     expect(r.lines[1]).toMatchObject({ discount: 5000, tax: 400 });
   });
@@ -109,14 +133,26 @@ describe('allocations', () => {
 
 describe('Halden Points', () => {
   it('takes 5.00 per 100 points off before tax, spread over the lines', () => {
-    const r = price({ lines: [line('1', '60.00'), line('2', '40.00')], coupon: null, rate: DOMESTIC, taxRatePercent: 8, points: 300 });
+    const r = price({
+      lines: [line('1', '60.00'), line('2', '40.00')],
+      coupon: null,
+      rate: DOMESTIC,
+      taxRatePercent: 8,
+      points: 300,
+    });
     expect(r).toMatchObject({ subtotal: 10_000, pointsDiscount: 1500, tax: 680, total: 10_000 - 1500 + 680 });
     expect(r.lines.map((l) => l.points)).toEqual([900, 600]);
     expect(r.lines.reduce((n, l) => n + l.tax, 0)).toBe(r.tax);
   });
 
   it('never takes more than half of the subtotal after the coupon', () => {
-    const r = price({ lines: [line('1', '28.00')], coupon: pct('10'), rate: DOMESTIC, taxRatePercent: 8, points: 2000 });
+    const r = price({
+      lines: [line('1', '28.00')],
+      coupon: pct('10'),
+      rate: DOMESTIC,
+      taxRatePercent: 8,
+      points: 2000,
+    });
     // 25.20 after the coupon: half is 12.60, so two 5.00 blocks.
     expect(r.pointsDiscount).toBe(1000);
   });

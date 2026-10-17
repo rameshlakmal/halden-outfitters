@@ -16,7 +16,8 @@ describe('register', () => {
     const res = await c.post('/auth/register', { ...NEW, email: '  Lena@Example.COM ' });
     expect(res.statusCode).toBe(201);
     expect(json(res).customer).toMatchObject({ email: 'lena@example.com', role: 'customer', emailVerified: false });
-    const session = res.cookies.find((k) => k.name === 'halden_session') as { httpOnly?: boolean; sameSite?: string } | undefined;
+    const session = res.cookies.find((k) => k.name === 'halden_session') as
+      { httpOnly?: boolean; sameSite?: string } | undefined;
     expect(session).toMatchObject({ httpOnly: true, sameSite: 'Lax' });
     expect(json(await c.get('/auth/session')).customer.email).toBe('lena@example.com');
     const mail = await lastEmail(t.db, 'lena@example.com', 'verify_email');
@@ -25,7 +26,9 @@ describe('register', () => {
 
   it('stores only an argon2id hash of the password', async () => {
     await new Client(t.app).post('/auth/register', NEW);
-    const row = await t.db.one<{ password_hash: string }>('SELECT password_hash FROM customers WHERE email = $1', [NEW.email]);
+    const row = await t.db.one<{ password_hash: string }>('SELECT password_hash FROM customers WHERE email = $1', [
+      NEW.email,
+    ]);
     expect(row?.password_hash).toMatch(/^\$argon2id\$/);
     expect(row?.password_hash).not.toContain(NEW.password);
   });
@@ -95,7 +98,10 @@ describe('login', () => {
 
   it('gives the same answer for a wrong password and an unknown email', async () => {
     const wrong = await new Client(t.app).post('/auth/login', { email: 'maya@halden.test', password: 'not it at all' });
-    const unknown = await new Client(t.app).post('/auth/login', { email: 'nobody@example.com', password: 'not it at all' });
+    const unknown = await new Client(t.app).post('/auth/login', {
+      email: 'nobody@example.com',
+      password: 'not it at all',
+    });
     expect(wrong.statusCode).toBe(401);
     expect(unknown.statusCode).toBe(401);
     expect(json(wrong).detail).toBe(json(unknown).detail);
@@ -124,16 +130,25 @@ describe('login', () => {
 
   it('never locks the shared demo accounts, so nobody can keep them locked', async () => {
     const c = new Client(t.app);
-    for (let i = 0; i < 8; i++) expect((await c.post('/auth/login', { email: 'jonas@halden.test', password: `wrong guess ${i}` })).statusCode).toBe(401);
-    expect((await c.post('/auth/login', { email: 'jonas@halden.test', password: PASSWORDS.shopper })).statusCode).toBe(200);
+    for (let i = 0; i < 8; i++)
+      expect(
+        (await c.post('/auth/login', { email: 'jonas@halden.test', password: `wrong guess ${i}` })).statusCode,
+      ).toBe(401);
+    expect((await c.post('/auth/login', { email: 'jonas@halden.test', password: PASSWORDS.shopper })).statusCode).toBe(
+      200,
+    );
   });
 
   it('a successful sign-in resets the count of wrong passwords', async () => {
     const c = new Client(t.app);
-    for (let i = 0; i < 4; i++) await c.post('/auth/login', { email: 'ari@halden.test', password: 'wrong wrong wrong' });
+    for (let i = 0; i < 4; i++)
+      await c.post('/auth/login', { email: 'ari@halden.test', password: 'wrong wrong wrong' });
     await c.login('ari@halden.test', PASSWORDS.shopper);
-    for (let i = 0; i < 4; i++) await c.post('/auth/login', { email: 'ari@halden.test', password: 'wrong wrong wrong' });
-    expect((await c.post('/auth/login', { email: 'ari@halden.test', password: PASSWORDS.shopper })).statusCode).toBe(200);
+    for (let i = 0; i < 4; i++)
+      await c.post('/auth/login', { email: 'ari@halden.test', password: 'wrong wrong wrong' });
+    expect((await c.post('/auth/login', { email: 'ari@halden.test', password: PASSWORDS.shopper })).statusCode).toBe(
+      200,
+    );
   });
 });
 
@@ -152,7 +167,9 @@ describe('sessions', () => {
     const c = new Client(t.app);
     await c.login('maya@halden.test', PASSWORDS.shopper);
     const token = c.cookies.get('halden_session')!;
-    const rows = await t.db.query("SELECT 1 FROM sessions WHERE encode(token_hash, 'escape') LIKE '%' || $1 || '%'", [token]);
+    const rows = await t.db.query("SELECT 1 FROM sessions WHERE encode(token_hash, 'escape') LIKE '%' || $1 || '%'", [
+      token,
+    ]);
     expect(rows).toHaveLength(0);
   });
 
@@ -186,7 +203,8 @@ describe('password reset', () => {
   it('sets the new password, signs out everywhere and lifts a lock', async () => {
     const phone = new Client(t.app);
     await phone.login('maya@halden.test', PASSWORDS.shopper);
-    for (let i = 0; i < 5; i++) await new Client(t.app).post('/auth/login', { email: 'maya@halden.test', password: 'wrong guess here' });
+    for (let i = 0; i < 5; i++)
+      await new Client(t.app).post('/auth/login', { email: 'maya@halden.test', password: 'wrong guess here' });
 
     await new Client(t.app).post('/auth/forgot-password', { email: 'maya@halden.test' });
     const token = tokenFrom((await lastEmail(t.db, 'maya@halden.test', 'password_reset'))!.body_text);
@@ -194,7 +212,10 @@ describe('password reset', () => {
     expect(res.statusCode).toBe(200);
 
     expect(json(await phone.get('/auth/session')).customer).toBeNull();
-    expect((await new Client(t.app).post('/auth/login', { email: 'maya@halden.test', password: PASSWORDS.shopper })).statusCode).toBe(401);
+    expect(
+      (await new Client(t.app).post('/auth/login', { email: 'maya@halden.test', password: PASSWORDS.shopper }))
+        .statusCode,
+    ).toBe(401);
     await new Client(t.app).login('maya@halden.test', 'new trail, new password');
     expect((await lastEmail(t.db, 'maya@halden.test'))?.template).toBe('password_changed');
   });
@@ -203,12 +224,20 @@ describe('password reset', () => {
     await new Client(t.app).post('/auth/forgot-password', { email: 'ari@halden.test' });
     const token = tokenFrom((await lastEmail(t.db, 'ari@halden.test', 'password_reset'))!.body_text);
     await t.advance(3601);
-    expect(json(await new Client(t.app).post('/auth/reset-password', { token, password: 'too late for this one' })).code).toBe('token_invalid');
+    expect(
+      json(await new Client(t.app).post('/auth/reset-password', { token, password: 'too late for this one' })).code,
+    ).toBe('token_invalid');
 
     await new Client(t.app).post('/auth/forgot-password', { email: 'ari@halden.test' });
     const fresh = tokenFrom((await lastEmail(t.db, 'ari@halden.test', 'password_reset'))!.body_text);
-    expect((await new Client(t.app).post('/auth/reset-password', { token: fresh, password: 'right on time today' })).statusCode).toBe(200);
-    expect((await new Client(t.app).post('/auth/reset-password', { token: fresh, password: 'and once more again' })).statusCode).toBe(410);
+    expect(
+      (await new Client(t.app).post('/auth/reset-password', { token: fresh, password: 'right on time today' }))
+        .statusCode,
+    ).toBe(200);
+    expect(
+      (await new Client(t.app).post('/auth/reset-password', { token: fresh, password: 'and once more again' }))
+        .statusCode,
+    ).toBe(410);
   });
 
   it('checks the new password against the policy', async () => {
@@ -217,7 +246,9 @@ describe('password reset', () => {
     const res = await new Client(t.app).post('/auth/reset-password', { token, password: 'qwertyuiop' });
     expect(json(res).errors[0].path).toBe('password');
     // The failed attempt did not spend the link.
-    expect((await new Client(t.app).post('/auth/reset-password', { token, password: 'a much better password' })).statusCode).toBe(200);
+    expect(
+      (await new Client(t.app).post('/auth/reset-password', { token, password: 'a much better password' })).statusCode,
+    ).toBe(200);
   });
 });
 
@@ -227,10 +258,16 @@ describe('rate limits', () => {
     try {
       const statuses = [];
       for (let i = 0; i < 11; i++) {
-        statuses.push((await new Client(limited.app).post('/auth/login', { email: 'nobody@example.com', password: 'guess guess' })).statusCode);
+        statuses.push(
+          (await new Client(limited.app).post('/auth/login', { email: 'nobody@example.com', password: 'guess guess' }))
+            .statusCode,
+        );
       }
       expect(statuses.slice(0, 10).every((s) => s === 401)).toBe(true);
-      const last = await new Client(limited.app).post('/auth/login', { email: 'nobody@example.com', password: 'guess guess' });
+      const last = await new Client(limited.app).post('/auth/login', {
+        email: 'nobody@example.com',
+        password: 'guess guess',
+      });
       expect(last.statusCode).toBe(429);
       expect(Number(last.headers['retry-after'])).toBeGreaterThan(0);
     } finally {

@@ -17,7 +17,11 @@ describe('product admin with optimistic locking', () => {
     const id = await productId(t.db, 'titanium-pot');
     const loaded = await a.get(`/staff/products/${id}`);
     expect(loaded.headers.etag).toBe('"1"');
-    expect(json(loaded)).toMatchObject({ version: 1, price: '54.00', stock: { onHand: 18, reserved: 0, available: 18 } });
+    expect(json(loaded)).toMatchObject({
+      version: 1,
+      price: '54.00',
+      stock: { onHand: 18, reserved: 0, available: 18 },
+    });
 
     const missing = await a.patch(`/staff/products/${id}`, { price: '49.00' });
     expect(missing.statusCode).toBe(428);
@@ -39,10 +43,21 @@ describe('product admin with optimistic locking', () => {
     const id = await productId(t.db, 'titanium-pot');
     const bad = await a.req('PATCH', `/staff/products/${id}`, { compareAtPrice: '50.00' }, { 'if-match': '1' });
     expect(json(bad).errors[0].path).toBe('compareAtPrice');
-    const res = await a.req('PATCH', `/staff/products/${id}`, { compareAtPrice: '60.00' }, { 'if-match': '1', 'x-request-id': 'req-test-1234' });
+    const res = await a.req(
+      'PATCH',
+      `/staff/products/${id}`,
+      { compareAtPrice: '60.00' },
+      { 'if-match': '1', 'x-request-id': 'req-test-1234' },
+    );
     expect(res.statusCode).toBe(200);
     const log = json(await a.get(`/staff/audit?entityType=product&entityId=${id}`)).items;
-    expect(log[0]).toMatchObject({ action: 'product.update', before: { compareAtPrice: null }, after: { compareAtPrice: '60.00' }, requestId: 'req-test-1234', actor: { role: 'admin' } });
+    expect(log[0]).toMatchObject({
+      action: 'product.update',
+      before: { compareAtPrice: null },
+      after: { compareAtPrice: '60.00' },
+      requestId: 'req-test-1234',
+      actor: { role: 'admin' },
+    });
   });
 
   it('only admin edits products; warehouse and support can read', async () => {
@@ -50,7 +65,9 @@ describe('product admin with optimistic locking', () => {
     const support = await signedIn(t, 'support@halden.test', true);
     const warehouse = await signedIn(t, 'warehouse@halden.test', true);
     expect((await support.get(`/staff/products/${id}`)).statusCode).toBe(200);
-    expect((await warehouse.req('PATCH', `/staff/products/${id}`, { price: '1.00' }, { 'if-match': '1' })).statusCode).toBe(403);
+    expect(
+      (await warehouse.req('PATCH', `/staff/products/${id}`, { price: '1.00' }, { 'if-match': '1' })).statusCode,
+    ).toBe(403);
     const shopper = await newCustomer(t);
     expect((await shopper.client.get('/staff/products')).statusCode).toBe(403);
   });
@@ -62,7 +79,10 @@ describe('product admin with optimistic locking', () => {
     const a = await admin();
     const id = await productId(t.db, 'titanium-pot');
     await a.req('PATCH', `/staff/products/${id}`, { price: '40.00' }, { 'if-match': '1' });
-    expect(json(await c.client.get(`/orders/${orderId}`)).lines[0]).toMatchObject({ unitPrice: '54.00', lineTotal: '108.00' });
+    expect(json(await c.client.get(`/orders/${orderId}`)).lines[0]).toMatchObject({
+      unitPrice: '54.00',
+      lineTotal: '108.00',
+    });
 
     await bug(t, 'price_edit_rewrites_orders');
     await a.req('PATCH', `/staff/products/${id}`, { price: '45.00' }, { 'if-match': '2' });
@@ -76,8 +96,14 @@ describe('stock', () => {
   it('restocks and writes off, with a movement and an audit entry each', async () => {
     const w = await signedIn(t, 'warehouse@halden.test', true);
     const id = await productId(t.db, 'titanium-pot');
-    expect(json(await w.post(`/staff/products/${id}/stock`, { change: 5, reason: 'restock', note: 'Delivery 42' })).stock.onHand).toBe(23);
-    expect(json(await w.post(`/staff/products/${id}/stock`, { change: -2, reason: 'write_off', note: 'Dented' })).stock.onHand).toBe(21);
+    expect(
+      json(await w.post(`/staff/products/${id}/stock`, { change: 5, reason: 'restock', note: 'Delivery 42' })).stock
+        .onHand,
+    ).toBe(23);
+    expect(
+      json(await w.post(`/staff/products/${id}/stock`, { change: -2, reason: 'write_off', note: 'Dented' })).stock
+        .onHand,
+    ).toBe(21);
     const moves = json(await w.get(`/staff/products/${id}/movements`)).items;
     expect(moves.slice(0, 2)).toMatchObject([
       { change: -2, reason: 'write_off', note: 'Dented', by: 'Tomas Berg' },
@@ -85,7 +111,11 @@ describe('stock', () => {
     ]);
     expect((await w.post(`/staff/products/${id}/stock`, { change: -1, reason: 'restock' })).statusCode).toBe(400);
     const a = await admin();
-    expect(json(await a.get(`/staff/audit?entityType=product&entityId=${id}`)).items.map((e: { action: string }) => e.action)).toEqual(['stock.write_off', 'stock.restock']);
+    expect(
+      json(await a.get(`/staff/audit?entityType=product&entityId=${id}`)).items.map(
+        (e: { action: string }) => e.action,
+      ),
+    ).toEqual(['stock.write_off', 'stock.restock']);
   });
 
   it('cannot remove stock that is held for orders', async () => {
@@ -122,7 +152,9 @@ describe('settings', () => {
 
   it('a new shipping rate and tax rate apply to new quotes', async () => {
     const a = await admin();
-    expect(json(await a.put('/staff/shipping-rates/domestic/standard', { price: '5.95', freeFrom: '60.00' }))).toMatchObject({ price: '5.95', freeFrom: '60.00' });
+    expect(
+      json(await a.put('/staff/shipping-rates/domestic/standard', { price: '5.95', freeFrom: '60.00' })),
+    ).toMatchObject({ price: '5.95', freeFrom: '60.00' });
     expect(json(await a.put('/staff/tax', { ratePercent: '10' })).ratePercent).toBe('10');
     const c = await newCustomer(t);
     await fill(t, c.client, [['insulated-mug', 1]]);
@@ -158,14 +190,28 @@ describe('customers and roles', () => {
 
 describe('audit trail of staff actions', () => {
   it('records warehouse steps, return decisions and goodwill refunds', async () => {
-    const d = await deliveredOrder(t, [['titanium-pot', 1], ['headlamp-400', 1]]);
+    const d = await deliveredOrder(t, [
+      ['titanium-pot', 1],
+      ['headlamp-400', 1],
+    ]);
     const productIdPot = json(await d.client.get(`/orders/${d.orderId}`)).lines[0].productId;
-    const r = json(await d.client.post(`/orders/${d.orderId}/returns`, { items: [{ productId: productIdPot, qty: 1 }], reason: 'changed_mind' }));
+    const r = json(
+      await d.client.post(`/orders/${d.orderId}/returns`, {
+        items: [{ productId: productIdPot, qty: 1 }],
+        reason: 'changed_mind',
+      }),
+    );
     const support = await signedIn(t, 'support@halden.test', true);
     await support.post(`/staff/returns/${r.id}/approve`);
-    await support.post(`/staff/orders/${d.orderId}/goodwill`, { amount: '5.00', reason: 'Late' }, { 'idempotency-key': 'goodwill-key-1' });
+    await support.post(
+      `/staff/orders/${d.orderId}/goodwill`,
+      { amount: '5.00', reason: 'Late' },
+      { 'idempotency-key': 'goodwill-key-1' },
+    );
     const a = await admin();
-    const orderLog = json(await a.get(`/staff/audit?entityType=order&entityId=${d.orderId}`)).items.map((e: { action: string }) => e.action);
+    const orderLog = json(await a.get(`/staff/audit?entityType=order&entityId=${d.orderId}`)).items.map(
+      (e: { action: string }) => e.action,
+    );
     expect(orderLog).toEqual(['refund.goodwill', 'order.deliver', 'order.ship', 'order.pack']);
     const returnLog = json(await a.get(`/staff/audit?entityType=return&entityId=${r.id}`)).items;
     expect(returnLog[0]).toMatchObject({ action: 'return.approve', actor: { role: 'support' } });
@@ -175,7 +221,9 @@ describe('audit trail of staff actions', () => {
     const a = await admin();
     await a.put('/qa/bugs/coupon_twice', { enabled: true });
     await a.put('/qa/clock', { offsetSeconds: 3600 });
-    const log = json(await a.get('/staff/audit')).items.map((e: { action: string; entityId: string }) => `${e.action} ${e.entityId}`);
+    const log = json(await a.get('/staff/audit')).items.map(
+      (e: { action: string; entityId: string }) => `${e.action} ${e.entityId}`,
+    );
     expect(log.slice(0, 2)).toEqual(['qa.clock clock_offset_seconds', 'qa.bug_on coupon_twice']);
   });
 });

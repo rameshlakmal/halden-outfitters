@@ -87,8 +87,10 @@ export const BUGS = [
     key: 'return_window_restarts',
     phase: 3,
     title: 'A cancelled return restarts the window',
-    description: 'The 30-day return window is counted from the latest return request instead of from delivery, so starting and cancelling a return buys another 30 days.',
-    howToSee: 'Move the clock 25 days after delivery, start a return and cancel it. Move 10 more days: a new return is still accepted.',
+    description:
+      'The 30-day return window is counted from the latest return request instead of from delivery, so starting and cancelling a return buys another 30 days.',
+    howToSee:
+      'Move the clock 25 days after delivery, start a return and cancel it. Move 10 more days: a new return is still accepted.',
     rule: 'Returns are requested within 30 days of delivery',
   },
   {
@@ -144,7 +146,8 @@ export const BUGS = [
     phase: 4,
     title: 'Price edits rewrite past orders',
     description: 'Changing a product price also changes the price on order lines already placed.',
-    howToSee: 'Change the price of a product someone has ordered: their order lines no longer add up to the order subtotal.',
+    howToSee:
+      'Change the price of a product someone has ordered: their order lines no longer add up to the order subtotal.',
     rule: 'An order subtotal is the sum of its lines',
   },
 ] as const;
