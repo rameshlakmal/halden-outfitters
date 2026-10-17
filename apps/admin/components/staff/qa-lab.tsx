@@ -4,7 +4,7 @@
 import { SHOP_URL } from '@/lib/shop';
 import { ArrowClockwise, EnvelopeSimple } from '@phosphor-icons/react';
 import { useQueryClient } from '@tanstack/react-query';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useEffect, useState } from 'react';
 import { post, put } from '@/lib/api';
 import { formatDateTime } from '@/lib/orders';
 import { errorMessage } from '../account/forms';
@@ -91,46 +91,51 @@ function BugRow({ bug: b }: { bug: Bug }) {
   const qc = useQueryClient();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
-  const setBug = (next: Bug) =>
-    qc.setQueryData<{ items: Bug[] }>(
-      staffKeys.bugs,
-      (old) => old && { items: old.items.map((x) => (x.key === b.key ? next : x)) },
-    );
+  // The switch's own state, set in the click itself: the query cache tells React about changes a moment later,
+  // and a controlled checkbox that doesn't change during its click is put back by React. It follows the server's
+  // value whenever no save is under way.
+  const [on, setOn] = useState(b.enabled);
+  useEffect(() => {
+    if (!busy) setOn(b.enabled);
+  }, [b.enabled, busy]);
   const toggle = async () => {
-    const before = b;
-    // Flip at once (synchronously, so the switch answers the click), then cancel any list refresh already on its
-    // way, which would otherwise put the old value back. Put it back ourselves if the API refuses.
-    setBug({ ...b, enabled: !b.enabled });
-    void qc.cancelQueries({ queryKey: staffKeys.bugs }, { revert: false });
+    const next = !on;
+    setOn(next);
     setBusy(true);
+    // A list refresh already on its way would bring back the old value: cancel it, keeping what's shown.
+    void qc.cancelQueries({ queryKey: staffKeys.bugs }, { revert: false });
     try {
-      const updated = await put<Bug>(`/qa/bugs/${b.key}`, { enabled: !before.enabled });
-      setBug(updated);
+      const updated = await put<Bug>(`/qa/bugs/${b.key}`, { enabled: next });
+      qc.setQueryData<{ items: Bug[] }>(
+        staffKeys.bugs,
+        (old) => old && { items: old.items.map((x) => (x.key === b.key ? updated : x)) },
+      );
+      setOn(updated.enabled);
       toast.show(`${b.title}: ${updated.enabled ? 'on' : 'off'}`);
     } catch (err) {
-      setBug(before);
+      setOn(!next);
       toast.show(errorMessage(err), 'error');
     } finally {
       setBusy(false);
     }
   };
   return (
-    <li className={`grid gap-1.5 p-3 ${b.enabled ? 'bg-danger-soft' : ''}`} data-testid={`bug-${b.key}`}>
+    <li className={`grid gap-1.5 p-3 ${on ? 'bg-danger-soft' : ''}`} data-testid={`bug-${b.key}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="grid min-w-0 gap-0.5">
           <p className="font-semibold">{b.title}</p>
           <p className="font-mono text-[11px] text-ink-3">{b.key}</p>
         </div>
         <label className="flex min-h-9 shrink-0 cursor-pointer items-center gap-2 text-[13px] font-medium pointer-coarse:min-h-11">
-          <span className={b.enabled ? 'text-danger' : 'text-ink-3'}>{b.enabled ? 'On' : 'Off'}</span>
+          <span className={on ? 'text-danger' : 'text-ink-3'}>{on ? 'On' : 'Off'}</span>
           <input
             type="checkbox"
             role="switch"
-            checked={b.enabled}
+            checked={on}
             disabled={busy}
             onChange={() => void toggle()}
             className="size-5 accent-[var(--accent)]"
-            aria-label={`${b.title} ${b.enabled ? 'on' : 'off'}`}
+            aria-label={`${b.title} ${on ? 'on' : 'off'}`}
           />
         </label>
       </div>

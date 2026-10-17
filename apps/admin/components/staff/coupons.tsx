@@ -4,7 +4,7 @@
 import { formatAmount } from '@halden/money';
 import { Plus } from '@phosphor-icons/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useEffect, useState } from 'react';
 import { ApiError, get, patch, post } from '@/lib/api';
 import { formatDate } from '@/lib/orders';
 import { errorMessage } from '../account/forms';
@@ -51,32 +51,7 @@ const rules = (c: Coupon) =>
 
 export function Coupons() {
   const q = useCoupons();
-  const qc = useQueryClient();
-  const toast = useToast();
   const [editing, setEditing] = useState<Coupon | 'new' | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
-
-  const setCoupon = (next: Coupon) =>
-    qc.setQueryData<{ items: Coupon[] }>(
-      staffKeys.coupons,
-      (old) => old && { items: old.items.map((x) => (x.code === next.code ? next : x)) },
-    );
-  const toggle = async (c: Coupon) => {
-    // Flip at once (synchronously, so the switch answers the click), then cancel any list refresh already on its
-    // way, which would otherwise put the old value back. Put it back ourselves if the API refuses.
-    setCoupon({ ...c, active: !c.active });
-    void qc.cancelQueries({ queryKey: staffKeys.coupons }, { revert: false });
-    setBusy(c.code);
-    try {
-      setCoupon(await patch<Coupon>(`/staff/coupons/${c.code}`, { active: !c.active }));
-      toast.show(`${c.code} ${c.active ? 'switched off' : 'switched on'}`);
-    } catch (err) {
-      setCoupon(c);
-      toast.show(errorMessage(err), 'error');
-    } finally {
-      setBusy(null);
-    }
-  };
 
   const items = q.data?.items ?? [];
   return (
@@ -132,18 +107,7 @@ export function Coupons() {
                   <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${s.tone}`}>{s.label}</span>
                 </Td>
                 <Td className="text-right whitespace-nowrap">
-                  <label className="mr-2 inline-flex items-center gap-2 text-[13px] text-ink-2">
-                    <input
-                      type="checkbox"
-                      role="switch"
-                      checked={c.active}
-                      disabled={busy === c.code}
-                      onChange={() => void toggle(c)}
-                      className="size-4"
-                      aria-label={`${c.code} ${c.active ? 'on' : 'off'}`}
-                    />
-                    On
-                  </label>
+                  <CouponSwitch coupon={c} />
                   <Button size="sm" variant="outline" onClick={() => setEditing(c)}>
                     Edit
                   </Button>
@@ -399,5 +363,54 @@ function CouponForm({ coupon: c, onClose }: { coupon: Coupon | null; onClose: ()
         </div>
       </form>
     </Dialog>
+  );
+}
+
+/**
+ * The on/off switch of one coupon. It keeps its own state, set in the click itself: the query cache tells React about
+ * changes a moment later, and a controlled checkbox that doesn't change during its click is put back by React.
+ */
+function CouponSwitch({ coupon: c }: { coupon: Coupon }) {
+  const qc = useQueryClient();
+  const toast = useToast();
+  const [on, setOn] = useState(c.active);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (!busy) setOn(c.active);
+  }, [c.active, busy]);
+  const toggle = async () => {
+    const next = !on;
+    setOn(next);
+    setBusy(true);
+    // A list refresh already on its way would bring back the old value: cancel it, keeping what's shown.
+    void qc.cancelQueries({ queryKey: staffKeys.coupons }, { revert: false });
+    try {
+      const saved = await patch<Coupon>(`/staff/coupons/${c.code}`, { active: next });
+      qc.setQueryData<{ items: Coupon[] }>(
+        staffKeys.coupons,
+        (old) => old && { items: old.items.map((x) => (x.code === saved.code ? saved : x)) },
+      );
+      setOn(saved.active);
+      toast.show(`${c.code} ${saved.active ? 'switched on' : 'switched off'}`);
+    } catch (err) {
+      setOn(!next);
+      toast.show(errorMessage(err), 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <label className="mr-2 inline-flex items-center gap-2 text-[13px] text-ink-2">
+      <input
+        type="checkbox"
+        role="switch"
+        checked={on}
+        disabled={busy}
+        onChange={() => void toggle()}
+        className="size-4"
+        aria-label={`${c.code} ${on ? 'on' : 'off'}`}
+      />
+      On
+    </label>
   );
 }
