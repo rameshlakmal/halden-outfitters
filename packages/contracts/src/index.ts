@@ -6,3 +6,5 @@ export * from './account.ts';
 export * from './qa.ts';
 export * from './orders.ts';
 export * from './returns.ts';
+export * from './reviews.ts';
+export * from './staff.ts';

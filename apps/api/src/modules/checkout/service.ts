@@ -20,6 +20,7 @@ import { AppError, fieldError } from '../../core/errors.js';
 import { couponProblem, loadCoupon, toPricingCoupon, type CouponBugs } from '../promotions/coupons.js';
 import { PAYMENT_MINUTES } from '../orders/lifecycle.js';
 import { OrderService } from '../orders/service.js';
+import { lowStockCheck } from '../staff/service.js';
 import { luhnValid } from '../payments/haldenpay.js';
 import { balance, lockPoints, redeem } from '../loyalty/points.js';
 import { creditBalance, spendCredit } from '../loyalty/store-credit.js';
@@ -270,6 +271,7 @@ export class CheckoutService {
         await tx.query('INSERT INTO stock_reservations (order_id, product_id, qty, expires_at, created_at) VALUES ($1, $2, $3, $4, $5)', [
           id, l.productId, l.qty, expires, now,
         ]);
+        await lowStockCheck(this.ctx, tx, l.productId, now);
       }
       if (q._couponCode) {
         await tx.query('INSERT INTO coupon_redemptions (coupon_code, customer_id, order_id, created_at) VALUES ($1, $2, $3, $4)', [

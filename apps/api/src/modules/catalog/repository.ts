@@ -146,8 +146,8 @@ export class CatalogRepository {
   }
 
   findProduct(slug: string) {
-    return this.db.one<CardRow & { description: string; details: [string, string][]; returnable: boolean }>(
-      `SELECT ${CARD_SELECT()}, p.description, p.details, p.returnable ${CARD_FROM} WHERE p.slug = $1 AND p.active`,
+    return this.db.one<CardRow & { description: string; details: [string, string][]; returnable: boolean; sized: boolean }>(
+      `SELECT ${CARD_SELECT()}, p.description, p.details, p.returnable, p.sized ${CARD_FROM} WHERE p.slug = $1 AND p.active`,
       [slug],
     );
   }

@@ -49,6 +49,7 @@ export const Product = ProductCard.extend({
   details: z.array(z.tuple([z.string(), z.string()])),
   images: z.array(Image),
   returnable: z.boolean(),
+  sized: z.boolean().describe('Reviews can say how it fits'),
   related: z.array(ProductCard),
 }).meta({ id: 'Product' });
 export type Product = z.infer<typeof Product>;

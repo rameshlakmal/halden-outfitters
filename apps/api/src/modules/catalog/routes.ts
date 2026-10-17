@@ -78,6 +78,7 @@ export const catalogRoutes: FastifyPluginAsyncZod = async (app) => {
         details: row.details,
         images: images.length ? images : [card.image],
         returnable: row.returnable,
+        sized: row.sized,
         related: related.map(toCard),
       };
     },

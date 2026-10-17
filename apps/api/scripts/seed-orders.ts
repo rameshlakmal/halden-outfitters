@@ -10,7 +10,8 @@ import { RateLimiter } from '../src/core/rate-limit.js';
 import { CheckoutService } from '../src/modules/checkout/service.js';
 import { OrderService } from '../src/modules/orders/service.js';
 import { HaldenPay } from '../src/modules/payments/haldenpay.js';
-import { DEMO_ORDERS } from './seed-data.js';
+import { ReviewService } from '../src/modules/reviews/service.js';
+import { DEMO_ORDERS, DEMO_REVIEWS } from './seed-data.js';
 
 type Person = { id: string; name: string; email: string; role: CurrentUser['role'] };
 
@@ -78,5 +79,12 @@ export async function seedOrders(db: Db): Promise<number> {
   await db.query('UPDATE haldenpay.events SET delivered_at = now(), attempts = 1');
   // Orders whose return window has passed become completed now.
   await orders.sweep(new Date());
+
+  // Reviews by customers who received what they review (one waits for moderation: it has a link).
+  const reviews = new ReviewService(ctx);
+  for (const r of DEMO_REVIEWS) {
+    const slug = r.slug;
+    await reviews.create(slug, asUser(by(r.email)), { rating: r.rating, title: r.title, body: r.body, fit: null }, new Date(Date.now() - r.daysAgo * day));
+  }
   return DEMO_ORDERS.length;
 }

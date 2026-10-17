@@ -19,6 +19,8 @@ type Templates = {
   return_refunded: { name: string; returnId: string; amount: string; method: string; points: number; lines: string; link: string };
   return_expired: { name: string; returnId: string; link: string };
   goodwill_refund: { name: string; orderId: string; amount: string; method: string; reason: string; link: string };
+  review_hidden: { name: string; product: string; reason: string; link: string };
+  low_stock: { product: string; sku: string; available: number; threshold: number; link: string };
 };
 export type Template = keyof Templates;
 
@@ -82,6 +84,14 @@ const RENDER: { [K in Template]: (d: Templates[K]) => { subject: string; body: s
   return_expired: (d) => ({
     subject: `Return ${d.returnId} has expired`,
     body: `Hi ${d.name},\n\nThe label for return ${d.returnId} was not used within 14 days, so the return has closed. You can start a new one while the order is still in its return window.\n\n${d.link}`,
+  }),
+  review_hidden: (d) => ({
+    subject: `Your review of ${d.product} is hidden`,
+    body: `Hi ${d.name},\n\nWe have hidden your review of ${d.product}: ${d.reason}\n\nYou can delete it, or reply to this email if you think this is a mistake.\n\n${d.link}`,
+  }),
+  low_stock: (d) => ({
+    subject: `Low stock: ${d.product}`,
+    body: `${d.product} (${d.sku}) is down to ${d.available} available, at or under its threshold of ${d.threshold}.\n\n${d.link}`,
   }),
   goodwill_refund: (d) => ({
     subject: `A refund on order ${d.orderId}`,

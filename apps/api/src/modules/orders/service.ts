@@ -6,8 +6,9 @@
 //     lazily whenever the order is read or touched, and by the sweep, because the free hosting plan only runs a
 //     scheduled job once a day.
 //   - A delivered order becomes completed once its return window has passed and it has no open return.
-import type { CancelReason, Order, OrderStatus, OrderSummary, Role } from '@halden/contracts';
+import type { CancelReason, Order, OrderStatus, OrderSummary, ReturnStatus, Role } from '@halden/contracts';
 import type pg from 'pg';
+import { audit } from '../../core/audit.js';
 import type { CurrentUser } from '../../core/auth.js';
 import type { AppContext } from '../../core/context.js';
 import type { Queryable } from '../../core/db.js';
@@ -183,6 +184,7 @@ export class OrderService {
       }
       const actor = actorOf(user, o.customer_id);
       await this.release(tx, o, reason, note, actor, now, { voidPayment: true });
+      if (actor.kind === 'staff') await audit(tx, user, 'order.cancel', { type: 'order', id: orderId }, { before: { status: o.status }, after: { status: 'cancelled', reason, note } }, now);
       await queueEmail(
         tx,
         o.email,
@@ -240,6 +242,7 @@ export class OrderService {
       this.assertMove(o, 'packed');
       await tx.query("UPDATE orders SET status = 'packed', packed_at = $2, version = version + 1, updated_at = $2 WHERE id = $1", [orderId, now]);
       await this.event(tx, orderId, o.status, 'packed', actorOf(user), null, now);
+      await audit(tx, user, 'order.pack', { type: 'order', id: orderId }, { before: { status: o.status }, after: { status: 'packed' } }, now);
     });
   }
 
@@ -278,6 +281,7 @@ export class OrderService {
         [orderId, now, trackingNumber],
       );
       await this.event(tx, orderId, o.status, 'shipped', actorOf(user), `Tracking ${trackingNumber}`, now);
+      await audit(tx, user, 'order.ship', { type: 'order', id: orderId }, { before: { status: o.status }, after: { status: 'shipped', trackingNumber } }, now);
       await queueEmail(
         tx,
         o.email,
@@ -296,6 +300,7 @@ export class OrderService {
       // Planted bug: points_on_tax_shipping.
       await earnOnDelivery(tx, o, now, { onTaxAndShipping: await this.ctx.bugs.enabled('points_on_tax_shipping', tx) });
       await this.event(tx, orderId, o.status, 'delivered', actorOf(user), null, now);
+      await audit(tx, user, 'order.deliver', { type: 'order', id: orderId }, { before: { status: o.status }, after: { status: 'delivered' } }, now);
       await queueEmail(tx, o.email, 'order_delivered', { name: await this.customerName(tx, o.customer_id), orderId, link: this.link(orderId) }, now);
     });
   }
@@ -403,7 +408,7 @@ export class OrderService {
         'SELECT kind, method, amount, reason, created_at FROM refunds WHERE order_id = $1 ORDER BY id',
         [orderId],
       ),
-      this.ctx.db.query<{ id: string; status: string }>('SELECT id, status FROM returns WHERE order_id = $1 ORDER BY id', [orderId]),
+      this.ctx.db.query<{ id: string; status: ReturnStatus }>('SELECT id, status FROM returns WHERE order_id = $1 ORDER BY id', [orderId]),
     ]);
     const windowFrom = (await this.ctx.bugs.enabled('return_window_order_date')) ? o.placed_at : o.delivered_at;
     const windowOpen = o.status === 'delivered' && !!windowFrom && !returnWindowClosed(windowFrom, now);

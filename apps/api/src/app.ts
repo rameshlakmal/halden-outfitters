@@ -27,6 +27,9 @@ import { HaldenPay } from './modules/payments/haldenpay.js';
 import { deliverWebhooks, webhookRoutes } from './modules/payments/webhooks.js';
 import { accountRoutes } from './modules/accounts/routes.js';
 import { returnRoutes } from './modules/returns/routes.js';
+import { reviewRoutes } from './modules/reviews/routes.js';
+import { staffRoutes } from './modules/staff/routes.js';
+import { requestContext } from './core/audit.js';
 import { cartRoutes } from './modules/cart/routes.js';
 import { catalogRoutes } from './modules/catalog/routes.js';
 import { qaRoutes } from './modules/qa-lab/routes.js';
@@ -119,6 +122,8 @@ export async function buildApp({ config, db, clock, rateLimits = config.RATE_LIM
   });
   await app.register(scalar, { routePrefix: `${API_PREFIX}/docs` });
 
+  // Each request runs in its own async context carrying its id, which the audit log records.
+  app.addHook('onRequest', (req, _reply, done) => requestContext.run({ requestId: req.id }, done));
   app.addHook('onRequest', async (req, reply) => {
     reply.header('x-request-id', req.id);
     if (!req.url.startsWith(`${API_PREFIX}/docs`)) reply.header('cache-control', 'no-store');
@@ -157,6 +162,8 @@ export async function buildApp({ config, db, clock, rateLimits = config.RATE_LIM
       await api.register(checkoutRoutes);
       await api.register(orderRoutes);
       await api.register(returnRoutes);
+      await api.register(reviewRoutes);
+      await api.register(staffRoutes);
       await api.register(webhookRoutes(ctx));
       await api.register(qaRoutes);
     },

@@ -131,6 +131,22 @@ export const BUGS = [
     howToSee: 'Return a delivered item before the window closes: the pending points stay.',
     rule: 'Returned lines hold no points',
   },
+  {
+    key: 'hidden_reviews_counted',
+    phase: 4,
+    title: 'Hidden reviews still count in the rating',
+    description: 'When support hides a review, the product rating is worked out with the hidden review still in it.',
+    howToSee: 'Hide a 1-star review in the staff console: the product rating does not go up.',
+    rule: 'A product rating is the average of its published reviews',
+  },
+  {
+    key: 'price_edit_rewrites_orders',
+    phase: 4,
+    title: 'Price edits rewrite past orders',
+    description: 'Changing a product price also changes the price on order lines already placed.',
+    howToSee: 'Change the price of a product someone has ordered: their order lines no longer add up to the order subtotal.',
+    rule: 'An order subtotal is the sum of its lines',
+  },
 ] as const;
 
 export type BugKey = (typeof BUGS)[number]['key'];

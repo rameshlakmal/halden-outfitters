@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { AddressInput } from './account.ts';
 import { Amount, Id, Timestamp } from './common.ts';
+import { RETURN_STATUSES } from './returns.ts';
 
 export const ORDER_STATUSES = [
   'pending_payment',
@@ -215,7 +216,7 @@ export const Order = z
         at: Timestamp,
       }),
     ),
-    returns: z.array(z.object({ id: Id, status: z.string() })),
+    returns: z.array(z.object({ id: Id, status: z.enum(RETURN_STATUSES) })),
     allowedActions: z.array(z.enum(ORDER_ACTIONS)).describe('What the viewer may do with this order now'),
   })
   .meta({ id: 'Order' });

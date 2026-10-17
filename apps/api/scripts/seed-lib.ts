@@ -2,7 +2,7 @@
 import { hashPassword } from '../src/core/crypto.js';
 import type { Db } from '../src/core/db.js';
 import { BUGS } from '../src/core/bugs.js';
-import { ACCOUNTS, ADDRESSES, CATEGORIES, COUNTRIES, COUPONS, PRODUCTS, RATES, ZONES, zoneOf } from './seed-data.js';
+import { ACCOUNTS, ADDRESSES, CATEGORIES, COUNTRIES, COUPONS, PRODUCTS, RATES, SIZED, ZONES, zoneOf } from './seed-data.js';
 import { seedOrders } from './seed-orders.js';
 
 export type SeedPasswords = { staff: string; shopper: string };
@@ -93,6 +93,7 @@ export async function seed(db: Db, passwords: SeedPasswords, opts: { orders?: bo
         await tx.query('INSERT INTO coupon_excluded_categories (coupon_code, category_id) SELECT $1, id FROM categories WHERE slug = $2', [c.code, slug]);
       }
     }
+    await tx.query('UPDATE products SET sized = true WHERE slug = ANY($1)', [SIZED]);
     for (const [i, b] of BUGS.entries()) {
       await tx.query(
         'INSERT INTO qa_bugs (key, phase, title, description, how_to_see, rule, position) VALUES ($1, $2, $3, $4, $5, $6, $7)',

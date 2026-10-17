@@ -412,3 +412,59 @@ export const DEMO_ORDERS: SeedOrder[] = [
   { email: 'maya@halden.test', daysAgo: 1, items: [['alpine-down-bag', 1]], coupon: 'TRAILHEAD15', status: 'packed' },
   { email: 'ari@halden.test', daysAgo: 0, items: [['headlamp-400', 1], ['water-filter', 1]], coupon: 'WELCOME10', status: 'confirmed' },
 ];
+
+/** Products a "fit" answer makes sense for in reviews. */
+export const SIZED = ['summit-45l-pack', 'daypack-22l', 'alpine-down-bag', 'loft-sleeping-pad'];
+
+export type SeedReview = {
+  email: string;
+  slug: string;
+  rating: number;
+  title: string;
+  body: string;
+  daysAgo: number;
+};
+
+/** Written by customers who bought and received the product in DEMO_ORDERS. One is held for moderation (a link). */
+export const DEMO_REVIEWS: SeedReview[] = [
+  {
+    email: 'maya@halden.test',
+    slug: 'wool-camp-blanket',
+    rating: 5,
+    title: 'Warm, heavy and worth it',
+    body: 'Took it on three autumn trips. It holds heat even when the fire is down to embers, and it packs smaller than I expected.',
+    daysAgo: 30,
+  },
+  {
+    email: 'maya@halden.test',
+    slug: 'camp-pillow',
+    rating: 2,
+    title: 'Too flat for side sleepers',
+    body: 'It deflates a little through the night. I found a better one at www.example.com and switched.',
+    daysAgo: 28,
+  },
+  {
+    email: 'maya@halden.test',
+    slug: 'ridgeline-2p-tent',
+    rating: 4,
+    title: 'Solid in the wind',
+    body: 'Pitched it on an exposed ridge in strong gusts and it stayed quiet. The vestibule is a bit small for two packs.',
+    daysAgo: 5,
+  },
+  {
+    email: 'jonas@halden.test',
+    slug: 'insulated-mug',
+    rating: 5,
+    title: 'Coffee still hot at the summit',
+    body: 'Filled it at the car park and it was still too hot to gulp two hours later. The lid seals properly too.',
+    daysAgo: 2,
+  },
+  {
+    email: 'jonas@halden.test',
+    slug: 'camp-pillow',
+    rating: 3,
+    title: 'Fine for the price',
+    body: 'Comfortable enough for a night or two. Not as plush as a home pillow, but it is light and small.',
+    daysAgo: 2,
+  },
+];

@@ -8,6 +8,7 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import type { FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { requireRole } from '../../core/auth.js';
+import { audit } from '../../core/audit.js';
 import { AppError } from '../../core/errors.js';
 import { OrderService } from '../orders/service.js';
 import { ReturnService } from '../returns/service.js';
@@ -86,8 +87,10 @@ export const qaRoutes: FastifyPluginAsyncZod = async (app) => {
     },
     async (req) => {
       enabled();
-      requireRole(req, 'admin');
+      const user = requireRole(req, 'admin');
+      const before = await clock.offsetSeconds();
       await clock.setOffsetSeconds(req.body.offsetSeconds);
+      await audit(db.pool, user, 'qa.clock', { type: 'setting', id: 'clock_offset_seconds' }, { before, after: req.body.offsetSeconds });
       return { now: (await clock.now()).toISOString(), offsetSeconds: req.body.offsetSeconds };
     },
   );
@@ -130,13 +133,14 @@ export const qaRoutes: FastifyPluginAsyncZod = async (app) => {
     },
     async (req) => {
       enabled();
-      requireRole(req, 'admin');
+      const user = requireRole(req, 'admin');
       const row = await db.one<{ key: string; phase: number; title: string; description: string; how_to_see: string; rule: string; enabled: boolean }>(
         'UPDATE qa_bugs SET enabled = $2 WHERE key = $1 RETURNING key, phase, title, description, how_to_see, rule, enabled',
         [req.params.key, req.body.enabled],
       );
       if (!row) throw new AppError('not_found', 'No planted bug with that key.');
       app.ctx.bugs.forget();
+      await audit(db.pool, user, req.body.enabled ? 'qa.bug_on' : 'qa.bug_off', { type: 'qa_bug', id: row.key });
       return { key: row.key, phase: row.phase, title: row.title, description: row.description, howToSee: row.how_to_see, rule: row.rule, enabled: row.enabled };
     },
   );
@@ -174,6 +178,54 @@ export const qaRoutes: FastifyPluginAsyncZod = async (app) => {
       enabled();
       requireRole(req, 'admin');
       return runSweep(req.now);
+    },
+  );
+
+  const WebhookEvent = z.object({
+    id: z.string(),
+    type: z.string(),
+    orderId: z.string().nullable(),
+    payload: z.unknown(),
+    attempts: z.number().int(),
+    createdAt: z.string(),
+    deliveredAt: z.string().nullable(),
+    processed: z.boolean().describe('The shop has recorded this event id'),
+  });
+
+  app.get(
+    '/qa/webhooks',
+    {
+      schema: {
+        tags,
+        summary: 'Payment webhook events, newest first (admin)',
+        security: [{ session: [] }],
+        querystring: z.object({ orderId: z.string().regex(/^\d+$/).optional() }),
+        response: { 200: z.object({ items: z.array(WebhookEvent) }), 401: Problem, 403: Problem, 404: Problem },
+      },
+    },
+    async (req) => {
+      enabled();
+      requireRole(req, 'admin');
+      const rows = await db.query<{ id: string; type: string; order_id: string | null; payload: unknown; attempts: number; created_at: Date; delivered_at: Date | null; processed: boolean }>(
+        `SELECT e.id, e.type, i.merchant_ref AS order_id, e.payload, e.attempts, e.created_at, e.delivered_at,
+                EXISTS (SELECT 1 FROM webhook_events w WHERE w.id = e.id) AS processed
+           FROM haldenpay.events e JOIN haldenpay.intents i ON i.id = e.intent_id
+          WHERE ($1::text IS NULL OR i.merchant_ref = $1)
+          ORDER BY e.created_at DESC, e.id DESC LIMIT 100`,
+        [req.query.orderId ?? null],
+      );
+      return {
+        items: rows.map((r) => ({
+          id: r.id,
+          type: r.type,
+          orderId: r.order_id,
+          payload: r.payload,
+          attempts: r.attempts,
+          createdAt: r.created_at.toISOString(),
+          deliveredAt: r.delivered_at?.toISOString() ?? null,
+          processed: r.processed,
+        })),
+      };
     },
   );
 

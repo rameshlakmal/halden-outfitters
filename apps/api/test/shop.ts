@@ -59,3 +59,23 @@ export async function bug(t: TestApp, key: string, on = true) {
   await t.db.query('UPDATE qa_bugs SET enabled = $2 WHERE key = $1', [key, on]);
   t.app.ctx.bugs.forget();
 }
+
+/** A new customer's order of `items`, taken through pack, ship and deliver by the warehouse. */
+export async function deliveredOrder(t: TestApp, items: [slug: string, qty: number][]) {
+  const c = await newCustomer(t);
+  await fill(t, c.client, items);
+  const res = await checkout(c.client, c.addressId);
+  if (res.statusCode !== 201) throw new Error(res.body);
+  const orderId = json(res).orderId as string;
+  const warehouse = await signedIn(t, 'warehouse@halden.test', true);
+  const steps: [string, object][] = [
+    ['pack', {}],
+    ['ship', { trackingNumber: 'HX12345678' }],
+    ['deliver', {}],
+  ];
+  for (const [step, body] of steps) {
+    const r = await warehouse.post(`/staff/orders/${orderId}/${step}`, body);
+    if (r.statusCode !== 200) throw new Error(`${step}: ${r.body}`);
+  }
+  return { ...c, orderId, warehouse };
+}

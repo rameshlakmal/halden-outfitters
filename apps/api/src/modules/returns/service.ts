@@ -18,6 +18,7 @@ import {
 } from '@halden/contracts';
 import { fromCents, toCents } from '@halden/money';
 import type pg from 'pg';
+import { audit } from '../../core/audit.js';
 import type { CurrentUser } from '../../core/auth.js';
 import type { AppContext } from '../../core/context.js';
 import type { Queryable } from '../../core/db.js';
@@ -229,11 +230,12 @@ export class ReturnService {
   async approve(returnId: string, user: CurrentUser, now: Date) {
     await this.ctx.db.tx(async (tx) => {
       await this.lock(tx, returnId);
-      await this.approveLocked(tx, returnId, user.id, now, false);
+      await this.approveLocked(tx, returnId, user, now, false);
     });
   }
 
-  private async approveLocked(tx: pg.PoolClient, returnId: string, actorId: string | null, now: Date, auto: boolean) {
+  private async approveLocked(tx: pg.PoolClient, returnId: string, actor: CurrentUser | null, now: Date, auto: boolean) {
+    const actorId = actor?.id ?? null;
     const r = await this.lock(tx, returnId);
     if (r.status !== 'requested') throw new AppError('invalid_transition', `A return that is ${r.status} cannot be approved.`);
     const code = `HRL-${returnId}-${randomBytes(3).toString('hex').toUpperCase()}`;
@@ -244,6 +246,7 @@ export class ReturnService {
       [returnId, auto, code, expires, now, actorId],
     );
     await this.event(tx, returnId, 'requested', 'approved', actorId, auto ? 'Approved automatically' : null, now);
+    if (actor) await audit(tx, actor, 'return.approve', { type: 'return', id: returnId }, { before: { status: 'requested' }, after: { status: 'approved' } }, now);
     const c = await this.name(tx, r.customer_id);
     await queueEmail(
       tx,
@@ -263,6 +266,7 @@ export class ReturnService {
         [returnId, reason, now, user.id],
       );
       await this.event(tx, returnId, 'requested', 'rejected', user.id, reason, now);
+      await audit(tx, user, 'return.reject', { type: 'return', id: returnId }, { before: { status: 'requested' }, after: { status: 'rejected', reason } }, now);
       const c = await this.name(tx, r.customer_id);
       await queueEmail(tx, c.email, 'return_rejected', { name: c.name, returnId, reason, link: this.link(returnId) }, now);
     });
@@ -363,6 +367,7 @@ export class ReturnService {
       // Planted bug: returned_keeps_points.
       if (!keepPoints) await reversePending(tx, r.customer_id, r.order_id, returnId, pointsEarned, now);
       await this.event(tx, returnId, 'received', status, user.id, `Refund ${fromCents(total.total)}`, now);
+      await audit(tx, user, 'return.receive', { type: 'return', id: returnId }, { before: { status: 'approved' }, after: { status, refundTotal: fromCents(total.total), lines: summary } }, now);
 
       const c = await this.name(tx, r.customer_id);
       await queueEmail(
@@ -421,6 +426,7 @@ export class ReturnService {
         now,
         { skipLimit },
       );
+      await audit(tx, user, 'refund.goodwill', { type: 'order', id: orderId }, { after: { amount: fromCents(amount), method: input.method, reason: input.reason } }, now);
       const c = await this.name(tx, o.customer_id);
       await queueEmail(
         tx,
