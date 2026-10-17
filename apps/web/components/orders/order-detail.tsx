@@ -7,9 +7,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 import { formatDate, formatDateTime, METHOD_LABEL, useOrder } from '@/lib/orders';
+import { RETURN_STATUS_LABEL } from '@/lib/returns';
 import { errorMessage } from '../account/forms';
 import { Skeleton } from '../ui/bits';
-import { Button } from '../ui/button';
+import { Button, LinkButton } from '../ui/button';
 import { FormAlert } from '../ui/field';
 import { CancelDialog } from './cancel-dialog';
 import { useTimeLeft } from './countdown';
@@ -85,6 +86,7 @@ export function OrderDetail({ id }: { id: string }) {
   const o = order.data;
   const s = o.shipping;
   const canCancel = o.allowedActions.includes('cancel');
+  const canReturn = o.allowedActions.includes('return');
   const count = o.lines.reduce((n, l) => n + l.qty, 0);
 
   return (
@@ -104,10 +106,19 @@ export function OrderDetail({ id }: { id: string }) {
               Placed {formatDateTime(o.placedAt)}
             </p>
           </div>
-          {canCancel && (
-            <Button variant="danger" onClick={() => setCancelling(true)}>
-              Cancel order
-            </Button>
+          {(canCancel || canReturn) && (
+            <div className="flex flex-wrap gap-2">
+              {canReturn && (
+                <LinkButton href={`/account/orders/${o.id}/return`} variant="outline" data-testid="start-return">
+                  Start a return
+                </LinkButton>
+              )}
+              {canCancel && (
+                <Button variant="danger" onClick={() => setCancelling(true)}>
+                  Cancel order
+                </Button>
+              )}
+            </div>
           )}
         </div>
       </header>
@@ -147,6 +158,16 @@ export function OrderDetail({ id }: { id: string }) {
                 <span className="text-[14px] text-ink-3 tabular-nums">
                   {l.qty} x {formatAmount(l.unitPrice)}
                 </span>
+                {l.returnedQty > 0 ? (
+                  <span className="text-[13px] font-medium text-ink-2">
+                    {l.returnedQty === l.qty ? 'Returned' : `${l.returnedQty} returned`}
+                  </span>
+                ) : (
+                  !l.returnable &&
+                  (o.status === 'delivered' || o.status === 'completed') && (
+                    <span className="text-[13px] text-ink-3">Final sale</span>
+                  )
+                )}
               </span>
               <span className="tabular-nums">{formatAmount(l.lineTotal)}</span>
             </li>
@@ -188,8 +209,10 @@ export function OrderDetail({ id }: { id: string }) {
           {o.pointsEarned > 0 && o.status !== 'cancelled' && (
             <span className="mt-2 text-ink-2">Earns {o.pointsEarned.toLocaleString('en-GB')} Halden Points.</span>
           )}
-          {o.returnWindowEndsAt && (
-            <span className="text-ink-2">Returns open until {formatDate(o.returnWindowEndsAt)}.</span>
+          {o.returnWindowEndsAt && o.status === 'delivered' && (
+            <span className="text-ink-2" data-testid="return-by">
+              Return by {formatDate(o.returnWindowEndsAt)}.
+            </span>
           )}
         </section>
       </div>
@@ -199,7 +222,55 @@ export function OrderDetail({ id }: { id: string }) {
         <TotalsTable totals={o.totals} coupon={o.couponCode} totalTestId="order-total" />
       </section>
 
+      {(o.returns.length > 0 || o.refunds.length > 0) && <ReturnsAndRefunds order={o} />}
+
       {canCancel && <CancelDialog order={o} open={cancelling} onClose={() => setCancelling(false)} />}
+    </div>
+  );
+}
+
+const KIND = { return: 'Return', goodwill: 'Goodwill refund' } as const;
+const PAID_TO = { card: 'to your card', store_credit: 'as store credit' } as const;
+
+function ReturnsAndRefunds({ order: o }: { order: Order }) {
+  return (
+    <div className="grid gap-8 sm:grid-cols-2">
+      {o.returns.length > 0 && (
+        <section aria-label="Returns" className="grid content-start gap-3">
+          <h2 className={label}>Returns</h2>
+          <ul className="grid divide-y divide-line border-y border-line">
+            {o.returns.map((r) => (
+              <li key={r.id}>
+                <Link
+                  href={`/account/returns/${r.id}`}
+                  className="flex min-h-12 items-center justify-between gap-4 py-2 text-[15px] transition-colors hover:text-accent"
+                >
+                  <span className="font-medium">Return {r.id}</span>
+                  <span className="text-ink-2">{RETURN_STATUS_LABEL[r.status]}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      {o.refunds.length > 0 && (
+        <section aria-label="Refunds" className="grid content-start gap-3">
+          <h2 className={label}>Refunds</h2>
+          <ul className="grid divide-y divide-line border-y border-line" data-testid="refunds">
+            {o.refunds.map((r, i) => (
+              <li key={i} className="flex items-center justify-between gap-4 py-3 text-[15px]">
+                <span className="grid min-w-0 gap-0.5">
+                  <span className="font-medium">{KIND[r.kind]}</span>
+                  <span className="text-[13px] text-ink-3">
+                    {formatDate(r.at)}, {PAID_TO[r.method]}
+                  </span>
+                </span>
+                <span className="font-semibold tabular-nums">{formatAmount(r.amount)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }

@@ -16,14 +16,11 @@ const CHIP: Record<OrderStatus, string> = {
   cancelled: 'border-line text-ink-3 line-through decoration-1',
 };
 
+export const chipClass = (tone: string) =>
+  `inline-flex h-7 items-center rounded-[2px] border px-2.5 text-[11px] font-bold tracking-[0.08em] whitespace-nowrap uppercase ${tone}`;
+
 export function StatusChip({ status }: { status: OrderStatus }) {
-  return (
-    <span
-      className={`inline-flex h-7 items-center rounded-[2px] border px-2.5 text-[11px] font-bold tracking-[0.08em] whitespace-nowrap uppercase ${CHIP[status]}`}
-    >
-      {STATUS_LABEL[status]}
-    </span>
-  );
+  return <span className={chipClass(CHIP[status])}>{STATUS_LABEL[status]}</span>;
 }
 
 const STEPS: OrderStatus[] = ['confirmed', 'packed', 'shipped', 'delivered'];

@@ -9,6 +9,7 @@ import { useForm } from 'react-hook-form';
 import { patch, post } from '@/lib/api';
 import { keys, useRefreshVisitor } from '@/lib/queries';
 import { LatestOrders } from '../orders/order-list';
+import { RewardsSummary } from './rewards';
 import { Skeleton } from '../ui/bits';
 import { Button } from '../ui/button';
 import { FormAlert, Input } from '../ui/field';
@@ -32,6 +33,7 @@ export function AccountOverview() {
       <EmailStatus me={me} />
       <ProfileForm me={me} />
       <LatestOrders />
+      <RewardsSummary />
       <SignOutBlock />
     </div>
   );
