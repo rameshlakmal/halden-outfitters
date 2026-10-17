@@ -2,12 +2,7 @@ node_modules
 **/.next
 **/dist
 package-lock.json
-api
-lib
-public
-scripts
-test
-db/*.js
+/scripts
 *.md
 apps/web/.next
 apps/api/dist

@@ -22,20 +22,10 @@
     "format:check": "prettier --check .",
     "db:migrate": "npm run db:migrate -w @halden/api",
     "db:seed": "npm run db:seed -w @halden/api",
-    "db:reset": "npm run db:reset -w @halden/api",
-    "v1:dev": "node scripts/dev.js",
-    "v1:db:setup": "node scripts/db-setup.js",
-    "v1:test": "vitest run --config vitest.config.js",
-    "v1:typecheck": "tsc -p jsconfig.json",
-    "assets": "node scripts/build-assets.js"
-  },
-  "dependencies": {
-    "pg": "^8.16.0"
+    "db:reset": "npm run db:reset -w @halden/api"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",
-    "@fontsource-variable/geist": "^5.3.0",
-    "@phosphor-icons/core": "^2.1.1",
     "@types/node": "^24.0.0",
     "@types/pg": "^8.15.0",
     "eslint": "^10.13.0",
