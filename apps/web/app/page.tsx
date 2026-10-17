@@ -10,9 +10,9 @@ import kitchen from '@/public/images/banners/kitchen.jpg';
 export const revalidate = 60;
 
 const PROMISES = [
-  { icon: Truck, title: 'Free shipping from 75.00', text: 'Standard delivery, counted after any discount.' },
+  { icon: Truck, title: 'Free shipping from $75', text: 'Standard delivery, counted after any discount.' },
   { icon: ArrowUUpLeft, title: '30 days to return', text: 'Counted from the day it arrives.' },
-  { icon: Medal, title: 'Halden Points', text: 'One point for every 1.00 spent on gear.' },
+  { icon: Medal, title: 'Halden Points', text: 'One point for every $1 spent on gear.' },
   { icon: CreditCard, title: 'Test cards only', text: 'A demo shop for QA practice. Nothing is charged.' },
 ];
 

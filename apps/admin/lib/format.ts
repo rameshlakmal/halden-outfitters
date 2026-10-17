@@ -1,8 +1,8 @@
 // Display helpers. Amounts come from the API as "1234.50" strings and are shown the way the shop shows them:
-// two decimals, no currency symbol (DESIGN.md: v1's currency display).
+// US dollars with two decimals, like formatAmount in @halden/money.
 import type { OrderStatus, ReturnReason } from '@halden/contracts';
 
-const grouped = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const grouped = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 const whole = new Intl.NumberFormat('en-US');
 
 export const money = (amount: string) => grouped.format(Number(amount));

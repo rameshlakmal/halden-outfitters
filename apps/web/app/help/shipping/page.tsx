@@ -4,9 +4,9 @@ import { Notice, PolicyPage, PolicySection } from '@/components/account/policy';
 export const metadata: Metadata = { title: 'Shipping' };
 
 const ZONES = [
-  { zone: 'Domestic', where: 'Our home country', standard: '7.95', express: '14.95', free: '75.00' },
-  { zone: 'Europe', where: 'EU countries', standard: '14.95', express: '29.95', free: '150.00' },
-  { zone: 'Rest of world', where: 'Everywhere else', standard: '24.95', express: 'Not offered', free: 'Not offered' },
+  { zone: 'Domestic', where: 'Our home country', standard: '$7.95', express: '$14.95', free: '$75.00' },
+  { zone: 'Europe', where: 'EU countries', standard: '$14.95', express: '$29.95', free: '$150.00' },
+  { zone: 'Rest of world', where: 'Everywhere else', standard: '$24.95', express: 'Not offered', free: 'Not offered' },
 ];
 
 export default function ShippingPage() {

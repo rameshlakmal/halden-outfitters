@@ -11,7 +11,7 @@ Rebuild Halden Outfitters so it behaves like a real production shop: a proper AP
 What stays the same:
 - PostgreSQL, money as `numeric(10,2)` in the database (easy to check with SQL), integer cents in code.
 - The QA lab with planted bugs, each one breaking exactly one rule in `qa/rules.sql`.
-- Currency display (amounts with no currency symbol) and an **8% tax rate**.
+- Prices in US dollars, shown with a "$" (the API sends plain amounts like "84.50") and an **8% tax rate**.
 - Free hosting on Vercel + Neon, the live URL https://halden-outfitters.vercel.app.
 
 What changes visually: the whole storefront gets a **new modern design** with motion (section 5), built with
@@ -518,4 +518,4 @@ pushed before the next one starts. The v1 site stays live until phase 2 reaches 
   just show the page without the animation, so nothing breaks. Lighthouse CI stops any slow-down from being merged.
 - **Photos:** the new layouts (bento, galleries) need more photos per product than v1 has. More free
   Pexels/Unsplash photos will be added and credited in `CREDITS.md`.
-- **Answered on 2026-10-17:** keep 8% tax and v1's currency display; reviews and loyalty points are in; no guest checkout.
+- **Answered on 2026-10-17:** keep 8% tax (prices in US dollars, shown with "$" since 2026-10-18); reviews and loyalty points are in; no guest checkout.

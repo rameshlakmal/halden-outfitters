@@ -435,7 +435,7 @@ export class ReturnService {
           );
         }
         item.processed += m.qty;
-        summary.push(`${m.qty} x ${item.name}: ${condition.replaceAll('_', ' ')}, ${fromCents(g.refund)}`);
+        summary.push(`${m.qty} x ${item.name}: ${condition.replaceAll('_', ' ')}, $${fromCents(g.refund)}`);
       }
 
       // Shipping comes back when the shop was at fault and this return completes the whole order.

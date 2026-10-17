@@ -535,7 +535,7 @@ function GoodwillDialog({ order, onClose, onDone }: { order: Order; onClose: () 
         <p className="text-[14px] text-ink-2">
           A refund without a return, for example for a late delivery.{' '}
           {me?.role === 'support'
-            ? `Support can refund up to 50.00 per order; ${Math.max(0, 50 - given).toFixed(2)} is left on this one.`
+            ? `Support can refund up to $50.00 per order; $${Math.max(0, 50 - given).toFixed(2)} is left on this one.`
             : 'Admins can refund any amount up to what is left to refund.'}
         </p>
         <label className="grid gap-1.5 text-[13px] font-medium">

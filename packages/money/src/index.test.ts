@@ -68,8 +68,8 @@ describe('allocate', () => {
 
 describe('formatAmount', () => {
   it('groups thousands and keeps two decimals', () => {
-    expect(formatAmount('1349.00')).toBe('1,349.00');
-    expect(formatAmount(795)).toBe('7.95');
-    expect(formatAmount('-5.00')).toBe('-5.00');
+    expect(formatAmount('1349.00')).toBe('$1,349.00');
+    expect(formatAmount(795)).toBe('$7.95');
+    expect(formatAmount('-5.00')).toBe('-$5.00');
   });
 });

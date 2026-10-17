@@ -68,7 +68,7 @@ export default async function ProductPage({ params }: Props) {
               <BuyBox product={product} />
               <ul className="grid gap-3 pt-2 text-sm text-ink-2">
                 <li className="flex items-center gap-3">
-                  <Truck className="size-5 text-brand" /> Free standard shipping on orders from 75.00
+                  <Truck className="size-5 text-brand" /> Free standard shipping on orders from $75
                 </li>
                 {product.returnable ? (
                   <li className="flex items-center gap-3">

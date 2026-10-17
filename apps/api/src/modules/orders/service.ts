@@ -154,7 +154,7 @@ export class OrderService {
         name: await this.customerName(tx, o.customer_id),
         orderId,
         total: o.total,
-        lines: lines.map((l) => `${l.qty} x ${l.name}  ${l.line_total}`).join('\n'),
+        lines: lines.map((l) => `${l.qty} x ${l.name}  $${l.line_total}`).join('\n'),
         link: this.link(orderId),
       },
       now,

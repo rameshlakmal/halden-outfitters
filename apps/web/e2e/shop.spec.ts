@@ -97,11 +97,11 @@ test.describe('cart', () => {
     const drawer = page.getByRole('dialog', { name: 'Your cart' });
     await expect(drawer.getByText('Ember Stove')).toBeVisible();
     await drawer.getByRole('button', { name: 'One more' }).click();
-    await expect(drawer.getByText('138.00').first()).toBeVisible();
+    await expect(drawer.getByText('$138.00').first()).toBeVisible();
     await expect(page.getByTestId('cart-button')).toHaveAccessibleName(/2 items/);
     await drawer.getByRole('link', { name: 'View cart' }).click();
     await expect(page).toHaveURL(/\/cart$/);
-    await expect(page.getByTestId('cart-subtotal')).toHaveText('138.00');
+    await expect(page.getByTestId('cart-subtotal')).toHaveText('$138.00');
     await page.getByRole('button', { name: 'Remove' }).click();
     await expect(page.getByText('Your cart is empty')).toBeVisible();
   });

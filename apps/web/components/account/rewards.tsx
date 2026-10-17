@@ -71,7 +71,7 @@ export function PointsPage() {
             />
             {summit ? 'Summit' : 'Base'}
           </span>
-          <span className="text-[14px] text-ink-2">{summit ? '1.5 points per 1.00' : '1 point per 1.00'}</span>
+          <span className="text-[14px] text-ink-2">{summit ? '1.5 points per $1' : '1 point per $1'}</span>
         </div>
       </div>
 
@@ -83,13 +83,13 @@ export function PointsPage() {
 
       <Section title="How points work">
         <ul className="grid max-w-[64ch] gap-2 text-[15px] leading-relaxed text-ink-2">
-          <li>You earn 1 point for every 1.00 you pay for goods. Tax and shipping do not earn points.</li>
+          <li>You earn 1 point for every $1 you pay for goods. Tax and shipping do not earn points.</li>
           <li>
-            Summit members earn 1.5 points per 1.00. You are Summit when your completed orders of the last 365 days add
-            up to 500.00 or more.
+            Summit members earn 1.5 points per $1. You are Summit when your completed orders of the last 365 days add up
+            to $500.00 or more.
           </li>
           <li>Points are pending until the order&apos;s 30-day return window closes, then you can spend them.</li>
-          <li>Every 100 points take 5.00 off at checkout, up to half of your subtotal after any coupon.</li>
+          <li>Every 100 points take $5.00 off at checkout, up to half of your subtotal after any coupon.</li>
           <li>Points expire 12 months after they become available. Returned items lose their points.</li>
         </ul>
       </Section>

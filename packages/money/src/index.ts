@@ -54,11 +54,11 @@ export function allocate(total: number, weights: readonly number[]): number[] {
   return parts;
 }
 
-/** "84.50" → "84.50", for display. The shop shows amounts without a currency symbol. */
+/** "84.50" → "$84.50", "-5.00" → "-$5.00", for display. Prices are in US dollars. */
 export function formatAmount(amount: Amount | number): string {
   const cents = typeof amount === 'number' ? amount : toCents(amount);
   const sign = cents < 0 ? '-' : '';
   const abs = Math.abs(cents);
   const whole = Math.floor(abs / 100).toLocaleString('en-US');
-  return `${sign}${whole}.${String(abs % 100).padStart(2, '0')}`;
+  return `${sign}$${whole}.${String(abs % 100).padStart(2, '0')}`;
 }

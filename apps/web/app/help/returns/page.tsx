@@ -36,7 +36,7 @@ export default function ReturnsPage() {
             If the item is damaged, wrong or not as described, the return label is <strong>free</strong>.
           </li>
           <li>
-            For any other reason, a <strong>4.95</strong> label fee is taken off your refund.
+            For any other reason, a <strong>$4.95</strong> label fee is taken off your refund.
           </li>
         </ul>
       </PolicySection>

@@ -58,7 +58,7 @@ const RENDER: { [K in Template]: (d: Templates[K]) => { subject: string; body: s
   }),
   order_confirmed: (d) => ({
     subject: `Order ${d.orderId} is confirmed`,
-    body: `Hi ${d.name},\n\nThanks for your order. Your card is authorized for ${d.total}; it's charged when the order ships.\n\n${d.lines}\n\nTrack it here:\n${d.link}`,
+    body: `Hi ${d.name},\n\nThanks for your order. Your card is authorized for $${d.total}; it's charged when the order ships.\n\n${d.lines}\n\nTrack it here:\n${d.link}`,
   }),
   order_cancelled: (d) => ({
     subject: `Order ${d.orderId} is cancelled`,
@@ -78,7 +78,7 @@ const RENDER: { [K in Template]: (d: Templates[K]) => { subject: string; body: s
   }),
   payment_disputed: (d) => ({
     subject: `Dispute opened on order ${d.orderId}`,
-    body: `The card holder disputed the payment of ${d.amount} for order ${d.orderId}. Review the order in the staff console.`,
+    body: `The card holder disputed the payment of $${d.amount} for order ${d.orderId}. Review the order in the staff console.`,
   }),
   return_requested: (d) => ({
     subject: `Return ${d.returnId} received for review`,
@@ -86,7 +86,7 @@ const RENDER: { [K in Template]: (d: Templates[K]) => { subject: string; body: s
   }),
   return_approved: (d) => ({
     subject: `Return ${d.returnId} is approved`,
-    body: `Hi ${d.name},\n\nYour return ${d.returnId} is approved. Your return label code is ${d.labelCode}; use it by ${d.labelExpires}.\n\nLabel fee taken off the refund: ${d.labelFee}\n\n${d.link}`,
+    body: `Hi ${d.name},\n\nYour return ${d.returnId} is approved. Your return label code is ${d.labelCode}; use it by ${d.labelExpires}.\n\nLabel fee taken off the refund: $${d.labelFee}\n\n${d.link}`,
   }),
   return_rejected: (d) => ({
     subject: `Return ${d.returnId} was not approved`,
@@ -94,7 +94,7 @@ const RENDER: { [K in Template]: (d: Templates[K]) => { subject: string; body: s
   }),
   return_refunded: (d) => ({
     subject: `Refund for return ${d.returnId}`,
-    body: `Hi ${d.name},\n\nWe checked your return ${d.returnId}.\n\n${d.lines}\n\nRefund: ${d.amount} to your ${d.method}${d.points > 0 ? `, and ${d.points} points back` : ''}.\n\n${d.link}`,
+    body: `Hi ${d.name},\n\nWe checked your return ${d.returnId}.\n\n${d.lines}\n\nRefund: $${d.amount} to your ${d.method}${d.points > 0 ? `, and ${d.points} points back` : ''}.\n\n${d.link}`,
   }),
   return_expired: (d) => ({
     subject: `Return ${d.returnId} has expired`,
@@ -110,7 +110,7 @@ const RENDER: { [K in Template]: (d: Templates[K]) => { subject: string; body: s
   }),
   goodwill_refund: (d) => ({
     subject: `A refund on order ${d.orderId}`,
-    body: `Hi ${d.name},\n\nWe have refunded ${d.amount} to your ${d.method} for order ${d.orderId}: ${d.reason}\n\n${d.link}`,
+    body: `Hi ${d.name},\n\nWe have refunded $${d.amount} to your ${d.method} for order ${d.orderId}: ${d.reason}\n\n${d.link}`,
   }),
 };
 

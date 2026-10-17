@@ -58,7 +58,7 @@ test('points and store credit pages show balances and how they work', async ({ p
   await expect(page.getByRole('heading', { name: 'Halden Points' })).toBeVisible();
   await expect(page.getByTestId('points-available')).toBeVisible();
   await expect(page.getByTestId('points-pending')).toBeVisible();
-  await expect(page.getByText('Every 100 points take 5.00 off')).toBeVisible();
+  await expect(page.getByText('Every 100 points take $5.00 off')).toBeVisible();
 
   await page.goto('/account/store-credit');
   await expect(page.getByRole('heading', { name: 'Store credit' })).toBeVisible();
