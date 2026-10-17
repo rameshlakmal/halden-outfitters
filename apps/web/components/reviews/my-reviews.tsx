@@ -37,6 +37,7 @@ function Row({ review }: { review: OwnReview }) {
       <div className="grid grid-cols-[64px_minmax(0,1fr)] gap-4 sm:grid-cols-[80px_minmax(0,1fr)_auto]">
         <Link
           href={`/products/${p.slug}`}
+          aria-label={p.name}
           className="relative block aspect-square overflow-hidden rounded-[2px] bg-surface-2"
         >
           {p.image && <Image src={p.image} alt="" fill sizes="80px" className="object-cover" />}

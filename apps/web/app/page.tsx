@@ -25,8 +25,9 @@ export default async function Home() {
 
   return (
     <>
-      {/* Hero: the photo edge to edge, the headline set over it like a magazine cover. */}
-      <section className="relative isolate flex min-h-[min(86dvh,760px)] items-end overflow-hidden bg-brand">
+      {/* Hero: the photo edge to edge, the headline set over it like a magazine cover. The base is a fixed near-black,
+          not a theme token (brand turns light in dark mode), so the white headline reads before the photo loads. */}
+      <section className="relative isolate flex min-h-[min(86dvh,760px)] items-end overflow-hidden bg-[oklch(0.16_0_0)]">
         <Image
           src={hero}
           alt="A lit tent under a starry sky at dusk"

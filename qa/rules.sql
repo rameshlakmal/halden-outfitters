@@ -3,7 +3,8 @@
 --   propmaster record check qa/rules.sql 12          (session 12)
 --   propmaster record check qa/rules.sql --all-rows  (the whole database)
 -- Each rule is a query that returns the rows breaking it; no rows means the rule holds.
--- {{orders}} means "the orders this test session touched"; Propmaster fills it in.
+-- {{orders}} means "the orders this test session touched"; Propmaster fills it in as a subquery, so a GROUP BY
+-- names every column the rule reads (grouping by the key alone only works on a plain table).
 -- A rule tagged [bug_key] is the one that planted bug breaks (QA lab). The API's test suite switches each bug
 -- on in turn and checks that it breaks its own rule and no other (apps/api/test/rules.test.ts).
 
@@ -33,7 +34,7 @@ SELECT o.id, o.discount, sum(oi.discount_alloc) AS discount_shares, o.points_dis
        o.tax, sum(oi.tax_alloc) AS tax_shares
   FROM {{orders}} o
   JOIN order_items oi ON oi.order_id = o.id
- GROUP BY o.id
+ GROUP BY o.id, o.discount, o.points_discount, o.tax
 HAVING o.discount <> sum(oi.discount_alloc) OR o.points_discount <> sum(oi.points_alloc) OR o.tax <> sum(oi.tax_alloc);
 
 -- rule: Tax is the order's tax rate on goods after discounts, rounded to the cent
@@ -96,7 +97,7 @@ SELECT o.id, o.total, o.store_credit_used, p.amount
 SELECT o.id, o.total, o.store_credit_used, count(p.id) AS payments
   FROM {{orders}} o
   LEFT JOIN payments p ON p.order_id = o.id
- GROUP BY o.id
+ GROUP BY o.id, o.total, o.store_credit_used
 HAVING count(p.id) <> CASE WHEN o.total > o.store_credit_used THEN 1 ELSE 0 END;
 
 -- rule: Cancelled orders have no open authorization  [cancel_leaves_authorization]
@@ -197,7 +198,7 @@ SELECT oi.order_id, oi.product_id, oi.qty, sum(ri.qty) AS returned
   FROM {{order_items}} oi
   JOIN return_items ri ON ri.order_item_id = oi.id
   JOIN returns r ON r.id = ri.return_id AND r.status NOT IN ('cancelled', 'rejected', 'expired')
- GROUP BY oi.id
+ GROUP BY oi.id, oi.order_id, oi.product_id, oi.qty
 HAVING sum(ri.qty) > oi.qty;
 
 -- rule: A line is never refunded more than was paid for it  [refund_ignores_discount]
@@ -205,7 +206,7 @@ SELECT oi.order_id, oi.product_id, oi.line_total - oi.discount_alloc - oi.points
        sum(ri.refund_amount) AS refunded
   FROM {{order_items}} oi
   JOIN return_items ri ON ri.order_item_id = oi.id
- GROUP BY oi.id
+ GROUP BY oi.id, oi.order_id, oi.product_id, oi.line_total, oi.discount_alloc, oi.points_alloc, oi.tax_alloc
 HAVING sum(ri.refund_amount) > oi.line_total - oi.discount_alloc - oi.points_alloc + oi.tax_alloc;
 
 -- rule: A return's refund adds up from its lines and fees
@@ -213,7 +214,7 @@ SELECT r.id, r.refund_total, sum(ri.refund_amount) AS lines, r.label_fee, r.ship
   FROM {{returns}} r
   JOIN return_items ri ON ri.return_id = r.id
  WHERE r.status IN ('refunded', 'partially_refunded')
- GROUP BY r.id
+ GROUP BY r.id, r.refund_total, r.label_fee, r.shipping_refund
 HAVING r.refund_total <> sum(ri.refund_amount) - r.label_fee + r.shipping_refund;
 
 -- rule: A refunded return has its refund recorded once
@@ -221,7 +222,7 @@ SELECT r.id, r.refund_total, coalesce(sum(f.amount), 0) AS refunded
   FROM {{returns}} r
   LEFT JOIN refunds f ON f.return_id = r.id
  WHERE r.status IN ('refunded', 'partially_refunded')
- GROUP BY r.id
+ GROUP BY r.id, r.refund_total
 HAVING r.refund_total <> coalesce(sum(f.amount), 0);
 
 -- rule: Refunds never exceed what was paid  [refund_over_captured]
@@ -317,5 +318,5 @@ SELECT r.id, r.customer_id, r.product_id
 SELECT r.id, r.helpful_count, count(v.customer_id) AS votes
   FROM {{reviews}} r
   LEFT JOIN review_votes v ON v.review_id = r.id
- GROUP BY r.id
+ GROUP BY r.id, r.helpful_count
 HAVING r.helpful_count <> count(v.customer_id);

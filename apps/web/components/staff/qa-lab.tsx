@@ -89,16 +89,22 @@ function BugRow({ bug: b }: { bug: Bug }) {
   const qc = useQueryClient();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
+  const setBug = (next: Bug) =>
+    qc.setQueryData<{ items: Bug[] }>(
+      staffKeys.bugs,
+      (old) => old && { items: old.items.map((x) => (x.key === b.key ? next : x)) },
+    );
   const toggle = async () => {
+    const before = b;
+    // Flip at once, so the switch answers the click; put it back if the API refuses.
+    setBug({ ...b, enabled: !b.enabled });
     setBusy(true);
     try {
-      const updated = await put<Bug>(`/qa/bugs/${b.key}`, { enabled: !b.enabled });
-      qc.setQueryData<{ items: Bug[] }>(
-        staffKeys.bugs,
-        (old) => old && { items: old.items.map((x) => (x.key === b.key ? updated : x)) },
-      );
+      const updated = await put<Bug>(`/qa/bugs/${b.key}`, { enabled: !before.enabled });
+      setBug(updated);
       toast.show(`${b.title}: ${updated.enabled ? 'on' : 'off'}`);
     } catch (err) {
+      setBug(before);
       toast.show(errorMessage(err), 'error');
     } finally {
       setBusy(false);
