@@ -1,16 +1,11 @@
 'use client';
-import { useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
 import { Logo } from '@/components/shell/sidebar';
 import { Button } from '@/components/kit';
 import { ApiError, post } from '@/lib/api';
 import { safeNext } from '@/lib/next-param';
-import { keys } from '@/lib/staff';
 
 export default function SignIn() {
-  const router = useRouter();
-  const qc = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -21,8 +16,9 @@ export default function SignIn() {
     setError(null);
     try {
       await post('/auth/login', { email: form.get('email'), password: form.get('password') });
-      await qc.invalidateQueries({ queryKey: keys.session });
-      router.replace(safeNext(new URLSearchParams(location.search).get('next')));
+      // A full page load, not a client-side navigation: pages prefetched while signed out (the logo's link to the
+      // dashboard) were answered with "go to sign-in", and the router would replay that cached answer.
+      location.assign(safeNext(new URLSearchParams(location.search).get('next')));
     } catch (err) {
       setError(
         err instanceof ApiError && (err.code === 'account_locked' || err.code === 'rate_limited')

@@ -10,6 +10,7 @@ export function Logo() {
   return (
     <Link
       href="/"
+      prefetch={false}
       className="flex items-center gap-2.5 px-2.5 py-1 text-[17px] font-bold"
       aria-label="Halden admin, dashboard"
     >

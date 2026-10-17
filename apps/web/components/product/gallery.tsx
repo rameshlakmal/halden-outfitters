@@ -31,6 +31,8 @@ export function Gallery({ product }: { product: Pick<Product, 'slug' | 'name' | 
         className="flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain rounded-[2px] bg-surface-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         role="group"
         aria-label={`Photos of ${product.name}${many ? ', swipe for more' : ''}`}
+        // With more than one photo the strip scrolls sideways: focusable, so arrow keys can scroll it too.
+        tabIndex={many ? 0 : undefined}
       >
         {images.map((img, i) => (
           <div key={img.url} className="w-full shrink-0 snap-center">
