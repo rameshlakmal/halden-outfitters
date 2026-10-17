@@ -1,6 +1,9 @@
 import {
   AuditEntry,
+  CouponCreate,
   CouponEdit,
+  Dashboard,
+  DASHBOARD_RANGES,
   Id,
   Problem,
   ProductEdit,
@@ -140,6 +143,30 @@ export const staffRoutes: FastifyPluginAsyncZod = async (app) => {
     },
   );
 
+  // ---------- dashboard ----------
+
+  app.get(
+    '/staff/dashboard',
+    {
+      schema: {
+        tags,
+        summary: 'Dashboard numbers for the last 7, 30 or 90 days (staff)',
+        security,
+        querystring: z.object({
+          days: z.coerce
+            .number()
+            .pipe(z.union(DASHBOARD_RANGES.map((d) => z.literal(d))))
+            .default(30),
+        }),
+        response: { 200: Dashboard, 400: Problem, 401: Problem, 403: Problem },
+      },
+    },
+    async (req) => {
+      requireRole(req, 'support', 'warehouse', 'admin');
+      return staff.dashboard(req.query.days, req.now);
+    },
+  );
+
   // ---------- coupons, shipping, tax (admin) ----------
 
   app.get(
@@ -158,13 +185,30 @@ export const staffRoutes: FastifyPluginAsyncZod = async (app) => {
     },
   );
 
+  app.post(
+    '/staff/coupons',
+    {
+      preValidation: needsUser,
+      schema: {
+        tags,
+        summary: 'Create a coupon (admin)',
+        description: 'The code, kind and value are fixed once created; everything else can be edited later.',
+        security,
+        body: CouponCreate,
+        response: { 201: StaffCoupon, 400: Problem, ...ok },
+      },
+    },
+    async (req, reply) =>
+      reply.status(201).send(await staff.createCoupon(requireRole(req, 'admin'), req.body, req.now)),
+  );
+
   app.patch(
     '/staff/coupons/:code',
     {
       preValidation: needsUser,
       schema: {
         tags,
-        summary: 'Switch a coupon on or off, change its limit or end date (admin)',
+        summary: 'Edit a coupon: switch it on or off, its limits, schedule and rules (admin)',
         security,
         params: z.object({ code: z.string().regex(/^[A-Z0-9]{3,20}$/) }),
         body: CouponEdit,

@@ -3,8 +3,18 @@
 //
 // Product edits use optimistic locking: the client sends back the version it loaded (If-Match). If someone else
 // saved in between, the save is refused with 412 and the current version, so nobody overwrites a change unseen.
-import type { Role, StaffProduct } from '@halden/contracts';
-import { toCents } from '@halden/money';
+import {
+  ORDER_STATUSES,
+  type CouponCreate,
+  type CouponEdit,
+  type OrderStatus,
+  type ReturnReason,
+  type Role,
+  type StaffProduct,
+} from '@halden/contracts';
+import { fromCents, toCents } from '@halden/money';
+import type pg from 'pg';
+import type { z } from 'zod';
 import { audit, diff } from '../../core/audit.js';
 import type { CurrentUser } from '../../core/auth.js';
 import type { AppContext } from '../../core/context.js';
@@ -96,6 +106,23 @@ export function parseIfMatch(header: string | undefined): number | null {
   const m = /^(?:W\/)?"?(\d+)"?$/.exec(header.trim());
   return m ? Number(m[1]) : NaN;
 }
+
+type CouponCreateInput = z.output<typeof CouponCreate>;
+type CouponEditInput = z.output<typeof CouponEdit>;
+type CouponRow = {
+  code: string;
+  kind: 'percent' | 'fixed' | 'free_shipping';
+  value: string;
+  description: string;
+  min_subtotal: string;
+  max_uses: number | null;
+  per_customer_limit: number | null;
+  first_order_only: boolean;
+  excludes_sale_items: boolean;
+  starts_at: Date | null;
+  ends_at: Date | null;
+  active: boolean;
+};
 
 export class StaffService {
   constructor(private readonly ctx: AppContext) {}
@@ -261,23 +288,12 @@ export class StaffService {
   // ---------- coupons ----------
 
   async coupons() {
-    const rows = await this.ctx.db.query<{
-      code: string;
-      kind: 'percent' | 'fixed' | 'free_shipping';
-      value: string;
-      description: string;
-      min_subtotal: string;
-      max_uses: number | null;
-      per_customer_limit: number | null;
-      first_order_only: boolean;
-      excludes_sale_items: boolean;
-      starts_at: Date | null;
-      ends_at: Date | null;
-      active: boolean;
-      uses: number;
-    }>(
-      `SELECT c.*, (SELECT count(*)::int FROM coupon_redemptions r WHERE r.coupon_code = c.code AND r.released_at IS NULL) AS uses
-         FROM coupons c ORDER BY c.code`,
+    const rows = await this.ctx.db.query<CouponRow & { uses: number; excluded: string[] }>(
+      `SELECT c.*,
+              (SELECT count(*)::int FROM coupon_redemptions r WHERE r.coupon_code = c.code AND r.released_at IS NULL) AS uses,
+              coalesce((SELECT array_agg(cat.slug ORDER BY cat.slug) FROM coupon_excluded_categories x
+                          JOIN categories cat ON cat.id = x.category_id WHERE x.coupon_code = c.code), '{}') AS excluded
+         FROM coupons c ORDER BY c.created_at DESC, c.code`,
     );
     return rows.map((c) => ({
       code: c.code,
@@ -293,42 +309,195 @@ export class StaffService {
       endsAt: c.ends_at?.toISOString() ?? null,
       active: c.active,
       uses: c.uses,
+      excludedCategories: c.excluded,
     }));
   }
 
-  async editCoupon(
-    code: string,
-    user: CurrentUser,
-    edit: { active?: boolean; maxUses?: number | null; endsAt?: string | null; description?: string },
-    now: Date,
-  ) {
+  async createCoupon(user: CurrentUser, input: CouponCreateInput, now: Date) {
     await this.ctx.db.tx(async (tx) => {
-      const { rows } = await tx.query<{
-        active: boolean;
-        max_uses: number | null;
-        ends_at: Date | null;
-        description: string;
-      }>('SELECT active, max_uses, ends_at, description FROM coupons WHERE code = $1 FOR UPDATE', [code]);
+      const { rows: cats } = await tx.query<{ id: number; slug: string }>(
+        'SELECT id, slug FROM categories WHERE slug = ANY($1)',
+        [input.excludedCategories],
+      );
+      const missing = input.excludedCategories.filter((s) => !cats.some((c) => c.slug === s));
+      if (missing.length) throw fieldError('excludedCategories', `No category called ${missing.join(', ')}.`);
+      try {
+        await tx.query(
+          `INSERT INTO coupons (code, kind, value, min_subtotal, max_uses, per_customer_limit, first_order_only,
+                                excludes_sale_items, starts_at, ends_at, active, description, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+          [
+            input.code,
+            input.kind,
+            input.value,
+            input.minSubtotal ?? '0.00',
+            input.maxUses,
+            input.perCustomerLimit,
+            input.firstOrderOnly,
+            input.excludesSaleItems,
+            input.startsAt,
+            input.endsAt,
+            input.active,
+            input.description,
+            now,
+          ],
+        );
+      } catch (err) {
+        if ((err as pg.DatabaseError).code === '23505')
+          throw fieldError('code', 'There is already a coupon with this code.');
+        throw err;
+      }
+      for (const c of cats) {
+        await tx.query('INSERT INTO coupon_excluded_categories (coupon_code, category_id) VALUES ($1, $2)', [
+          input.code,
+          c.id,
+        ]);
+      }
+      await audit(tx, user, 'coupon.create', { type: 'coupon', id: input.code }, { after: input }, now);
+    });
+    return (await this.coupons()).find((c) => c.code === input.code)!;
+  }
+
+  async editCoupon(code: string, user: CurrentUser, edit: CouponEditInput, now: Date) {
+    await this.ctx.db.tx(async (tx) => {
+      const { rows } = await tx.query<CouponRow>('SELECT * FROM coupons WHERE code = $1 FOR UPDATE', [code]);
       const c = rows[0];
       if (!c) throw notFound('That coupon');
       const before = {
-        active: c.active,
-        maxUses: c.max_uses,
-        endsAt: c.ends_at?.toISOString() ?? null,
         description: c.description,
+        minSubtotal: toCents(c.min_subtotal) > 0 ? c.min_subtotal : null,
+        maxUses: c.max_uses,
+        perCustomerLimit: c.per_customer_limit,
+        firstOrderOnly: c.first_order_only,
+        excludesSaleItems: c.excludes_sale_items,
+        startsAt: c.starts_at?.toISOString() ?? null,
+        endsAt: c.ends_at?.toISOString() ?? null,
+        active: c.active,
       };
       const changes = diff(before, edit);
       if (!changes.changed) return;
-      await tx.query(`UPDATE coupons SET active = $2, max_uses = $3, ends_at = $4, description = $5 WHERE code = $1`, [
-        code,
-        edit.active ?? c.active,
-        edit.maxUses === undefined ? c.max_uses : edit.maxUses,
-        edit.endsAt === undefined ? c.ends_at : edit.endsAt,
-        edit.description ?? c.description,
-      ]);
+      const next = { ...before, ...edit };
+      if (next.startsAt && next.endsAt && new Date(next.endsAt) <= new Date(next.startsAt)) {
+        throw fieldError('endsAt', 'The end must be after the start.');
+      }
+      await tx.query(
+        `UPDATE coupons SET description = $2, min_subtotal = $3, max_uses = $4, per_customer_limit = $5, first_order_only = $6,
+                            excludes_sale_items = $7, starts_at = $8, ends_at = $9, active = $10
+          WHERE code = $1`,
+        [
+          code,
+          next.description,
+          next.minSubtotal ?? '0.00',
+          next.maxUses,
+          next.perCustomerLimit,
+          next.firstOrderOnly,
+          next.excludesSaleItems,
+          next.startsAt,
+          next.endsAt,
+          next.active,
+        ],
+      );
       await audit(tx, user, 'coupon.update', { type: 'coupon', id: code }, changes, now);
     });
     return (await this.coupons()).find((c) => c.code === code)!;
+  }
+
+  // ---------- dashboard ----------
+
+  /**
+   * The numbers on the admin dashboard for the last `days` days of shop time, compared with the `days` before.
+   * Revenue is the total of orders placed in the range, cancelled ones excluded.
+   */
+  async dashboard(days: number, now: Date) {
+    const db = this.ctx.db;
+    const from = new Date(now.getTime() - days * 86400_000);
+    const prevFrom = new Date(from.getTime() - days * 86400_000);
+    const totals = async (a: Date, b: Date) => {
+      const row = await db.one<{ revenue: string; orders: number; returns: number }>(
+        `SELECT coalesce(sum(total) FILTER (WHERE status <> 'cancelled'), 0)::numeric(12, 2)::text AS revenue,
+                count(*) FILTER (WHERE status <> 'cancelled')::int AS orders,
+                (SELECT count(*)::int FROM returns WHERE requested_at >= $1 AND requested_at < $2) AS returns
+           FROM orders WHERE placed_at >= $1 AND placed_at < $2`,
+        [a, b],
+      );
+      return row!;
+    };
+    const [cur, prev] = await Promise.all([totals(from, now), totals(prevFrom, from)]);
+    const avg = (t: { revenue: string; orders: number }) =>
+      fromCents(t.orders ? Math.round(toCents(t.revenue) / t.orders) : 0);
+    const rate = (t: { orders: number; returns: number }) =>
+      t.orders ? ((t.returns / t.orders) * 100).toFixed(1) : '0.0';
+
+    const [series, byStatus, reasons, lowStock, recent, queues] = await Promise.all([
+      db.query<{ day: string; revenue: string; orders: number }>(
+        `SELECT to_char(d, 'YYYY-MM-DD') AS day,
+                coalesce(sum(o.total) FILTER (WHERE o.status <> 'cancelled'), 0)::numeric(12, 2)::text AS revenue,
+                count(o.id) FILTER (WHERE o.status <> 'cancelled')::int AS orders
+           FROM generate_series(date_trunc('day', $1::timestamptz AT TIME ZONE 'UTC'),
+                                date_trunc('day', $2::timestamptz AT TIME ZONE 'UTC'), interval '1 day') d
+           LEFT JOIN orders o ON o.placed_at >= $1 AND o.placed_at < $2
+                             AND date_trunc('day', o.placed_at AT TIME ZONE 'UTC') = d
+          GROUP BY d ORDER BY d`,
+        [from, now],
+      ),
+      db.query<{ status: OrderStatus; count: number }>(
+        'SELECT status, count(*)::int AS count FROM orders WHERE placed_at >= $1 AND placed_at < $2 GROUP BY status',
+        [from, now],
+      ),
+      db.query<{ reason: ReturnReason; count: number }>(
+        `SELECT reason, count(*)::int AS count FROM returns WHERE requested_at >= $1 AND requested_at < $2
+          GROUP BY reason ORDER BY count DESC, reason`,
+        [from, now],
+      ),
+      db.query<{ id: string; name: string; available: number; threshold: number }>(
+        `SELECT p.id, p.name, sl.available, p.low_stock_threshold AS threshold
+           FROM products p JOIN stock_levels sl ON sl.product_id = p.id
+          WHERE p.active AND sl.available <= p.low_stock_threshold
+          ORDER BY sl.available, p.name LIMIT 8`,
+      ),
+      db.query<{ id: string; customer: string; status: OrderStatus; total: string; placed_at: Date }>(
+        `SELECT o.id, c.name AS customer, o.status, o.total, o.placed_at
+           FROM orders o JOIN customers c ON c.id = o.customer_id ORDER BY o.placed_at DESC, o.id DESC LIMIT 6`,
+      ),
+      db.one<{ to_pack: number; to_ship: number; decide: number; receive: number; reviews: number; low: number }>(
+        `SELECT (SELECT count(*)::int FROM orders WHERE status = 'confirmed') AS to_pack,
+                (SELECT count(*)::int FROM orders WHERE status = 'packed') AS to_ship,
+                (SELECT count(*)::int FROM returns WHERE status = 'requested') AS decide,
+                (SELECT count(*)::int FROM returns WHERE status = 'approved') AS receive,
+                (SELECT count(*)::int FROM reviews WHERE status = 'pending') AS reviews,
+                (SELECT count(*)::int FROM products p JOIN stock_levels sl ON sl.product_id = p.id
+                  WHERE p.active AND sl.available <= p.low_stock_threshold) AS low`,
+      ),
+    ]);
+    const counts = new Map(byStatus.map((s) => [s.status, s.count]));
+    return {
+      from: from.toISOString(),
+      to: now.toISOString(),
+      days,
+      revenue: { value: cur.revenue, previous: prev.revenue },
+      orders: { value: String(cur.orders), previous: String(prev.orders) },
+      averageOrder: { value: avg(cur), previous: avg(prev) },
+      returnRate: { value: rate(cur), previous: rate(prev) },
+      series,
+      byStatus: ORDER_STATUSES.map((status) => ({ status, count: counts.get(status) ?? 0 })),
+      returnReasons: reasons,
+      lowStock,
+      recentOrders: recent.map((o) => ({
+        id: o.id,
+        customer: o.customer,
+        status: o.status,
+        total: o.total,
+        placedAt: o.placed_at.toISOString(),
+      })),
+      queues: {
+        toPack: queues!.to_pack,
+        toShip: queues!.to_ship,
+        returnsToDecide: queues!.decide,
+        returnsToReceive: queues!.receive,
+        reviewsToModerate: queues!.reviews,
+        lowStock: queues!.low,
+      },
+    };
   }
 
   // ---------- shipping and tax ----------

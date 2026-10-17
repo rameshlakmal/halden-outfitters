@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { ROLES } from './account.ts';
 import { Amount, Id, Slug, Timestamp } from './common.ts';
+import { ORDER_STATUSES } from './orders.ts';
+import { RETURN_REASONS } from './returns.ts';
 
 export const StockLevel = z
   .object({
@@ -117,18 +119,87 @@ export const StaffCoupon = z
     endsAt: Timestamp.nullable(),
     active: z.boolean(),
     uses: z.number().int(),
+    excludedCategories: z.array(Slug),
   })
   .meta({ id: 'StaffCoupon' });
 
-export const CouponEdit = z
+export const COUPON_KINDS = ['percent', 'fixed', 'free_shipping'] as const;
+
+/** What a coupon does once created. Its code, kind and value are fixed then: make a new coupon to change them. */
+const couponRules = {
+  description: z.string().trim().min(3).max(200),
+  minSubtotal: Amount.nullable(),
+  maxUses: z.number().int().min(1).max(100_000).nullable(),
+  perCustomerLimit: z.number().int().min(1).max(100).nullable(),
+  firstOrderOnly: z.boolean(),
+  excludesSaleItems: z.boolean(),
+  startsAt: Timestamp.nullable(),
+  endsAt: Timestamp.nullable(),
+  active: z.boolean(),
+};
+
+const datesInOrder = (c: { startsAt?: string | null; endsAt?: string | null }) =>
+  !c.startsAt || !c.endsAt || new Date(c.endsAt) > new Date(c.startsAt);
+
+export const CouponCreate = z
   .object({
-    active: z.boolean(),
-    maxUses: z.number().int().min(1).nullable(),
-    endsAt: Timestamp.nullable(),
-    description: z.string().trim().min(3).max(200),
+    code: z
+      .string()
+      .trim()
+      .toUpperCase()
+      .regex(/^[A-Z0-9]{3,20}$/, '3 to 20 letters and digits.'),
+    kind: z.enum(COUPON_KINDS),
+    value: Amount.describe('Percent (1 to 100), fixed amount off, or 0 for free shipping'),
+    ...couponRules,
+    excludedCategories: z.array(Slug).max(20).default([]),
   })
+  .refine(datesInOrder, { path: ['endsAt'], message: 'The end must be after the start.' })
+  .refine((c) => (c.kind === 'free_shipping' ? Number(c.value) === 0 : Number(c.value) > 0), {
+    path: ['value'],
+    message: 'Free shipping has no value; percent and fixed coupons need one.',
+  })
+  .refine((c) => c.kind !== 'percent' || Number(c.value) <= 100, { path: ['value'], message: 'At most 100%.' });
+
+export const CouponEdit = z
+  .object(couponRules)
   .partial()
-  .refine((e) => Object.keys(e).length > 0, 'Change at least one field.');
+  .refine((e) => Object.keys(e).length > 0, 'Change at least one field.')
+  .refine(datesInOrder, { path: ['endsAt'], message: 'The end must be after the start.' });
+
+// ---------- dashboard ----------
+
+export const DASHBOARD_RANGES = [7, 30, 90] as const;
+
+const Kpi = z.object({ value: z.string(), previous: z.string() });
+
+export const Dashboard = z
+  .object({
+    from: Timestamp,
+    to: Timestamp,
+    days: z.number().int(),
+    revenue: Kpi.describe('Totals of orders placed in the range, cancelled ones excluded'),
+    orders: Kpi,
+    averageOrder: Kpi,
+    returnRate: Kpi.describe('Returns requested per order placed, as a percent'),
+    series: z.array(z.object({ day: z.string(), revenue: Amount, orders: z.number().int() })),
+    byStatus: z.array(z.object({ status: z.enum(ORDER_STATUSES), count: z.number().int() })),
+    returnReasons: z.array(z.object({ reason: z.enum(RETURN_REASONS), count: z.number().int() })),
+    lowStock: z.array(z.object({ id: Id, name: z.string(), available: z.number().int(), threshold: z.number().int() })),
+    recentOrders: z.array(
+      z.object({ id: Id, customer: z.string(), status: z.enum(ORDER_STATUSES), total: Amount, placedAt: Timestamp }),
+    ),
+    queues: z
+      .object({
+        toPack: z.number().int(),
+        toShip: z.number().int(),
+        returnsToDecide: z.number().int(),
+        returnsToReceive: z.number().int(),
+        reviewsToModerate: z.number().int(),
+        lowStock: z.number().int(),
+      })
+      .describe('Open work, for the counters in the navigation'),
+  })
+  .meta({ id: 'Dashboard' });
 
 export const ShippingRate = z
   .object({
