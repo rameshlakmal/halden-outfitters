@@ -30,7 +30,13 @@ export const Cart = z
     subtotal: Amount,
     savings: Amount.describe('How much less than the old prices of sale items'),
     coupon: z
-      .object({ code: z.string(), applied: z.boolean(), problem: z.string().nullable(), discount: Amount, kind: z.enum(['percent', 'fixed', 'free_shipping']).nullable() })
+      .object({
+        code: z.string(),
+        applied: z.boolean(),
+        problem: z.string().nullable(),
+        discount: Amount,
+        kind: z.enum(['percent', 'fixed', 'free_shipping']).nullable(),
+      })
       .nullable()
       .describe('The code on the cart and whether it can be used right now'),
     discount: Amount.describe('Coupon discount before shipping and tax'),

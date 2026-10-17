@@ -21,7 +21,9 @@ import { couponProblem, loadCoupon, toPricingCoupon, type CouponBugs } from '../
 import { PAYMENT_MINUTES } from '../orders/lifecycle.js';
 import { OrderService } from '../orders/service.js';
 import { luhnValid } from '../payments/haldenpay.js';
-import { amounts, price, type PricingLine } from './pricing.js';
+import { balance, lockPoints, redeem } from '../loyalty/points.js';
+import { creditBalance, spendCredit } from '../loyalty/store-credit.js';
+import { amounts, maxRedeemablePoints, price, type PricingLine } from './pricing.js';
 
 type Input = z.infer<typeof QuoteInput>;
 type ShipAddress = {
@@ -166,15 +168,28 @@ export class CheckoutService {
       if (problem) coupon = undefined;
     }
     const couponTwice = await this.ctx.bugs.enabled('coupon_twice', client);
+    const pricingCoupon = coupon ? toPricingCoupon(coupon) : null;
+    const base = price({ lines, coupon: pricingCoupon, rate: { price: rate.price, freeFrom: rate.free_from }, taxRatePercent: taxRate, bugs: { couponTwice } });
+
+    // Halden Points: checked against the balance and the half-of-the-order limit.
+    const points = await balance(client, user.id);
+    const maxRedeemable = Math.min(maxRedeemablePoints(base.subtotal - base.discount), Math.floor(points.available / 100) * 100);
+    if (input.pointsToRedeem > points.available) throw fieldError('pointsToRedeem', `You have ${points.available} points.`);
+    if (input.pointsToRedeem > maxRedeemablePoints(base.subtotal - base.discount)) {
+      throw fieldError('pointsToRedeem', `Points can pay at most half of this order: up to ${maxRedeemablePoints(base.subtotal - base.discount)} points.`);
+    }
     const result = price({
       lines,
-      coupon: coupon ? toPricingCoupon(coupon) : null,
+      coupon: pricingCoupon,
       rate: { price: rate.price, freeFrom: rate.free_from },
       taxRatePercent: taxRate,
+      points: input.pointsToRedeem,
       bugs: { couponTwice },
     });
+    const creditCents = toCents(await creditBalance(client, user.id));
+    const credit = input.useStoreCredit ? Math.min(creditCents, result.total) : 0;
     const options = rates.map((r) => {
-      const p = price({ lines, coupon: coupon ? toPricingCoupon(coupon) : null, rate: { price: r.price, freeFrom: r.free_from }, taxRatePercent: taxRate, bugs: { couponTwice } });
+      const p = price({ lines, coupon: pricingCoupon, rate: { price: r.price, freeFrom: r.free_from }, taxRatePercent: taxRate, points: input.pointsToRedeem, bugs: { couponTwice } });
       return { method: r.method, price: fromCents(p.shipping), free: p.shipping === 0, freeFrom: r.free_from, daysMin: r.days_min, daysMax: r.days_max };
     });
     return {
@@ -182,8 +197,10 @@ export class CheckoutService {
       shippingOptions: options,
       shippingMethod: input.shippingMethod,
       coupon: couponCode ? { code: couponCode, applied: !problem && Boolean(coupon), problem, discount: fromCents(result.discount) } : null,
-      totals: amounts(result, taxRate),
+      totals: { ...amounts(result, taxRate), storeCredit: fromCents(credit), amountDue: fromCents(result.total - credit) },
       toFreeShipping: result.toFreeShipping === null ? null : fromCents(result.toFreeShipping),
+      points: { available: points.available, maxRedeemable, redeemed: input.pointsToRedeem },
+      storeCredit: { balance: fromCents(creditCents), applied: fromCents(credit) },
       _lines: lines,
       _cents: result,
       _address: address,
@@ -194,12 +211,14 @@ export class CheckoutService {
   }
 
   /** Places the order and authorizes the card. Returns the order id and, for the bank step, where to go. */
-  async place(user: CurrentUser, input: Input & { card: { number: string } }, now: Date) {
+  async place(user: CurrentUser, input: Input & { card?: { number: string } | undefined }, now: Date) {
     if (!user.emailVerified) {
       throw new AppError('email_not_verified', 'Confirm your email address before your first order. We sent you a link.');
     }
-    if (!luhnValid(input.card.number)) throw fieldError('card.number', 'That card number is not valid.', 'Please check the card number.');
+    if (input.card && !luhnValid(input.card.number)) throw fieldError('card.number', 'That card number is not valid.', 'Please check the card number.');
     const orderId = await this.ctx.db.tx(async (tx) => {
+      // Lock the customer's points and store credit first, so two checkouts can't spend them twice.
+      await lockPoints(tx, user.id);
       const { lines } = await this.cartLines(tx, user.id, true);
       if (lines.length === 0) throw new AppError('cart_empty', 'Your cart is empty.');
       const bad = lines.find((l) => !l.active || l.available < l.qty);
@@ -220,29 +239,33 @@ export class CheckoutService {
       }
       const q = await this.quote(user, input, now, tx);
       const a = q._address;
+      if (toCents(q.totals.amountDue) > 0 && !input.card) throw fieldError('card', 'Enter a card for the amount left to pay.');
       if ('address' in input.shipTo) await this.saveAddress(tx, user.id, input.shipTo.address, now);
 
       const expires = addSeconds(now, PAYMENT_MINUTES * 60);
       const { rows } = await tx.query<{ id: string }>(
         `INSERT INTO orders (customer_id, email, status, subtotal, discount, shipping, tax, total, tax_rate, coupon_code,
                              shipping_zone, shipping_method, ship_name, ship_line1, ship_line2, ship_city, ship_region,
-                             ship_postcode, ship_country, ship_phone, payment_expires_at, placed_at, updated_at)
-         VALUES ($1, $2, 'pending_payment', $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $21)
+                             ship_postcode, ship_country, ship_phone, payment_expires_at, placed_at, updated_at,
+                             points_redeemed, points_discount, store_credit_used)
+         VALUES ($1, $2, 'pending_payment', $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $21, $22, $23, $24)
          RETURNING id`,
         [
           user.id, user.email, q.totals.subtotal, q.totals.discount, q.totals.shipping, q.totals.tax, q.totals.total, q.totals.taxRate,
           q._couponCode, q.zone.code, input.shippingMethod, a.name, a.line1, a.line2, a.city, a.region, a.postcode, a.country_code, a.phone,
-          expires, now,
+          expires, now, input.pointsToRedeem, q.totals.pointsDiscount, q.totals.storeCredit,
         ],
       );
       const id = rows[0]!.id;
+      await redeem(tx, user.id, input.pointsToRedeem, id, now);
+      if (toCents(q.totals.storeCredit) > 0) await spendCredit(tx, user.id, toCents(q.totals.storeCredit), id, now);
       for (const [i, l] of q._lines.entries()) {
         const priced = q._cents.lines[i]!;
         await tx.query(
           `INSERT INTO order_items (order_id, product_id, sku, name, image, category_id, unit_price, qty, line_total,
-                                    discount_alloc, tax_alloc, returnable, on_sale)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
-          [id, l.productId, l.sku, l.name, l.image, l.categoryId, l.unitPrice, l.qty, fromCents(priced.lineTotal), fromCents(priced.discount), fromCents(priced.tax), l.returnable, l.onSale],
+                                    discount_alloc, points_alloc, tax_alloc, returnable, on_sale)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+          [id, l.productId, l.sku, l.name, l.image, l.categoryId, l.unitPrice, l.qty, fromCents(priced.lineTotal), fromCents(priced.discount), fromCents(priced.points), fromCents(priced.tax), l.returnable, l.onSale],
         );
         await tx.query('INSERT INTO stock_reservations (order_id, product_id, qty, expires_at, created_at) VALUES ($1, $2, $3, $4, $5)', [
           id, l.productId, l.qty, expires, now,
@@ -257,18 +280,22 @@ export class CheckoutService {
         'INSERT INTO order_events (order_id, from_status, to_status, actor_id, actor_role, note, created_at) VALUES ($1, NULL, $2, $3, $4, $5, $6)',
         [id, 'pending_payment', user.id, user.role, 'Order placed', now],
       );
-      return { id, total: q.totals.total, shipping: q.totals.shipping };
+      // Paid in full with store credit: no card, confirmed straight away.
+      if (toCents(q.totals.amountDue) === 0) await this.orders.confirm(tx, id, now);
+      return { id, due: q.totals.amountDue, shipping: q.totals.shipping };
     });
+    if (toCents(orderId.due) === 0) return { orderId: orderId.id, status: 'confirmed' as const, nextAction: null };
+    const card = input.card!;
 
-    // Planted bug: payment_misses_shipping authorizes the total without shipping.
+    // Planted bug: payment_misses_shipping authorizes the amount due without shipping.
     const amount = (await this.ctx.bugs.enabled('payment_misses_shipping'))
-      ? fromCents(toCents(orderId.total) - toCents(orderId.shipping))
-      : orderId.total;
+      ? fromCents(Math.max(1, toCents(orderId.due) - toCents(orderId.shipping)))
+      : orderId.due;
     const result = await this.ctx.db.tx(async (tx) => {
       const r = await this.ctx.gateway.authorize(tx, {
         orderId: orderId.id,
         amount,
-        cardNumber: input.card.number,
+        cardNumber: card.number,
         returnUrl: `${this.ctx.config.APP_URL}/checkout/authenticate`,
       });
       const status = r.status === 'authorized' ? 'authorized' : r.status === 'requires_action' ? 'requires_action' : 'failed';

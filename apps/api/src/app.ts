@@ -26,6 +26,7 @@ import { orderRoutes } from './modules/orders/routes.js';
 import { HaldenPay } from './modules/payments/haldenpay.js';
 import { deliverWebhooks, webhookRoutes } from './modules/payments/webhooks.js';
 import { accountRoutes } from './modules/accounts/routes.js';
+import { returnRoutes } from './modules/returns/routes.js';
 import { cartRoutes } from './modules/cart/routes.js';
 import { catalogRoutes } from './modules/catalog/routes.js';
 import { qaRoutes } from './modules/qa-lab/routes.js';
@@ -155,6 +156,7 @@ export async function buildApp({ config, db, clock, rateLimits = config.RATE_LIM
       await api.register(accountRoutes);
       await api.register(checkoutRoutes);
       await api.register(orderRoutes);
+      await api.register(returnRoutes);
       await api.register(webhookRoutes(ctx));
       await api.register(qaRoutes);
     },

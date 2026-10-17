@@ -19,7 +19,7 @@ describe('quote', () => {
     await fill(t, client, [['camp-pillow', 1], ['insulated-mug', 1]]); // 60.00
     const q = json(await quote(client, addressId));
     expect(q.zone.code).toBe('domestic');
-    expect(q.totals).toEqual({ subtotal: '60.00', discount: '0.00', shipping: '7.95', tax: '4.80', taxRate: '8.00', total: '72.75' });
+    expect(q.totals).toEqual({ subtotal: '60.00', discount: '0.00', pointsDiscount: '0.00', storeCredit: '0.00', amountDue: '72.75', shipping: '7.95', tax: '4.80', taxRate: '8.00', total: '72.75' });
     expect(q.toFreeShipping).toBe('15.00');
     expect(q.shippingOptions.map((o: { method: string; price: string }) => [o.method, o.price])).toEqual([
       ['standard', '7.95'],

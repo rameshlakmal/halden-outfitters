@@ -10,6 +10,8 @@ import { z } from 'zod';
 import { requireRole } from '../../core/auth.js';
 import { AppError } from '../../core/errors.js';
 import { OrderService } from '../orders/service.js';
+import { ReturnService } from '../returns/service.js';
+import { expire } from '../loyalty/points.js';
 
 type OutboxRow = { id: string; to_email: string; template: string; subject: string; body_text: string; created_at: Date };
 
@@ -141,11 +143,20 @@ export const qaRoutes: FastifyPluginAsyncZod = async (app) => {
 
   // ---------- sweeps and webhooks ----------
 
-  const Sweep = z.object({ expired: z.number().int(), completed: z.number().int(), webhooksDelivered: z.number().int() });
+  const Sweep = z.object({
+    expired: z.number().int(),
+    completed: z.number().int(),
+    returnsExpired: z.number().int(),
+    pointsExpired: z.number().int(),
+    webhooksDelivered: z.number().int(),
+  });
   const orders = new OrderService(app.ctx);
+  const returns = new ReturnService(app.ctx);
   const runSweep = async (now: Date) => {
+    const returnsExpired = await returns.sweep(now);
     const result = await orders.sweep(now);
-    return { ...result, webhooksDelivered: await app.ctx.deliverWebhooks() };
+    const pointsExpired = await app.ctx.db.tx((tx) => expire(tx, now));
+    return { ...result, returnsExpired, pointsExpired, webhooksDelivered: await app.ctx.deliverWebhooks() };
   };
 
   app.post(
@@ -154,7 +165,7 @@ export const qaRoutes: FastifyPluginAsyncZod = async (app) => {
       schema: {
         tags,
         summary: 'Run the time-based rules now (admin)',
-        description: 'Cancels unpaid orders past their 30 minutes, completes orders past their return window, delivers queued webhooks.',
+        description: 'Cancels unpaid orders past their 30 minutes, expires unused return labels, completes orders past their return window, expires 12-month-old points, delivers queued webhooks.',
         security: [{ session: [] }],
         response: { 200: Sweep, 401: Problem, 403: Problem, 404: Problem },
       },

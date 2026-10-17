@@ -5,7 +5,7 @@
 //   - A pending_payment order that isn't paid within 30 minutes is cancelled (payment_timeout). This is applied
 //     lazily whenever the order is read or touched, and by the sweep, because the free hosting plan only runs a
 //     scheduled job once a day.
-//   - A delivered order becomes completed once its return window has passed.
+//   - A delivered order becomes completed once its return window has passed and it has no open return.
 import type { CancelReason, Order, OrderStatus, OrderSummary, Role } from '@halden/contracts';
 import type pg from 'pg';
 import type { CurrentUser } from '../../core/auth.js';
@@ -13,7 +13,10 @@ import type { AppContext } from '../../core/context.js';
 import type { Queryable } from '../../core/db.js';
 import { AppError, notFound } from '../../core/errors.js';
 import { queueEmail } from '../../core/outbox.js';
-import { allowedActions, canMove, CANCELLABLE_BY, returnWindowClosed } from './lifecycle.js';
+import { fromCents, toCents } from '@halden/money';
+import { earnOnDelivery, giveBack, releaseOnCompletion } from '../loyalty/points.js';
+import { addCredit } from '../loyalty/store-credit.js';
+import { allowedActions, canMove, CANCELLABLE_BY, returnWindowClosed, returnWindowEnds } from './lifecycle.js';
 
 export type Actor = { id: string | null; role: Role | null; kind: 'customer' | 'staff' | 'system' };
 export const systemActor: Actor = { id: null, role: null, kind: 'system' };
@@ -34,6 +37,10 @@ type OrderRow = {
   tax: string;
   total: string;
   tax_rate: string;
+  points_redeemed: number;
+  points_earned: number;
+  points_discount: string;
+  store_credit_used: string;
   coupon_code: string | null;
   shipping_zone: string;
   shipping_method: 'standard' | 'express';
@@ -210,6 +217,9 @@ export class OrderService {
     if (!(await this.ctx.bugs.enabled('cancel_keeps_coupon_use', tx))) {
       await tx.query('UPDATE coupon_redemptions SET released_at = $2 WHERE order_id = $1 AND released_at IS NULL', [o.id, now]);
     }
+    // Points spent and store credit used on the order go back to the customer.
+    await giveBack(tx, o.customer_id, o.points_redeemed, 'redeem_reversal', { orderId: o.id }, now);
+    if (toCents(o.store_credit_used) > 0) await addCredit(tx, o.customer_id, o.store_credit_used, 'purchase_reversal', { orderId: o.id }, now);
     if (opts.voidPayment) {
       const { rows } = await tx.query<{ intent_id: string; status: string }>('SELECT intent_id, status FROM payments WHERE order_id = $1', [o.id]);
       const p = rows[0];
@@ -243,11 +253,12 @@ export class OrderService {
         [orderId],
       );
       const pay = pays[0];
-      if (!pay || pay.status !== 'authorized') {
-        throw new AppError('invalid_transition', 'This order has no authorized payment to charge.');
+      // Orders paid fully with store credit have no card to charge.
+      if (pay) {
+        if (pay.status !== 'authorized') throw new AppError('invalid_transition', 'This order has no authorized payment to charge.');
+        await this.ctx.gateway.capture(tx, pay.intent_id, pay.amount);
+        await tx.query("UPDATE payments SET status = 'captured', amount_captured = amount, updated_at = $2 WHERE order_id = $1", [orderId, now]);
       }
-      await this.ctx.gateway.capture(tx, pay.intent_id, pay.amount);
-      await tx.query("UPDATE payments SET status = 'captured', amount_captured = amount, updated_at = $2 WHERE order_id = $1", [orderId, now]);
 
       const { rows: holds } = await tx.query<{ id: string; product_id: string; qty: number }>(
         `SELECT id, product_id, qty FROM stock_reservations
@@ -282,6 +293,8 @@ export class OrderService {
       const o = await this.lockOrder(tx, orderId);
       this.assertMove(o, 'delivered');
       await tx.query("UPDATE orders SET status = 'delivered', delivered_at = $2, version = version + 1, updated_at = $2 WHERE id = $1", [orderId, now]);
+      // Planted bug: points_on_tax_shipping.
+      await earnOnDelivery(tx, o, now, { onTaxAndShipping: await this.ctx.bugs.enabled('points_on_tax_shipping', tx) });
       await this.event(tx, orderId, o.status, 'delivered', actorOf(user), null, now);
       await queueEmail(tx, o.email, 'order_delivered', { name: await this.customerName(tx, o.customer_id), orderId, link: this.link(orderId) }, now);
     });
@@ -309,8 +322,11 @@ export class OrderService {
     } else if (o.status === 'delivered' && o.delivered_at && returnWindowClosed(o.delivered_at, now)) {
       const locked = await this.lockOrder(tx, orderId);
       if (locked.status !== 'delivered') return;
+      const { rows: open } = await tx.query("SELECT 1 FROM returns WHERE order_id = $1 AND status IN ('requested', 'approved')", [orderId]);
+      if (open.length) return; // completes once the return is finished
       await tx.query("UPDATE orders SET status = 'completed', completed_at = $2, version = version + 1, updated_at = $2 WHERE id = $1", [orderId, now]);
       await this.event(tx, orderId, 'delivered', 'completed', systemActor, 'Return window closed', now);
+      await releaseOnCompletion(tx, o.customer_id, orderId, now);
     }
   }
 
@@ -347,7 +363,7 @@ export class OrderService {
     const isStaff = user.role !== 'customer';
     if (!o || (o.customer_id !== user.id && !isStaff)) throw notFound('That order');
 
-    const [lines, payment, events] = await Promise.all([
+    const [lines, payment, events, refunds, returns] = await Promise.all([
       this.ctx.db.query<{
         product_id: string;
         sku: string;
@@ -359,10 +375,14 @@ export class OrderService {
         line_total: string;
         discount_alloc: string;
         tax_alloc: string;
+        points_alloc: string;
         returnable: boolean;
+        claimed: number;
       }>(
         `SELECT oi.product_id, oi.sku, oi.name, p.slug, oi.image, oi.unit_price, oi.qty, oi.line_total, oi.discount_alloc,
-                oi.tax_alloc, oi.returnable
+                oi.tax_alloc, oi.points_alloc, oi.returnable,
+                (SELECT coalesce(sum(ri.qty), 0)::int FROM return_items ri JOIN returns r ON r.id = ri.return_id
+                  WHERE ri.order_item_id = oi.id AND r.status NOT IN ('cancelled', 'rejected', 'expired')) AS claimed
            FROM order_items oi JOIN products p ON p.id = oi.product_id WHERE oi.order_id = $1 ORDER BY oi.id`,
         [orderId],
       ),
@@ -379,7 +399,19 @@ export class OrderService {
         'SELECT from_status, to_status, actor_id, actor_role, note, created_at FROM order_events WHERE order_id = $1 ORDER BY id',
         [orderId],
       ),
+      this.ctx.db.query<{ kind: 'return' | 'goodwill'; method: 'card' | 'store_credit'; amount: string; reason: string; created_at: Date }>(
+        'SELECT kind, method, amount, reason, created_at FROM refunds WHERE order_id = $1 ORDER BY id',
+        [orderId],
+      ),
+      this.ctx.db.query<{ id: string; status: string }>('SELECT id, status FROM returns WHERE order_id = $1 ORDER BY id', [orderId]),
     ]);
+    const windowFrom = (await this.ctx.bugs.enabled('return_window_order_date')) ? o.placed_at : o.delivered_at;
+    const windowOpen = o.status === 'delivered' && !!windowFrom && !returnWindowClosed(windowFrom, now);
+    const openReturn = returns.some((r) => r.status === 'requested' || r.status === 'approved');
+    const canReturn = (l: { returnable: boolean; qty: number; claimed: number }) => windowOpen && !openReturn && l.returnable ? l.qty - l.claimed : 0;
+    const actions = allowedActions(o.status, { id: user.id, role: user.role, isOwner: o.customer_id === user.id });
+    if (o.customer_id === user.id && lines.some((l) => canReturn(l) > 0)) actions.push('return');
+    if ((user.role === 'support' || user.role === 'admin') && ['shipped', 'delivered', 'completed'].includes(o.status)) actions.push('goodwill');
 
     return {
       id: o.id,
@@ -399,8 +431,21 @@ export class OrderService {
         discount: l.discount_alloc,
         tax: l.tax_alloc,
         returnable: l.returnable,
+        pointsDiscount: l.points_alloc,
+        returnedQty: l.claimed,
+        returnableQty: canReturn(l),
       })),
-      totals: { subtotal: o.subtotal, discount: o.discount, shipping: o.shipping, tax: o.tax, taxRate: Number(o.tax_rate).toFixed(2), total: o.total },
+      totals: {
+        subtotal: o.subtotal,
+        discount: o.discount,
+        pointsDiscount: o.points_discount,
+        shipping: o.shipping,
+        tax: o.tax,
+        taxRate: Number(o.tax_rate).toFixed(2),
+        total: o.total,
+        storeCredit: o.store_credit_used,
+        amountDue: fromCents(toCents(o.total) - toCents(o.store_credit_used)),
+      },
       couponCode: o.coupon_code,
       shipping: {
         method: o.shipping_method,
@@ -435,7 +480,11 @@ export class OrderService {
         note: e.note,
         at: e.created_at.toISOString(),
       })),
-      allowedActions: allowedActions(o.status, { id: user.id, role: user.role, isOwner: o.customer_id === user.id }),
+      returnWindowEndsAt: o.delivered_at && windowFrom ? returnWindowEnds(windowFrom).toISOString() : null,
+      pointsEarned: o.points_earned,
+      refunds: refunds.map((r) => ({ kind: r.kind, method: r.method, amount: r.amount, reason: r.reason, at: r.created_at.toISOString() })),
+      returns,
+      allowedActions: actions,
     };
   }
 

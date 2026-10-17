@@ -13,6 +13,12 @@ type Templates = {
   order_shipped: { name: string; orderId: string; trackingNumber: string; link: string };
   order_delivered: { name: string; orderId: string; link: string };
   payment_disputed: { orderId: string; amount: string };
+  return_requested: { name: string; returnId: string; orderId: string; link: string };
+  return_approved: { name: string; returnId: string; labelCode: string; labelExpires: string; labelFee: string; link: string };
+  return_rejected: { name: string; returnId: string; reason: string; link: string };
+  return_refunded: { name: string; returnId: string; amount: string; method: string; points: number; lines: string; link: string };
+  return_expired: { name: string; returnId: string; link: string };
+  goodwill_refund: { name: string; orderId: string; amount: string; method: string; reason: string; link: string };
 };
 export type Template = keyof Templates;
 
@@ -56,6 +62,30 @@ const RENDER: { [K in Template]: (d: Templates[K]) => { subject: string; body: s
   payment_disputed: (d) => ({
     subject: `Dispute opened on order ${d.orderId}`,
     body: `The card holder disputed the payment of ${d.amount} for order ${d.orderId}. Review the order in the staff console.`,
+  }),
+  return_requested: (d) => ({
+    subject: `Return ${d.returnId} received for review`,
+    body: `Hi ${d.name},\n\nWe have your return request ${d.returnId} for order ${d.orderId}. Our support team will look at it within 2 working days and email you.\n\n${d.link}`,
+  }),
+  return_approved: (d) => ({
+    subject: `Return ${d.returnId} is approved`,
+    body: `Hi ${d.name},\n\nYour return ${d.returnId} is approved. Your return label code is ${d.labelCode}; use it by ${d.labelExpires}.\n\nLabel fee taken off the refund: ${d.labelFee}\n\n${d.link}`,
+  }),
+  return_rejected: (d) => ({
+    subject: `Return ${d.returnId} was not approved`,
+    body: `Hi ${d.name},\n\nWe could not approve return ${d.returnId}: ${d.reason}\n\nReply to this email if you have questions.\n\n${d.link}`,
+  }),
+  return_refunded: (d) => ({
+    subject: `Refund for return ${d.returnId}`,
+    body: `Hi ${d.name},\n\nWe checked your return ${d.returnId}.\n\n${d.lines}\n\nRefund: ${d.amount} to your ${d.method}${d.points > 0 ? `, and ${d.points} points back` : ''}.\n\n${d.link}`,
+  }),
+  return_expired: (d) => ({
+    subject: `Return ${d.returnId} has expired`,
+    body: `Hi ${d.name},\n\nThe label for return ${d.returnId} was not used within 14 days, so the return has closed. You can start a new one while the order is still in its return window.\n\n${d.link}`,
+  }),
+  goodwill_refund: (d) => ({
+    subject: `A refund on order ${d.orderId}`,
+    body: `Hi ${d.name},\n\nWe have refunded ${d.amount} to your ${d.method} for order ${d.orderId}: ${d.reason}\n\n${d.link}`,
   }),
 };
 

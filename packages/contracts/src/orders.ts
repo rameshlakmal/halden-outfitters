@@ -24,11 +24,16 @@ export const CUSTOMER_CANCEL_REASONS = [
   'delivery_too_slow',
   'other',
 ] as const;
-export const STAFF_CANCEL_REASONS = [...CUSTOMER_CANCEL_REASONS, 'out_of_stock', 'fraud_suspected', 'customer_request'] as const;
+export const STAFF_CANCEL_REASONS = [
+  ...CUSTOMER_CANCEL_REASONS,
+  'out_of_stock',
+  'fraud_suspected',
+  'customer_request',
+] as const;
 export const CANCEL_REASONS = [...STAFF_CANCEL_REASONS, 'payment_failed', 'payment_timeout'] as const;
 export type CancelReason = (typeof CANCEL_REASONS)[number];
 
-export const ORDER_ACTIONS = ['cancel', 'pay', 'pack', 'ship', 'deliver'] as const;
+export const ORDER_ACTIONS = ['cancel', 'pay', 'pack', 'ship', 'deliver', 'return', 'goodwill'] as const;
 export type OrderAction = (typeof ORDER_ACTIONS)[number];
 
 // ---------- checkout ----------
@@ -42,6 +47,14 @@ export const ShipTo = z.union([
 export const QuoteInput = z.object({
   shipTo: ShipTo,
   shippingMethod: z.enum(SHIPPING_METHODS).default('standard'),
+  pointsToRedeem: z
+    .number()
+    .int()
+    .min(0)
+    .multipleOf(100, 'Points are used in blocks of 100.')
+    .default(0)
+    .describe('100 points = 5.00 off; at most half of the subtotal after the coupon'),
+  useStoreCredit: z.boolean().default(false).describe('Pay with store credit first, the card for the rest'),
 });
 
 export const ShippingOption = z
@@ -58,11 +71,14 @@ export const ShippingOption = z
 export const Totals = z
   .object({
     subtotal: Amount,
-    discount: Amount,
+    discount: Amount.describe('Coupon discount'),
+    pointsDiscount: Amount.describe('Paid with Halden Points'),
     shipping: Amount,
     tax: Amount,
     taxRate: z.string().describe('Percent, e.g. "8.00"'),
     total: Amount,
+    storeCredit: Amount.describe('Paid with store credit'),
+    amountDue: Amount.describe('What the card is charged: total minus store credit'),
   })
   .meta({ id: 'Totals' });
 export type Totals = z.infer<typeof Totals>;
@@ -77,6 +93,8 @@ export const Quote = z
       .nullable(),
     totals: Totals,
     toFreeShipping: Amount.nullable().describe('How much more for free shipping with this method, if any'),
+    points: z.object({ available: z.number().int(), maxRedeemable: z.number().int(), redeemed: z.number().int() }),
+    storeCredit: z.object({ balance: Amount, applied: Amount }),
   })
   .meta({ id: 'Quote' });
 export type Quote = z.infer<typeof Quote>;
@@ -92,7 +110,9 @@ export const Card = z.object({
   name: z.string().trim().min(1, 'Required.').max(80),
 });
 
-export const CheckoutInput = QuoteInput.extend({ card: Card });
+export const CheckoutInput = QuoteInput.extend({
+  card: Card.optional().describe('Not needed when store credit covers the whole order'),
+});
 
 export const CheckoutResult = z
   .object({
@@ -129,6 +149,9 @@ export const OrderLine = z
     discount: Amount,
     tax: Amount,
     returnable: z.boolean(),
+    pointsDiscount: Amount,
+    returnedQty: z.number().int().describe('Units in returns that were not cancelled, rejected or expired'),
+    returnableQty: z.number().int().describe('Units that can still be returned now'),
   })
   .meta({ id: 'OrderLine' });
 
@@ -144,15 +167,7 @@ export const OrderEvent = z
 
 export const OrderPayment = z
   .object({
-    status: z.enum([
-      'requires_action',
-      'authorized',
-      'captured',
-      'voided',
-      'failed',
-      'partially_refunded',
-      'refunded',
-    ]),
+    status: z.enum(['requires_action', 'authorized', 'captured', 'voided', 'failed', 'partially_refunded', 'refunded']),
     cardBrand: z.string(),
     cardLast4: z.string(),
     amount: Amount,
@@ -189,6 +204,18 @@ export const Order = z
     payment: OrderPayment.nullable(),
     cancel: z.object({ reason: z.enum(CANCEL_REASONS), note: z.string().nullable(), at: Timestamp }).nullable(),
     events: z.array(OrderEvent),
+    returnWindowEndsAt: Timestamp.nullable().describe('Last day to start a return (delivered orders)'),
+    pointsEarned: z.number().int(),
+    refunds: z.array(
+      z.object({
+        kind: z.enum(['return', 'goodwill']),
+        method: z.enum(['card', 'store_credit']),
+        amount: Amount,
+        reason: z.string(),
+        at: Timestamp,
+      }),
+    ),
+    returns: z.array(z.object({ id: Id, status: z.string() })),
     allowedActions: z.array(z.enum(ORDER_ACTIONS)).describe('What the viewer may do with this order now'),
   })
   .meta({ id: 'Order' });

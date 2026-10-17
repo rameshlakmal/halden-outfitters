@@ -106,3 +106,18 @@ describe('allocations', () => {
     expect(r.lines[1]).toMatchObject({ discount: 5000, tax: 400 });
   });
 });
+
+describe('Halden Points', () => {
+  it('takes 5.00 per 100 points off before tax, spread over the lines', () => {
+    const r = price({ lines: [line('1', '60.00'), line('2', '40.00')], coupon: null, rate: DOMESTIC, taxRatePercent: 8, points: 300 });
+    expect(r).toMatchObject({ subtotal: 10_000, pointsDiscount: 1500, tax: 680, total: 10_000 - 1500 + 680 });
+    expect(r.lines.map((l) => l.points)).toEqual([900, 600]);
+    expect(r.lines.reduce((n, l) => n + l.tax, 0)).toBe(r.tax);
+  });
+
+  it('never takes more than half of the subtotal after the coupon', () => {
+    const r = price({ lines: [line('1', '28.00')], coupon: pct('10'), rate: DOMESTIC, taxRatePercent: 8, points: 2000 });
+    // 25.20 after the coupon: half is 12.60, so two 5.00 blocks.
+    expect(r.pointsDiscount).toBe(1000);
+  });
+});

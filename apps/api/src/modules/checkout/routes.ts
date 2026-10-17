@@ -33,6 +33,8 @@ export const checkoutRoutes: FastifyPluginAsyncZod = async (app) => {
         coupon: q.coupon,
         totals: q.totals,
         toFreeShipping: q.toFreeShipping,
+        points: q.points,
+        storeCredit: q.storeCredit,
       };
     },
   );

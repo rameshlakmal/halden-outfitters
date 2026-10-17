@@ -22,6 +22,8 @@ const TITLES: Record<ErrorCode, string> = {
   cart_empty: 'The cart is empty',
   coupon_invalid: 'Coupon cannot be used',
   shipping_unavailable: 'No shipping to this address',
+  return_not_allowed: 'This cannot be returned',
+  refund_limit_exceeded: 'Refund over the limit',
   idempotency_key_missing: 'Idempotency-Key header required',
   idempotency_key_reused: 'Idempotency-Key reused with a different request',
   idempotency_in_progress: 'The first request with this key is still running',

@@ -26,6 +26,8 @@ export const ERROR_CODES = {
   cart_empty: 409,
   coupon_invalid: 409,
   shipping_unavailable: 409,
+  return_not_allowed: 409,
+  refund_limit_exceeded: 409,
   idempotency_key_missing: 400,
   idempotency_key_reused: 422,
   idempotency_in_progress: 409,

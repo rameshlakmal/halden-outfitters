@@ -58,7 +58,7 @@ export async function seedOrders(db: Db): Promise<number> {
 
     const placed = await checkout.place(
       asUser(customer),
-      { shipTo: { addressId: address!.id }, shippingMethod: o.method ?? 'standard', card: { number: o.card ?? '4242424242424242' } },
+      { shipTo: { addressId: address!.id }, shippingMethod: o.method ?? 'standard', pointsToRedeem: 0, useStoreCredit: false, card: { number: o.card ?? '4242424242424242' } },
       at,
     );
     const id = placed.orderId;
