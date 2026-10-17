@@ -63,6 +63,8 @@ jobs:
       RATE_LIMITS: 'false'
       SEED_ADMIN_PASSWORD: ci-staff-password-1
       SEED_SHOPPER_PASSWORD: ci-shopper-password-1
+      HALDENPAY_WEBHOOK_SECRET: whsec_ci_only_not_a_real_secret
+      CRON_SECRET: ci-cron-secret
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -75,24 +77,28 @@ jobs:
         run: |
           npm run build -w @halden/api
           NODE_ENV=production nohup npm run start -w @halden/api > api.log 2>&1 &
-          npx wait-on -t 60000 http://127.0.0.1:4000/api/v1/health
+          npx wait-on -t 60000 http://127.0.0.1:4000/api/v1/health || { bash scripts/ci-annotate.sh 'API did not start' api.log; exit 1; }
       - name: Build the web app
         run: npm run build -w @halden/web
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
         working-directory: apps/web
       - name: End-to-end tests
-        run: npm run test:e2e
+        run: |
+          set -o pipefail
+          npm run test:e2e 2>&1 | tee e2e.log || { bash scripts/ci-annotate.sh 'End-to-end tests' e2e.log; bash scripts/ci-annotate.sh 'API log' api.log; exit 1; }
       - name: Reseed (the e2e run changed carts and accounts)
         run: npm run db:seed
       - name: Start the web app for the budgets
         run: |
           NODE_ENV=production nohup npm run start -w @halden/web > web.log 2>&1 &
-          npx wait-on -t 60000 http://localhost:3001/
+          npx wait-on -t 60000 http://localhost:3001/ || { bash scripts/ci-annotate.sh 'Web app did not start' web.log; exit 1; }
       - name: First-load JavaScript budget
         run: node apps/web/scripts/check-js-budget.mjs http://localhost:3001
       - name: Lighthouse budgets (mobile)
-        run: npx @lhci/cli@0.15.1 autorun --config=apps/web/lighthouserc.json
+        run: |
+          set -o pipefail
+          npx @lhci/cli@0.15.1 autorun --config=apps/web/lighthouserc.json 2>&1 | tee lhci.log || { bash scripts/ci-annotate.sh 'Lighthouse' lhci.log; exit 1; }
       - uses: actions/upload-artifact@v4
         if: always()
         with:
