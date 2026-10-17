@@ -307,6 +307,18 @@ export class OrderService {
 
   // ---------- time-based rules ----------
 
+  /**
+   * Where the order's return window starts: its delivery. Planted bug return_window_restarts counts from the
+   * latest return request instead, so a cancelled return buys another 30 days.
+   */
+  async returnWindowFrom(db: Queryable, o: { id: string; delivered_at: Date | null }): Promise<Date> {
+    const delivered = o.delivered_at!;
+    if (!(await this.ctx.bugs.enabled('return_window_restarts', db))) return delivered;
+    const { rows } = await db.query<{ at: Date | null }>('SELECT max(requested_at) AS at FROM returns WHERE order_id = $1', [o.id]);
+    const at = rows[0]?.at;
+    return at && at > delivered ? at : delivered;
+  }
+
   /** Applies whatever time has decided for this order (payment timeout, completion). Idempotent. */
   async settle(tx: pg.PoolClient, orderId: string, now: Date): Promise<void> {
     const { rows } = await tx.query<OrderRow>('SELECT * FROM orders WHERE id = $1', [orderId]);
@@ -324,7 +336,7 @@ export class OrderService {
         { name: await this.customerName(tx, o.customer_id), orderId, reason: REASON_TEXT.payment_timeout, link: this.link(orderId) },
         now,
       );
-    } else if (o.status === 'delivered' && o.delivered_at && returnWindowClosed(o.delivered_at, now)) {
+    } else if (o.status === 'delivered' && o.delivered_at && returnWindowClosed(await this.returnWindowFrom(tx, o), now)) {
       const locked = await this.lockOrder(tx, orderId);
       if (locked.status !== 'delivered') return;
       const { rows: open } = await tx.query("SELECT 1 FROM returns WHERE order_id = $1 AND status IN ('requested', 'approved')", [orderId]);
@@ -410,7 +422,7 @@ export class OrderService {
       ),
       this.ctx.db.query<{ id: string; status: ReturnStatus }>('SELECT id, status FROM returns WHERE order_id = $1 ORDER BY id', [orderId]),
     ]);
-    const windowFrom = (await this.ctx.bugs.enabled('return_window_order_date')) ? o.placed_at : o.delivered_at;
+    const windowFrom = o.delivered_at ? await this.returnWindowFrom(this.ctx.db.pool, o) : null;
     const windowOpen = o.status === 'delivered' && !!windowFrom && !returnWindowClosed(windowFrom, now);
     const openReturn = returns.some((r) => r.status === 'requested' || r.status === 'approved');
     const canReturn = (l: { returnable: boolean; qty: number; claimed: number }) => windowOpen && !openReturn && l.returnable ? l.qty - l.claimed : 0;

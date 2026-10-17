@@ -138,8 +138,7 @@ export class ReturnService {
   async blocker(db: Queryable, o: { id: string; status: string; delivered_at: Date | null; placed_at: Date }, now: Date): Promise<string | null> {
     if (o.status === 'completed') return 'The return window for this order has closed.';
     if (o.status !== 'delivered' || !o.delivered_at) return 'Orders can be returned once they have been delivered.';
-    // Planted bug: return_window_order_date.
-    const from = (await this.ctx.bugs.enabled('return_window_order_date', db)) ? o.placed_at : o.delivered_at;
+    const from = await this.orders.returnWindowFrom(db, o);
     if (returnWindowClosed(from, now)) return `The return window for this order closed on ${dateText(returnWindowEnds(from))}.`;
     const { rows } = await db.query<{ id: string }>("SELECT id FROM returns WHERE order_id = $1 AND status IN ('requested', 'approved')", [o.id]);
     if (rows[0]) return `Return ${rows[0].id} for this order is still open. Finish or cancel it first.`;

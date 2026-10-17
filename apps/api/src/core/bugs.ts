@@ -84,12 +84,12 @@ export const BUGS = [
     rule: 'Refunds never exceed what was paid',
   },
   {
-    key: 'return_window_order_date',
+    key: 'return_window_restarts',
     phase: 3,
-    title: 'Return window counted from the order date',
-    description: 'The 30-day return window is counted from when the order was placed, not delivered.',
-    howToSee: 'Deliver an order a week after placing it, then move the clock 25 days: returns are refused.',
-    rule: 'Returns are accepted for 30 days after delivery',
+    title: 'A cancelled return restarts the window',
+    description: 'The 30-day return window is counted from the latest return request instead of from delivery, so starting and cancelling a return buys another 30 days.',
+    howToSee: 'Move the clock 25 days after delivery, start a return and cancel it. Move 10 more days: a new return is still accepted.',
+    rule: 'Returns are requested within 30 days of delivery',
   },
   {
     key: 'restock_damaged',

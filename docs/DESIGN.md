@@ -484,7 +484,7 @@ Each bug is off by default, switched on in the QA lab, and breaks exactly one ru
 | 6 | Per-customer coupon limit ignored | uses per customer ≤ limit |
 | 7 | Refund ignores the coupon share | line refund ≤ amount paid for the line |
 | 8 | Second partial refund skips the "already refunded" check | refunds ≤ captured |
-| 9 | Return window counted from order date, not delivery | returns requested within window |
+| 9 | A cancelled return restarts the 30-day window (counted from the latest return request, not delivery) | returns requested within 30 days of delivery |
 | 10 | Cancel doesn't give back the coupon use | coupon uses = non-cancelled orders |
 | 11 | Damaged returns go back to sellable stock | written-off items not restocked |
 | 12 | Cancel leaves the authorization open | cancelled orders have voided payments |

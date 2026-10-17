@@ -538,19 +538,16 @@ describe('planted bugs', () => {
     expect(json(await d.client.get('/account/points')).pending).toBe(99);
   });
 
-  it('return_window_order_date: the window counts from the order date', async () => {
-    await bug(t, 'return_window_order_date');
-    const c = await newCustomer(t);
-    await fill(t, c.client, [['titanium-pot', 1]]);
-    const orderId = json(await checkout(c.client, c.addressId)).orderId;
-    const s = await staff();
-    await s.warehouse.post(`/staff/orders/${orderId}/pack`, {});
-    await s.warehouse.post(`/staff/orders/${orderId}/ship`, { trackingNumber: 'HX12345678' });
-    await days(10, c.client, s.warehouse);
-    await s.warehouse.post(`/staff/orders/${orderId}/deliver`, {});
-    await days(25, c.client);
-    const productId = json(await c.client.get(`/orders/${orderId}`)).lines[0].productId;
-    const res = await startReturn(c.client, orderId, productId, 1, 'damaged');
-    expect(res.statusCode).toBe(409);
+  it('return_window_restarts: a cancelled return buys another 30 days', async () => {
+    const d = await delivered([['titanium-pot', 1]]);
+    const productId = d.order.lines[0].productId;
+    await days(25, d.client);
+    const first = json(await startReturn(d.client, d.orderId, productId, 1, 'changed_mind'));
+    await d.client.post(`/returns/${first.id}/cancel`, {});
+    await days(10, d.client);
+    expect((await startReturn(d.client, d.orderId, productId, 1, 'changed_mind')).statusCode).toBe(409);
+    await bug(t, 'return_window_restarts');
+    expect((await startReturn(d.client, d.orderId, productId, 1, 'changed_mind')).statusCode).toBe(201);
   });
+
 });
