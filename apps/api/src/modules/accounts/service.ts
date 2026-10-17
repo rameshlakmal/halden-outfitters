@@ -27,7 +27,7 @@ export const LOCK_MINUTES = 15;
 export const VERIFY_HOURS = 24;
 export const RESET_MINUTES = 60;
 
-type CustomerRow = {
+export type CustomerRow = {
   id: string;
   name: string;
   email: string;

@@ -4,17 +4,23 @@
 //     and reset links. Other addresses (someone's real email) are readable only by their signed-in owner. Mail to
 //     the seeded demo accounts and to staff is only shown to admins: otherwise anyone could reset their passwords.
 //   - Shop clock: admins can move business time forward to test expiry rules.
-import { Clock, Email, InboxEmail, Problem, SetClock } from '@halden/contracts';
+//   - Fixtures: admins can make a ready-to-use test account in one call, so a test sets up its own data.
+import { Clock, Email, InboxEmail, Problem, SetClock, ShopperFixture, ShopperFixtureInput } from '@halden/contracts';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import type { FastifyRequest } from 'fastify';
-import { timingSafeEqual } from 'node:crypto';
+import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
-import { requireRole } from '../../core/auth.js';
+import { createSession, requireRole } from '../../core/auth.js';
 import { audit } from '../../core/audit.js';
+import { hashPassword } from '../../core/crypto.js';
 import { AppError } from '../../core/errors.js';
+import { AccountService, toMe, type CustomerRow } from '../accounts/service.js';
+import { cartRepo } from '../cart/repository.js';
+import { CartService, toCart } from '../cart/service.js';
+import { addCredit, creditBalance } from '../loyalty/store-credit.js';
 import { OrderService } from '../orders/service.js';
 import { ReturnService } from '../returns/service.js';
-import { expire } from '../loyalty/points.js';
+import { balance, expire, giveBack } from '../loyalty/points.js';
 
 type OutboxRow = {
   id: string;
@@ -94,7 +100,7 @@ export const qaRoutes: FastifyPluginAsyncZod = async (app) => {
         tags,
         summary: 'Move the shop clock (admin)',
         description: 'Sets how far ahead of real time the shop runs. 0 puts it back to real time.',
-        security: [{ session: [] }],
+        security: [{ session: [] }, { bearer: [] }],
         body: SetClock,
         response: { 200: Clock, 400: Problem, 401: Problem, 403: Problem, 404: Problem },
       },
@@ -169,7 +175,7 @@ export const qaRoutes: FastifyPluginAsyncZod = async (app) => {
       schema: {
         tags,
         summary: 'Switch a planted bug on or off (admin)',
-        security: [{ session: [] }],
+        security: [{ session: [] }, { bearer: [] }],
         params: z.object({ key: z.string().regex(/^[a-z_]+$/) }),
         body: z.object({ enabled: z.boolean() }),
         response: { 200: Bug, 401: Problem, 403: Problem, 404: Problem },
@@ -235,7 +241,7 @@ export const qaRoutes: FastifyPluginAsyncZod = async (app) => {
         summary: 'Run the time-based rules now (admin)',
         description:
           'Cancels unpaid orders past their 30 minutes, expires unused return labels, completes orders past their return window, expires 12-month-old points, delivers queued webhooks.',
-        security: [{ session: [] }],
+        security: [{ session: [] }, { bearer: [] }],
         response: { 200: Sweep, 401: Problem, 403: Problem, 404: Problem },
       },
     },
@@ -265,7 +271,7 @@ export const qaRoutes: FastifyPluginAsyncZod = async (app) => {
       schema: {
         tags,
         summary: 'Payment webhook events, newest first (admin)',
-        security: [{ session: [] }],
+        security: [{ session: [] }, { bearer: [] }],
         querystring: z.object({ orderId: z.string().regex(/^\d+$/).optional() }),
         response: { 200: z.object({ items: z.array(WebhookEvent) }), 401: Problem, 403: Problem, 404: Problem },
       },
@@ -312,7 +318,7 @@ export const qaRoutes: FastifyPluginAsyncZod = async (app) => {
         tags,
         summary: 'Send a payment webhook again (admin)',
         description: 'For testing that a repeated delivery changes nothing.',
-        security: [{ session: [] }],
+        security: [{ session: [] }, { bearer: [] }],
         params: z.object({ id: z.string().regex(/^evt_[A-Za-z0-9_-]+$/) }),
         response: { 200: z.object({ delivered: z.number().int() }), 401: Problem, 403: Problem, 404: Problem },
       },
@@ -331,6 +337,85 @@ export const qaRoutes: FastifyPluginAsyncZod = async (app) => {
   );
 
   // Vercel Cron calls this once a day with the CRON_SECRET as a bearer token.
+  // ---------- fixtures ----------
+
+  const accounts = new AccountService(app.ctx, new CartService(db));
+
+  app.post(
+    '/qa/fixtures/shopper',
+    {
+      schema: {
+        tags,
+        summary: 'Make a ready-to-use test account (admin)',
+        description:
+          'Creates an account at a new `@fixtures.test` address and signs it in, in one step: confirmed email, a ' +
+          'default address, a filled cart, store credit and points as asked. Send `{}` for the defaults. The ' +
+          'answer holds the generated password and a Bearer token for the new account.',
+        security: [{ session: [] }, { bearer: [] }],
+        body: ShopperFixtureInput,
+        response: { 201: ShopperFixture, 400: Problem, 401: Problem, 403: Problem, 404: Problem, 409: Problem },
+      },
+    },
+    async (req, reply) => {
+      enabled();
+      const admin = requireRole(req, 'admin');
+      const input = req.body;
+      const now = req.now;
+      const tag = randomBytes(5).toString('hex');
+      const email = `${input.role === 'customer' ? 'shopper' : input.role}-${tag}@fixtures.test`;
+      const password = `fixture-${randomBytes(12).toString('base64url')}`;
+      const passwordHash = await hashPassword(password);
+
+      const made = await db.tx(async (tx) => {
+        const { rows } = await tx.query<CustomerRow>(
+          `INSERT INTO customers (email, name, password_hash, role, email_verified_at, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $6)
+           RETURNING id, name, email, role, password_hash, email_verified_at, failed_logins, locked_until, created_at`,
+          [email, input.name, passwordHash, input.role, input.emailVerified ? now : null, now],
+        );
+        const customer = rows[0]!;
+        if (input.address) {
+          await tx.query(
+            `INSERT INTO addresses (customer_id, label, name, line1, city, region, postcode, country_code, is_default, created_at, updated_at)
+             VALUES ($1, 'Home', $2, '14 Larch Street', 'Portland', 'OR', '97205', 'US', true, $3, $3)`,
+            [customer.id, input.name, now],
+          );
+        }
+        const cartId = await cartRepo.ensureForCustomer(tx, customer.id);
+        for (const line of input.cart) {
+          const found = await tx.query<{ id: string }>('SELECT id FROM products WHERE slug = $1', [line.slug]);
+          const productId = found.rows[0]?.id;
+          const product = productId ? await cartRepo.product(tx, productId) : undefined;
+          if (!productId || !product?.active) {
+            throw new AppError('product_unavailable', `There is no product on sale with the slug ${line.slug}.`);
+          }
+          const qty = (await cartRepo.lineQty(tx, cartId, productId)) + line.qty;
+          if (qty > product.available) {
+            throw new AppError('not_enough_stock', `Only ${product.available} ${product.name} left.`);
+          }
+          await cartRepo.setQty(tx, cartId, productId, qty);
+        }
+        const note = 'QA fixture';
+        await addCredit(tx, customer.id, input.storeCredit, 'adjustment', { actorId: admin.id, note }, now);
+        await giveBack(tx, customer.id, input.points, 'adjustment', { actorId: admin.id, note }, now);
+        const accessToken = await createSession(tx, customer.id, req, now);
+        await audit(tx, admin, 'qa.fixture', { type: 'customer', id: customer.id }, { after: input }, now);
+        return { customer, cart: toCart(await cartRepo.lines(tx, cartId)), accessToken };
+      });
+
+      const id = made.customer.id;
+      return reply.status(201).send({
+        customer: toMe(made.customer),
+        password,
+        accessToken: made.accessToken,
+        address: (await accounts.addresses(id))[0] ?? null,
+        cart: made.cart,
+        storeCredit: await creditBalance(db.pool, id),
+        points: (await balance(db.pool, id, now)).available,
+      });
+    },
+  );
+
   app.get('/internal/cron/sweep', { schema: { hide: true } }, async (req) => {
     const secret = app.ctx.config.CRON_SECRET;
     const given = Buffer.from(String(req.headers.authorization ?? ''));
