@@ -21,8 +21,10 @@ async function scan(page: Page, label: string) {
         `${v.id}: ${v.help} (${v.nodes
           .map((n) => n.target.join(' '))
           .slice(0, 3)
-          .join(', ')})`,
+          .join(', ')}) ${(v.nodes[0]?.failureSummary ?? '').replace(/\s+/g, ' ')}`,
     );
+  // In CI, each problem becomes an annotation on the run, readable without opening the logs.
+  if (process.env.CI) for (const b of blocking) console.log(`::error title=a11y ${label}::${b}`);
   expect(blocking, `${label}: serious accessibility problems`).toEqual([]);
 }
 
