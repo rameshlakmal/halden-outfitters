@@ -1,13 +1,14 @@
 'use client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { type Me, UpdateProfile } from '@halden/contracts';
-import { CheckCircle, Package, SignOut, WarningCircle } from '@phosphor-icons/react';
+import { CheckCircle, SignOut, WarningCircle } from '@phosphor-icons/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { patch, post } from '@/lib/api';
 import { keys, useRefreshVisitor } from '@/lib/queries';
+import { LatestOrders } from '../orders/order-list';
 import { Skeleton } from '../ui/bits';
 import { Button } from '../ui/button';
 import { FormAlert, Input } from '../ui/field';
@@ -30,12 +31,7 @@ export function AccountOverview() {
       </header>
       <EmailStatus me={me} />
       <ProfileForm me={me} />
-      <Section title="Orders" description="Your orders will show here once checkout opens in the next release.">
-        <div className="flex items-center gap-3 rounded-[2px] border border-dashed border-line-strong px-5 py-6 text-sm text-ink-2">
-          <Package className="size-6 text-ink-3" />
-          No orders yet.
-        </div>
-      </Section>
+      <LatestOrders />
       <SignOutBlock />
     </div>
   );

@@ -1,10 +1,11 @@
 'use client';
-import { HouseLine, MapPin, ShieldCheck } from '@phosphor-icons/react';
+import { HouseLine, MapPin, Package, ShieldCheck } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const ITEMS = [
   { href: '/account', label: 'Overview', icon: HouseLine },
+  { href: '/account/orders', label: 'Orders', icon: Package },
   { href: '/account/addresses', label: 'Addresses', icon: MapPin },
   { href: '/account/security', label: 'Security', icon: ShieldCheck },
 ];
@@ -19,7 +20,7 @@ export function AccountNav() {
     >
       <ul className="flex gap-1 md:grid">
         {ITEMS.map(({ href, label, icon: Icon }) => {
-          const current = pathname === href;
+          const current = href === '/account' ? pathname === href : pathname.startsWith(href);
           return (
             <li key={href}>
               <Link

@@ -1,8 +1,9 @@
 'use client';
-import { formatAmount } from '@halden/money';
+import { formatAmount, toCents } from '@halden/money';
 import { ShoppingBagOpen, WarningCircle } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { useCart } from '@/lib/queries';
+import { CouponField } from '../checkout/coupon-field';
 import { DrawerLine } from '../shell/cart-line';
 import { Skeleton } from '../ui/bits';
 import { buttonClass, LinkButton } from '../ui/button';
@@ -60,17 +61,24 @@ export function CartView() {
                   <dd className="tabular-nums">{formatAmount(cart.savings)}</dd>
                 </div>
               )}
+              {cart.discount !== '0.00' && (
+                <div className="flex justify-between text-accent">
+                  <dt>Discount ({cart.coupon?.code})</dt>
+                  <dd className="tabular-nums">-{formatAmount(cart.discount)}</dd>
+                </div>
+              )}
               <div className="flex justify-between">
                 <dt className="text-ink-2">Shipping and tax</dt>
                 <dd className="text-ink-3">At checkout</dd>
               </div>
               <div className="mt-2 flex justify-between border-t border-line pt-3 text-lg font-semibold">
-                <dt>Subtotal</dt>
+                <dt>{cart.discount === '0.00' ? 'Subtotal' : 'After discount'}</dt>
                 <dd className="tabular-nums" data-testid="cart-subtotal">
-                  {formatAmount(cart.subtotal)}
+                  {formatAmount(toCents(cart.subtotal) - toCents(cart.discount))}
                 </dd>
               </div>
             </dl>
+            <CouponField cart={cart} />
             {!cart.canCheckOut && (
               <p className="flex gap-2 rounded-[2px] bg-warning-soft p-3 text-sm text-ink">
                 <WarningCircle className="size-5 shrink-0 text-danger" />

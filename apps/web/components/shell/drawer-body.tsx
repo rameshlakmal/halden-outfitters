@@ -65,6 +65,12 @@ export default function DrawerBody({ onClose }: { onClose: () => void }) {
             <span className="text-ink-2">Subtotal</span>
             <span className="text-lg font-semibold tabular-nums">{formatAmount(cart.subtotal)}</span>
           </div>
+          {cart.discount !== '0.00' && (
+            <div className="flex items-baseline justify-between text-accent">
+              <span>Discount ({cart.coupon?.code})</span>
+              <span className="tabular-nums">-{formatAmount(cart.discount)}</span>
+            </div>
+          )}
           <p className="text-[13px] text-ink-3">Shipping and tax are worked out at checkout.</p>
           <div className="grid grid-cols-2 gap-2">
             <Link href="/cart" onClick={onClose} className={buttonClass('outline', 'md')}>

@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
-import { CheckoutGate } from '@/components/account/checkout-gate';
+import { CheckoutPage } from '@/components/checkout/checkout-page';
 
 export const metadata: Metadata = { title: 'Checkout' };
 
-export default function CheckoutPage() {
+export default function Page() {
   return (
-    <div className="mx-auto max-w-[1200px] px-[var(--gutter)] pt-12 md:pt-20">
-      <CheckoutGate />
+    <div className="mx-auto max-w-[1200px] px-[var(--gutter)] pt-10 md:pt-14">
+      <CheckoutPage />
     </div>
   );
 }
