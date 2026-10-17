@@ -31,6 +31,8 @@ test.describe('signed in', () => {
 
   test("Maya marks Jonas's review helpful", async ({ page }) => {
     await signIn(page, 'maya@halden.test', '/products/insulated-mug');
+    // Reviews load as the section nears the screen, so scroll to it the way a shopper would.
+    await page.locator('#reviews').scrollIntoViewIfNeeded();
     const card = page
       .locator('#reviews')
       .getByTestId('review-card')
@@ -42,6 +44,7 @@ test.describe('signed in', () => {
     await expect(button).toHaveText(/\(1\)/);
     // Still counted after a reload: the vote was saved.
     await page.reload();
+    await page.locator('#reviews').scrollIntoViewIfNeeded();
     await expect(
       page
         .locator('#reviews')
