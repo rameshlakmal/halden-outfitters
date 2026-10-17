@@ -42,8 +42,7 @@ export const ShopperFixtureInput = z.object({
     .max(10)
     .default([])
     .describe('Products to put in the cart, by slug'),
-  storeCredit: Amount.refine((a) => !a.startsWith('-') && Number(a) <= 1000, 'From 0.00 to 1000.00.')
-    .default('0.00'),
+  storeCredit: Amount.refine((a) => !a.startsWith('-') && Number(a) <= 1000, 'From 0.00 to 1000.00.').default('0.00'),
   points: z.number().int().min(0).max(100_000).default(0),
 });
 export type ShopperFixtureInput = z.infer<typeof ShopperFixtureInput>;

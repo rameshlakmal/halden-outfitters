@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Id, Slug, Timestamp } from './common.ts';
+import { Id, Slug, Timestamp, Total } from './common.ts';
 
 export const REVIEW_STATUSES = ['published', 'pending', 'hidden'] as const;
 export type ReviewStatus = (typeof REVIEW_STATUSES)[number];
@@ -58,6 +58,7 @@ export const ReviewPage = z
   .object({
     items: z.array(Review),
     nextCursor: z.string().nullable(),
+    total: Total,
     summary: RatingSummary,
     viewer: ReviewViewer.nullable().describe('Null when signed out'),
   })

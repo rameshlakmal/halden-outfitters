@@ -40,9 +40,11 @@ export const Email = z
   .max(120, { message: 'At most 120 characters.', abort: true })
   .regex(/^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$/, 'Enter an email address like name@example.com.');
 
+export const Total = z.number().int().describe('How many items match the filters, across all pages');
+
 export const Page = <T extends z.ZodType>(item: T) =>
   z.object({
     items: z.array(item),
     nextCursor: z.string().nullable().describe('Pass as `cursor` to get the next page; null on the last page'),
-    total: z.number().int().describe('How many items match, across all pages'),
+    total: Total,
   });

@@ -39,6 +39,15 @@ export class Db {
     return (await this.query<T>(text, params, client))[0];
   }
 
+  /** How many rows of `from` match `where` (conditions joined with AND): a list's `total`, before its cursor. */
+  async count(from: string, where: string[], params: unknown[]): Promise<number> {
+    const row = await this.one<{ n: number }>(
+      `SELECT count(*)::int AS n FROM ${from} ${where.length ? `WHERE ${where.join(' AND ')}` : ''}`,
+      params,
+    );
+    return row?.n ?? 0;
+  }
+
   /** Runs `fn` in a transaction: committed when it returns, rolled back when it throws. */
   async tx<T>(fn: (client: pg.PoolClient) => Promise<T>): Promise<T> {
     const client = await this.pool.connect();

@@ -33,7 +33,9 @@ describe('shopper fixture', () => {
   });
 
   it('fills the cart and adds store credit and points', async () => {
-    const res = await (await admin()).post('/qa/fixtures/shopper', {
+    const res = await (
+      await admin()
+    ).post('/qa/fixtures/shopper', {
       name: 'Cart Tester',
       cart: [{ slug: 'ridgeline-2p-tent', qty: 2 }],
       storeCredit: '25.00',
@@ -48,9 +50,7 @@ describe('shopper fixture', () => {
   });
 
   it('can leave the email unconfirmed and the address book empty', async () => {
-    const body = json(
-      await (await admin()).post('/qa/fixtures/shopper', { emailVerified: false, address: false }),
-    );
+    const body = json(await (await admin()).post('/qa/fixtures/shopper', { emailVerified: false, address: false }));
     expect(body.customer.emailVerified).toBe(false);
     expect(body.address).toBeNull();
   });
@@ -77,7 +77,11 @@ describe('shopper fixture', () => {
   it('validates the body', async () => {
     const res = await (await admin()).post('/qa/fixtures/shopper', { role: 'admin', storeCredit: '-5.00', points: -1 });
     expect(res.statusCode).toBe(400);
-    expect(json(res).errors.map((e: { path: string }) => e.path).sort()).toEqual(['points', 'role', 'storeCredit']);
+    expect(
+      json(res)
+        .errors.map((e: { path: string }) => e.path)
+        .sort(),
+    ).toEqual(['points', 'role', 'storeCredit']);
   });
 
   it('is for admins only', async () => {

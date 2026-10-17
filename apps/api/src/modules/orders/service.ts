@@ -674,6 +674,7 @@ export class OrderService {
       params.push(filter.status);
       where.push(`o.status = $${params.length}`);
     }
+    const total = await this.ctx.db.count('orders o', where, params);
     if (cursor) {
       params.push(cursor);
       where.push(`o.id < $${params.length}`);
@@ -705,6 +706,6 @@ export class OrderService {
       images: r.images ?? [],
       email: r.email,
     }));
-    return { items, nextCursor: rows.length > limit ? (page.at(-1)?.id ?? null) : null };
+    return { items, nextCursor: rows.length > limit ? (page.at(-1)?.id ?? null) : null, total };
   }
 }

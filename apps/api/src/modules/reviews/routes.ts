@@ -8,6 +8,7 @@ import {
   ReviewPage,
   ReviewQuery,
   Slug,
+  Total,
 } from '@halden/contracts';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
@@ -15,7 +16,7 @@ import { needsUser, requireRole, requireUser } from '../../core/auth.js';
 import { ReviewService } from './service.js';
 
 const security: Record<string, string[]>[] = [{ session: [] }, { bearer: [] }];
-const OwnList = z.object({ items: z.array(OwnReview), nextCursor: z.string().nullable() });
+const OwnList = z.object({ items: z.array(OwnReview), nextCursor: z.string().nullable(), total: Total });
 const listQuery = z.object({ cursor: Id.optional(), limit: z.coerce.number().int().min(1).max(50).default(20) });
 const params = z.object({ id: Id });
 

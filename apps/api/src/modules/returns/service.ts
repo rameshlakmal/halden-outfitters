@@ -736,6 +736,7 @@ export class ReturnService {
       params.push(filter.status);
       where.push(`r.status = $${params.length}`);
     }
+    const total = await this.ctx.db.count('returns r', where, params);
     if (cursor) {
       params.push(cursor);
       where.push(`r.id < $${params.length}`);
@@ -768,6 +769,7 @@ export class ReturnService {
         itemCount: r.item_count ?? 0,
       })),
       nextCursor: rows.length > limit ? (page.at(-1)?.id ?? null) : null,
+      total,
     };
   }
 }

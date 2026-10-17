@@ -1,14 +1,15 @@
-import { CancelOrder, Id, ORDER_STATUSES, Order, OrderSummary, Problem, ShipOrder } from '@halden/contracts';
+import { CancelOrder, Id, ORDER_STATUSES, Order, OrderSummary, Problem, ShipOrder, Total } from '@halden/contracts';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { needsUser, requireRole, requireUser } from '../../core/auth.js';
 import { OrderService } from './service.js';
 
 const security: Record<string, string[]>[] = [{ session: [] }, { bearer: [] }];
-const OrderList = z.object({ items: z.array(OrderSummary), nextCursor: z.string().nullable() });
+const OrderList = z.object({ items: z.array(OrderSummary), nextCursor: z.string().nullable(), total: Total });
 const StaffOrderList = z.object({
   items: z.array(OrderSummary.extend({ email: z.string() })),
   nextCursor: z.string().nullable(),
+  total: Total,
 });
 
 export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
@@ -37,7 +38,7 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
       );
       for (const d of due) await app.ctx.db.tx((tx) => orders.settle(tx, d.id, req.now));
       const page = await orders.list({ customerId: user.id }, req.query.cursor ?? null, req.query.limit);
-      return { items: page.items.map(({ email: _email, ...o }) => o), nextCursor: page.nextCursor };
+      return { items: page.items.map(({ email: _email, ...o }) => o), nextCursor: page.nextCursor, total: page.total };
     },
   );
 

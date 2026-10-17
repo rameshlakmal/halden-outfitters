@@ -18,6 +18,7 @@ import {
   StockAdjust,
   StockMovement,
   TaxSetting,
+  Total,
 } from '@halden/contracts';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
@@ -28,7 +29,8 @@ const security: Record<string, string[]>[] = [{ session: [] }, { bearer: [] }];
 const tags = ['Staff'];
 const params = z.object({ id: Id });
 const listQuery = z.object({ cursor: Id.optional(), limit: z.coerce.number().int().min(1).max(100).default(50) });
-const page = <T extends z.ZodType>(item: T) => z.object({ items: z.array(item), nextCursor: z.string().nullable() });
+const page = <T extends z.ZodType>(item: T) =>
+  z.object({ items: z.array(item), nextCursor: z.string().nullable(), total: Total });
 const ok = { 401: Problem, 403: Problem, 404: Problem };
 
 export const staffRoutes: FastifyPluginAsyncZod = async (app) => {

@@ -291,6 +291,11 @@ export class ReviewService {
       params.push(q.rating);
       filter = ` AND r.rating = $${params.length}`;
     }
+    const total = await this.ctx.db.count(
+      'reviews r',
+      [`r.product_id = $1 AND r.status = 'published'${filter}`],
+      params,
+    );
     params.push(q.limit + 1, offset);
     const rows = await this.ctx.db.query<Row>(
       `${SELECT} WHERE r.product_id = $1 AND r.status = 'published'${filter}
@@ -338,6 +343,7 @@ export class ReviewService {
     return {
       items: page.map((r) => this.toReview(r, viewer?.id ?? null, voted)),
       nextCursor: rows.length > q.limit ? String(offset + q.limit) : null,
+      total,
       summary: {
         // The stored rating, so the page shows what the product card shows (and what the rules check).
         average: product?.rating_avg === null || product?.rating_avg === undefined ? null : Number(product.rating_avg),
@@ -355,7 +361,7 @@ export class ReviewService {
     staff: boolean,
     cursor: string | null,
     limit: number,
-  ): Promise<{ items: OwnReview[]; nextCursor: string | null }> {
+  ): Promise<{ items: OwnReview[]; nextCursor: string | null; total: number }> {
     const params: unknown[] = [];
     const where: string[] = [];
     if (filter.customerId) {
@@ -366,6 +372,7 @@ export class ReviewService {
       params.push(filter.status);
       where.push(`r.status = $${params.length}`);
     }
+    const total = await this.ctx.db.count('reviews r', where, params);
     if (cursor) {
       params.push(cursor);
       where.push(`r.id < $${params.length}`);
@@ -394,6 +401,7 @@ export class ReviewService {
         customer: staff ? { id: r.customer_id, name: r.author_name, email: r.email } : null,
       })),
       nextCursor: rows.length > limit ? (page.at(-1)?.id ?? null) : null,
+      total,
     };
   }
 

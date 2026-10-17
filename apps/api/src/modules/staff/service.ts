@@ -139,6 +139,7 @@ export class StaffService {
       where.push(`(p.name ILIKE $${params.length} OR p.sku ILIKE $${params.length})`);
     }
     if (q.lowStock) where.push('sl.available <= p.low_stock_threshold');
+    const total = await this.ctx.db.count('products p JOIN stock_levels sl ON sl.product_id = p.id', where, params);
     if (cursor) {
       params.push(cursor);
       where.push(`p.id > $${params.length}`);
@@ -149,7 +150,11 @@ export class StaffService {
       params,
     );
     const page = rows.slice(0, limit);
-    return { items: page.map(toStaffProduct), nextCursor: rows.length > limit ? (page.at(-1)?.id ?? null) : null };
+    return {
+      items: page.map(toStaffProduct),
+      nextCursor: rows.length > limit ? (page.at(-1)?.id ?? null) : null,
+      total,
+    };
   }
 
   async product(id: string, db: Queryable = this.ctx.db.pool): Promise<StaffProduct> {
@@ -664,6 +669,7 @@ export class StaffService {
       params.push(q.role);
       where.push(`c.role = $${params.length}`);
     }
+    const total = await this.ctx.db.count('customers c', where, params);
     if (cursor) {
       params.push(cursor);
       where.push(`c.id < $${params.length}`);
@@ -697,6 +703,7 @@ export class StaffService {
         createdAt: c.created_at.toISOString(),
       })),
       nextCursor: rows.length > limit ? (page.at(-1)?.id ?? null) : null,
+      total,
     };
   }
 
@@ -739,6 +746,7 @@ export class StaffService {
         where.push(`${col} = $${params.length}`);
       }
     }
+    const total = await this.ctx.db.count('audit_log a', where, params);
     if (cursor) {
       params.push(cursor);
       where.push(`a.id < $${params.length}`);
@@ -775,6 +783,7 @@ export class StaffService {
         at: a.created_at.toISOString(),
       })),
       nextCursor: rows.length > limit ? (page.at(-1)?.id ?? null) : null,
+      total,
     };
   }
 }

@@ -11,6 +11,7 @@ import {
   RETURN_STATUSES,
   ReturnSummary,
   StoreCreditAccount,
+  Total,
 } from '@halden/contracts';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
@@ -22,7 +23,7 @@ import { OrderService } from '../orders/service.js';
 import { ReturnService } from './service.js';
 
 const security: Record<string, string[]>[] = [{ session: [] }, { bearer: [] }];
-const ReturnList = z.object({ items: z.array(ReturnSummary), nextCursor: z.string().nullable() });
+const ReturnList = z.object({ items: z.array(ReturnSummary), nextCursor: z.string().nullable(), total: Total });
 const listQuery = z.object({ cursor: Id.optional(), limit: z.coerce.number().int().min(1).max(50).default(20) });
 const params = z.object({ id: Id });
 
