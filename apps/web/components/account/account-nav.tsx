@@ -1,5 +1,14 @@
 'use client';
-import { ArrowUUpLeft, Coins, HouseLine, MapPin, Package, ShieldCheck, Wallet } from '@phosphor-icons/react';
+import {
+  ArrowUUpLeft,
+  ChatCircleText,
+  Coins,
+  HouseLine,
+  MapPin,
+  Package,
+  ShieldCheck,
+  Wallet,
+} from '@phosphor-icons/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -9,6 +18,7 @@ const ITEMS = [
   { href: '/account/returns', label: 'Returns', icon: ArrowUUpLeft },
   { href: '/account/points', label: 'Points', icon: Coins },
   { href: '/account/store-credit', label: 'Store credit', icon: Wallet },
+  { href: '/account/reviews', label: 'Reviews', icon: ChatCircleText },
   { href: '/account/addresses', label: 'Addresses', icon: MapPin },
   { href: '/account/security', label: 'Security', icon: ShieldCheck },
 ];

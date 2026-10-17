@@ -34,6 +34,7 @@ export async function api<T>(
   } catch {
     throw new ApiError(0, 'network_error', 'You seem to be offline. Check your connection and try again.');
   }
+  if (res.status === 204) return undefined as T;
   if (res.ok) return (await res.json()) as T;
   let problem: Partial<Problem> = {};
   try {

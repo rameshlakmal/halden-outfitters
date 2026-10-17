@@ -1,5 +1,5 @@
 'use client';
-import { CaretRight, List, ShoppingBag, User, X } from '@phosphor-icons/react';
+import { Briefcase, CaretRight, List, ShoppingBag, User, X } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef } from 'react';
@@ -13,6 +13,8 @@ import { ThemeToggle } from './theme';
 export function TopBar() {
   const pathname = usePathname();
   const menu = useRef<HTMLDialogElement>(null);
+  const { data: me } = useSession();
+  const staffRole = !!me && me.role !== 'customer';
 
   return (
     // A solid editorial bar with a hard rule underneath.
@@ -43,6 +45,7 @@ export function TopBar() {
           })}
         </nav>
         <div className="ml-auto flex items-center gap-0.5 md:ml-0">
+          <StaffLink />
           <SearchButton />
           {/* On the narrowest phones the theme switch lives in the menu instead. */}
           <div className="hidden min-[400px]:block">
@@ -72,13 +75,17 @@ export function TopBar() {
         </div>
         {/* Big, thumb-friendly links set in the display face. */}
         <nav aria-label="Mobile" className="grid px-[var(--gutter)] py-4">
-          {[...NAV, { href: '/account', label: 'Your account' }].map((n) => {
+          {[
+            ...NAV,
+            { href: '/account', label: 'Your account' },
+            ...(staffRole ? [{ href: '/staff', label: 'Staff' }] : []),
+          ].map((n) => {
             const current = n.href === '/shop' ? pathname === '/shop' : pathname.startsWith(n.href);
             return (
               <Link
                 key={n.href}
                 href={n.href}
-                prefetch={n.href === '/account' ? false : undefined}
+                prefetch={n.href === '/account' || n.href === '/staff' ? false : undefined}
                 onClick={() => menu.current?.close()}
                 aria-current={current ? 'page' : undefined}
                 className={`flex items-center justify-between border-b border-line py-4 text-[clamp(32px,9vw,48px)] leading-none font-extrabold uppercase [font-stretch:72%] transition-colors ${
@@ -97,6 +104,22 @@ export function TopBar() {
         </div>
       </dialog>
     </header>
+  );
+}
+
+/** Only for support, warehouse and admin accounts: the way into the staff console. */
+function StaffLink() {
+  const { data: me } = useSession();
+  if (!me || me.role === 'customer') return null;
+  return (
+    <Link
+      href="/staff"
+      prefetch={false}
+      className="hidden h-10 items-center gap-1.5 rounded-[2px] px-3 text-[12px] font-bold tracking-[0.08em] text-ink uppercase transition-colors hover:bg-surface-2 hover:text-accent sm:flex"
+    >
+      <Briefcase className="size-4" />
+      Staff
+    </Link>
   );
 }
 

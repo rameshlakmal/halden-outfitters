@@ -5,6 +5,7 @@ import { ViewTransition } from 'react';
 import { BuyBox } from '@/components/product/add-to-cart';
 import { Gallery } from '@/components/product/gallery';
 import { ProductCard } from '@/components/product/product-card';
+import { ReviewsSection } from '@/components/reviews/reviews-section';
 import { AvailabilityNote, Price, Stars } from '@/components/ui/bits';
 import { getProduct, getProducts } from '@/lib/server-api';
 import { PAGE_ENTER } from '@/lib/transitions';
@@ -52,7 +53,12 @@ export default async function ProductPage({ params }: Props) {
             <div className="grid gap-5">
               <div className="grid gap-3">
                 <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">{product.name}</h1>
-                <Stars average={product.rating.average} count={product.rating.count} />
+                <a
+                  href="#reviews"
+                  className="inline-flex w-fit items-center rounded-[2px] hover:opacity-80 pointer-coarse:min-h-11"
+                >
+                  <Stars average={product.rating.average} count={product.rating.count} />
+                </a>
               </div>
               <p className="max-w-[52ch] text-lg leading-relaxed text-ink-2">{product.summary}</p>
               <div className="flex items-center justify-between gap-4 border-y border-line py-4">
@@ -104,6 +110,8 @@ export default async function ProductPage({ params }: Props) {
           </dl>
         )}
       </section>
+
+      <ReviewsSection slug={product.slug} productName={product.name} sized={product.sized} />
 
       {product.related.length > 0 && (
         <section className="below-fold reveal mt-24" aria-labelledby="related">

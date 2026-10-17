@@ -1,5 +1,5 @@
 // Runs before routing, so it can still set the status code.
-//  - /account/*: an optimistic check only. No session cookie means "not signed in", so go to sign-in first.
+//  - /account/*, /staff/* and /qa (the QA lab; its fake inbox stays open): an optimistic check only. No session cookie means "not signed in", so go to sign-in first.
 //    The API still checks the session on every request; a stale cookie is caught there.
 //  - /shop/<category>: unknown categories get a real 404. The page itself streams (it reads the filters from
 //    the URL), and once streaming has started the status can no longer change.
@@ -40,4 +40,4 @@ export async function proxy(request: NextRequest) {
   return NextResponse.redirect(url);
 }
 
-export const config = { matcher: ['/account/:path*', '/shop/:path+'] };
+export const config = { matcher: ['/account/:path*', '/staff/:path*', '/qa', '/shop/:path+'] };
