@@ -76,7 +76,7 @@ export default async function Home() {
               <li key={c.slug} className="bg-bg">
                 <Link
                   href={`/shop/${c.slug}`}
-                  className="group relative isolate flex aspect-[3/4] flex-col justify-end overflow-hidden p-5 text-[oklch(0.97_0_0)] sm:p-7"
+                  className="group relative isolate flex aspect-[3/4] flex-col justify-end overflow-hidden bg-[oklch(0.16_0_0)] p-5 text-[oklch(0.97_0_0)] sm:p-7"
                 >
                   <Image
                     src={c.image}

@@ -28,7 +28,12 @@ export function CheckoutPage() {
 
   if (session.isPending || (me && cart.isPending)) {
     return (
-      <div className="grid gap-8 md:grid-cols-[minmax(0,1fr)_380px]" aria-busy="true" aria-label="Loading checkout">
+      <div
+        className="grid gap-8 md:grid-cols-[minmax(0,1fr)_380px]"
+        role="status"
+        aria-busy="true"
+        aria-label="Loading checkout"
+      >
         <div className="grid content-start gap-4">
           <Skeleton className="h-12 w-64" />
           <Skeleton className="h-10 w-full" />

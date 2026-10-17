@@ -87,7 +87,7 @@ function ReviewItem({ review: r }: { review: OwnReview }) {
           <Link href={`/products/${r.product.slug}`} className="font-bold transition-colors hover:text-accent">
             {r.product.name}
           </Link>
-          <span className="flex" aria-label={`${r.rating} of 5 stars`}>
+          <span className="flex" role="img" aria-label={`${r.rating} of 5 stars`}>
             {[1, 2, 3, 4, 5].map((n) => (
               <Star
                 key={n}

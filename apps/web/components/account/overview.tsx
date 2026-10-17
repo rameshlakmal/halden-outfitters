@@ -140,7 +140,7 @@ function SignOutBlock() {
 
 function OverviewSkeleton() {
   return (
-    <div className="grid gap-8" aria-busy="true" aria-label="Loading your account">
+    <div className="grid gap-8" role="status" aria-busy="true" aria-label="Loading your account">
       <Skeleton className="h-9 w-56" />
       <Skeleton className="h-16 w-full rounded-[2px]" />
       <div className="grid max-w-md gap-3">

@@ -29,7 +29,8 @@ export function Gallery({ product }: { product: Pick<Product, 'slug' | 'name' | 
           setIndex(Math.round(el.scrollLeft / Math.max(1, el.clientWidth)));
         }}
         className="flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain rounded-[2px] bg-surface-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        aria-label={many ? `Photos of ${product.name}, swipe for more` : undefined}
+        role="group"
+        aria-label={`Photos of ${product.name}${many ? ', swipe for more' : ''}`}
       >
         {images.map((img, i) => (
           <div key={img.url} className="w-full shrink-0 snap-center">

@@ -109,7 +109,7 @@ function Summary({
 
 function ListSkeleton() {
   return (
-    <div className="grid gap-6" aria-busy="true" aria-label="Loading reviews">
+    <div className="grid gap-6" role="status" aria-busy="true" aria-label="Loading reviews">
       {[0, 1, 2].map((i) => (
         <div key={i} className="grid gap-3 border-t border-line pt-6">
           <Skeleton className="h-4 w-24" />
