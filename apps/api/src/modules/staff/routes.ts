@@ -24,7 +24,7 @@ import { z } from 'zod';
 import { needsUser, requireRole } from '../../core/auth.js';
 import { parseIfMatch, StaffService } from './service.js';
 
-const security = [{ session: [] }];
+const security: Record<string, string[]>[] = [{ session: [] }, { bearer: [] }];
 const tags = ['Staff'];
 const params = z.object({ id: Id });
 const listQuery = z.object({ cursor: Id.optional(), limit: z.coerce.number().int().min(1).max(100).default(50) });

@@ -35,6 +35,17 @@ type SessionRow = {
   created_at: Date;
 };
 
+/**
+ * The session token a request carries: `Authorization: Bearer <token>` (from POST /auth/token) or else the cookie.
+ * A request that sends an Authorization header is judged by it alone, so a bad token never falls back to a cookie.
+ */
+export function sessionToken(req: FastifyRequest): string | undefined {
+  const header = req.headers.authorization;
+  if (header === undefined) return req.cookies[SESSION_COOKIE];
+  const match = /^Bearer +([A-Za-z0-9_-]+)$/i.exec(header.trim());
+  return match?.[1];
+}
+
 /** The signed-in user for a session token, or null when it's missing, unknown, revoked or expired. */
 export async function loadSession(db: Db, token: string | undefined, now: Date): Promise<CurrentUser | null> {
   if (!token || token.length > 100) return null;

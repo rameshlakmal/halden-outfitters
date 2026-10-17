@@ -39,6 +39,15 @@ export const Login = z.object({
 
 export const TokenBody = z.object({ token: z.string().min(20).max(100) });
 
+export const AccessToken = z
+  .object({
+    accessToken: z.string().describe('Send as `Authorization: Bearer <accessToken>`'),
+    tokenType: z.literal('Bearer'),
+    expiresAt: Timestamp.describe('Each use pushes this out again, up to 90 days after sign-in'),
+    customer: Me,
+  })
+  .meta({ id: 'AccessToken' });
+
 export const ForgotPassword = z.object({ email: Email });
 
 export const ResetPassword = z.object({

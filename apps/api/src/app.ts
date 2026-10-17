@@ -14,7 +14,7 @@ import {
 } from 'fastify-type-provider-zod';
 import { randomUUID } from 'node:crypto';
 import type { Config } from './config.js';
-import { loadSession, SESSION_COOKIE } from './core/auth.js';
+import { loadSession, SESSION_COOKIE, sessionToken } from './core/auth.js';
 import { Clock } from './core/clock.js';
 import type { AppContext } from './core/context.js';
 import { Db } from './core/db.js';
@@ -104,7 +104,8 @@ export async function buildApp({
         version: '2.0.0',
         description:
           'The API of Halden Outfitters, a demo outdoor-gear shop built as a QA test target. ' +
-          'Sign in with POST /auth/login; the session is an HttpOnly cookie. Every error is ' +
+          'Sign in with POST /auth/login (the session is an HttpOnly cookie), or get a token from POST /auth/token ' +
+          'and send it as `Authorization: Bearer <token>`. Every error is ' +
           'application/problem+json with a stable `code`.',
       },
       servers: [{ url: '/' }],
@@ -120,7 +121,10 @@ export async function buildApp({
         { name: 'System' },
       ],
       components: {
-        securitySchemes: { session: { type: 'apiKey', in: 'cookie', name: SESSION_COOKIE } },
+        securitySchemes: {
+          session: { type: 'apiKey', in: 'cookie', name: SESSION_COOKIE },
+          bearer: { type: 'http', scheme: 'bearer', description: 'A token from POST /auth/token' },
+        },
       },
     },
     transform: jsonSchemaTransform,
@@ -144,13 +148,14 @@ export async function buildApp({
   // preValidation: before the body is validated, so routes that need a session answer 401 before 400.
   app.addHook('preValidation', async (req) => {
     req.now = await ctx.clock.now();
-    req.user = await loadSession(ctx.db, req.cookies[SESSION_COOKIE], req.now);
+    req.user = await loadSession(ctx.db, sessionToken(req), req.now);
   });
 
   app.setErrorHandler((err: FastifyError, req, reply) => {
     const problem = toProblem(err, req);
     if (problem.status >= 500) req.log.error({ err }, 'request failed');
     if (problem.retryAfterSeconds) reply.header('retry-after', String(problem.retryAfterSeconds));
+    if (problem.code === 'unauthenticated') reply.header('www-authenticate', 'Bearer realm="halden"');
     return reply.status(problem.status).type('application/problem+json').send(problem);
   });
 

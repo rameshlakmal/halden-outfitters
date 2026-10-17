@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { needsUser, requireRole, requireUser } from '../../core/auth.js';
 import { OrderService } from './service.js';
 
-const security = [{ session: [] }];
+const security: Record<string, string[]>[] = [{ session: [] }, { bearer: [] }];
 const OrderList = z.object({ items: z.array(OrderSummary), nextCursor: z.string().nullable() });
 const StaffOrderList = z.object({
   items: z.array(OrderSummary.extend({ email: z.string() })),

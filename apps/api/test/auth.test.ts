@@ -190,6 +190,76 @@ describe('sessions', () => {
   });
 });
 
+describe('bearer tokens', () => {
+  // An API client: no cookies, no Origin, just the Authorization header.
+  const api = (method: 'GET' | 'POST', url: string, token?: string, body?: unknown) =>
+    t.app.inject({
+      method,
+      url: `/api/v1${url}`,
+      headers: {
+        ...(token !== undefined ? { authorization: token } : {}),
+        ...(body !== undefined ? { 'content-type': 'application/json' } : {}),
+      },
+      ...(body !== undefined ? { payload: JSON.stringify(body) } : {}),
+    });
+  const getToken = async () => {
+    const res = await api('POST', '/auth/token', undefined, { email: 'maya@halden.test', password: PASSWORDS.shopper });
+    expect(res.statusCode).toBe(201);
+    return json(res);
+  };
+
+  it('signs in without a cookie and works as a session', async () => {
+    const body = await getToken();
+    expect(body).toMatchObject({ tokenType: 'Bearer', customer: { email: 'maya@halden.test' } });
+    expect(new Date(body.expiresAt).getTime()).toBeGreaterThan(Date.now() + 13 * 86400_000);
+    const res = await api('GET', '/auth/session', `Bearer ${body.accessToken}`);
+    expect(json(res).customer.email).toBe('maya@halden.test');
+    expect((await api('GET', '/orders', `bearer ${body.accessToken}`)).statusCode).toBe(200);
+  });
+
+  it('sets no cookie', async () => {
+    const res = await api('POST', '/auth/token', undefined, { email: 'maya@halden.test', password: PASSWORDS.shopper });
+    expect(res.cookies).toEqual([]);
+  });
+
+  it('refuses a wrong password like login does', async () => {
+    const res = await api('POST', '/auth/token', undefined, { email: 'maya@halden.test', password: 'not it at all' });
+    expect(res.statusCode).toBe(401);
+    expect(json(res).code).toBe('invalid_credentials');
+  });
+
+  it.each([
+    ['a made-up token', 'Bearer abcdefghijklmnopqrstuvwxyz0123456789'],
+    ['another scheme', 'Basic bWF5YTpwYXNzd29yZA=='],
+    ['no token', 'Bearer'],
+  ])('answers 401 with WWW-Authenticate for %s', async (_, header) => {
+    const res = await api('GET', '/orders', header);
+    expect(res.statusCode).toBe(401);
+    expect(res.headers['www-authenticate']).toBe('Bearer realm="halden"');
+    expect(json(res).code).toBe('unauthenticated');
+  });
+
+  it('judges a request by its Authorization header, never falling back to the cookie', async () => {
+    const c = new Client(t.app);
+    await c.login('maya@halden.test', PASSWORDS.shopper);
+    const res = await c.get('/orders', { authorization: 'Bearer not-a-real-token-at-all-0123456789' });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('shows in the session list and ends with logout', async () => {
+    const { accessToken } = await getToken();
+    const sessions = json(await api('GET', '/account/sessions', `Bearer ${accessToken}`));
+    expect(sessions.items.filter((s: { current: boolean }) => s.current)).toHaveLength(1);
+    expect((await api('POST', '/auth/logout', `Bearer ${accessToken}`, {})).statusCode).toBe(200);
+    expect((await api('GET', '/orders', `Bearer ${accessToken}`)).statusCode).toBe(401);
+  });
+
+  it('works for staff routes with a staff token', async () => {
+    const res = await api('POST', '/auth/token', undefined, { email: 'admin@halden.test', password: PASSWORDS.admin });
+    expect((await api('GET', '/staff/dashboard', `Bearer ${json(res).accessToken}`)).statusCode).toBe(200);
+  });
+});
+
 describe('password reset', () => {
   it('answers the same whether or not the account exists', async () => {
     const known = await new Client(t.app).post('/auth/forgot-password', { email: 'maya@halden.test' });

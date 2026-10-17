@@ -21,7 +21,7 @@ import { creditBalance } from '../loyalty/store-credit.js';
 import { OrderService } from '../orders/service.js';
 import { ReturnService } from './service.js';
 
-const security = [{ session: [] }];
+const security: Record<string, string[]>[] = [{ session: [] }, { bearer: [] }];
 const ReturnList = z.object({ items: z.array(ReturnSummary), nextCursor: z.string().nullable() });
 const listQuery = z.object({ cursor: Id.optional(), limit: z.coerce.number().int().min(1).max(50).default(20) });
 const params = z.object({ id: Id });

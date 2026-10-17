@@ -5,7 +5,7 @@ import { needsUser, requireUser } from '../../core/auth.js';
 import { withIdempotency } from '../../core/idempotency.js';
 import { CheckoutService } from './service.js';
 
-const security = [{ session: [] }];
+const security: Record<string, string[]>[] = [{ session: [] }, { bearer: [] }];
 
 export const checkoutRoutes: FastifyPluginAsyncZod = async (app) => {
   const checkout = new CheckoutService(app.ctx);

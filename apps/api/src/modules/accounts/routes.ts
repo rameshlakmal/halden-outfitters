@@ -1,4 +1,5 @@
 import {
+  AccessToken,
   ActiveSession,
   Address,
   AddressInput,
@@ -18,12 +19,20 @@ import {
 } from '@halden/contracts';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
-import { CART_COOKIE, clearCookie, requireUser, SESSION_COOKIE, setSessionCookie } from '../../core/auth.js';
+import {
+  CART_COOKIE,
+  clearCookie,
+  requireUser,
+  SESSION_COOKIE,
+  SESSION_DAYS,
+  setSessionCookie,
+} from '../../core/auth.js';
+import { addSeconds } from '../../core/clock.js';
 import { CartService } from '../cart/service.js';
 import { AccountService, userToMe } from './service.js';
 
 const ok = { ok: true as const };
-const security = [{ session: [] }];
+const security: Record<string, string[]>[] = [{ session: [] }, { bearer: [] }];
 
 export const accountRoutes: FastifyPluginAsyncZod = async (app) => {
   const { config } = app.ctx;
@@ -83,6 +92,31 @@ export const accountRoutes: FastifyPluginAsyncZod = async (app) => {
       setSessionCookie(reply, sessionToken, config.secureCookies);
       clearCookie(reply, CART_COOKIE, config.secureCookies);
       return { customer: me };
+    },
+  );
+
+  app.post(
+    '/auth/token',
+    {
+      schema: {
+        tags: auth,
+        summary: 'Sign in and get a Bearer token',
+        description:
+          'For API clients and test suites: the same checks as POST /auth/login (lockout, rate limits), but the ' +
+          'session comes back as a token instead of a cookie. Send it as `Authorization: Bearer <accessToken>`. ' +
+          'It is an ordinary session: it shows in GET /account/sessions, and POST /auth/logout with it ends it.',
+        body: Login,
+        response: { 201: AccessToken, 400: Problem, 401: Problem, 423: Problem, 429: Problem },
+      },
+    },
+    async (req, reply) => {
+      const { me, sessionToken } = await accounts.login(req, req.body.email, req.body.password);
+      return reply.status(201).send({
+        accessToken: sessionToken,
+        tokenType: 'Bearer' as const,
+        expiresAt: addSeconds(req.now, SESSION_DAYS * 86400).toISOString(),
+        customer: me,
+      });
     },
   );
 

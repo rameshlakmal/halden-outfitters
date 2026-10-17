@@ -14,7 +14,7 @@ import { z } from 'zod';
 import { needsUser, requireRole, requireUser } from '../../core/auth.js';
 import { ReviewService } from './service.js';
 
-const security = [{ session: [] }];
+const security: Record<string, string[]>[] = [{ session: [] }, { bearer: [] }];
 const OwnList = z.object({ items: z.array(OwnReview), nextCursor: z.string().nullable() });
 const listQuery = z.object({ cursor: Id.optional(), limit: z.coerce.number().int().min(1).max(50).default(20) });
 const params = z.object({ id: Id });
