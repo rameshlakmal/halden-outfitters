@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
 import { Logo } from '@/components/shell/sidebar';
-import { Button } from '@/components/ui';
+import { Button } from '@/components/kit';
 import { ApiError, post } from '@/lib/api';
 import { safeNext } from '@/lib/next-param';
 import { keys } from '@/lib/staff';

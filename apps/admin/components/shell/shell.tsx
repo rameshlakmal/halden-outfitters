@@ -8,7 +8,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { type ReactNode, useEffect, useState } from 'react';
 import { post } from '@/lib/api';
 import { isStaff, ROLE_LABEL, useSession } from '@/lib/staff';
-import { Button, Skeleton } from '../ui';
+import { Button, Skeleton } from '../kit';
 import { CommandPalette, useCommandPalette } from './command';
 import { Logo, SideNav } from './sidebar';
 import { useTheme } from './theme';

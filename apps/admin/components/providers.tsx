@@ -2,6 +2,7 @@
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { type ReactNode, useState } from 'react';
 import { ApiError } from '@/lib/api';
+import { ToastProvider } from './ui/toast';
 
 /** A signed-out answer anywhere (the session expired, or was revoked) sends the user to sign in again. */
 function onAuthError(err: unknown) {
@@ -25,5 +26,9 @@ export function Providers({ children }: { children: ReactNode }) {
         },
       }),
   );
-  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+  return (
+    <QueryClientProvider client={client}>
+      <ToastProvider>{children}</ToastProvider>
+    </QueryClientProvider>
+  );
 }

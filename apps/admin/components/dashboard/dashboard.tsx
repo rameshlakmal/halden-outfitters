@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useState } from 'react';
 import { axis, baseOption, EChart, tooltip, type Tokens } from '@/components/charts/echart';
-import { Card, CardTitle, Empty, PageHeader, Skeleton, Tag } from '@/components/ui';
+import { Card, CardTitle, Empty, PageHeader, Skeleton, Tag } from '@/components/kit';
 import { change, count, day, money, OPEN_STATUSES, REASON_LABEL, STATUS_LABEL, when } from '@/lib/format';
 import { type DashboardData, useDashboard } from '@/lib/staff';
 

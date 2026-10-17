@@ -178,3 +178,87 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Utilities the staff screens share with the shop (same behaviour, see apps/web/app/globals.css). */
+@layer components {
+  .link {
+    color: var(--accent);
+    font-weight: 600;
+    transition: color 160ms ease;
+  }
+  .link:hover {
+    color: var(--accent-hover);
+  }
+  /* Pressable: a physical push on :active. */
+  .press {
+    transition:
+      transform 160ms var(--ease-out-expo),
+      background-color 160ms ease,
+      border-color 160ms ease,
+      color 160ms ease;
+  }
+  .press:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+}
+
+/* List items and toasts ease in when they first appear (@starting-style, no JS). */
+@media (prefers-reduced-motion: no-preference) {
+  .enter {
+    transition:
+      opacity 240ms ease,
+      transform 360ms var(--ease-out-expo);
+  }
+  @starting-style {
+    .enter {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+  }
+  .rise {
+    animation: rise 600ms var(--ease-out-expo) both;
+    animation-delay: calc(var(--i, 0) * 60ms);
+  }
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+/* Native <dialog>: enters and leaves with @starting-style. */
+.pop {
+  transition:
+    transform 240ms var(--ease-out-expo),
+    opacity 180ms ease,
+    overlay 240ms allow-discrete,
+    display 240ms allow-discrete;
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+.pop:not([open]) {
+  transform: translateY(-8px) scale(0.98);
+  opacity: 0;
+}
+@starting-style {
+  .pop[open] {
+    transform: translateY(-8px) scale(0.98);
+    opacity: 0;
+  }
+}
+.pop::backdrop {
+  background: var(--scrim);
+  transition:
+    opacity 180ms ease,
+    overlay 240ms allow-discrete,
+    display 240ms allow-discrete;
+}
+.pop:not([open])::backdrop {
+  opacity: 0;
+}
+@starting-style {
+  .pop[open]::backdrop {
+    opacity: 0;
+  }
+}
