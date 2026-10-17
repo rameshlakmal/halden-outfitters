@@ -136,8 +136,11 @@ test('a coupon on the cart shows as a discount line and carries into checkout', 
 
   await page.goto('/checkout');
   // On phones the summary is folded away above the steps.
-  const fold = page.getByText('Order summary', { exact: true });
-  if (await fold.isVisible()) await fold.click();
+  if (test.info().project.name === 'mobile') {
+    const fold = page.getByText('Order summary', { exact: true });
+    await expect(fold).toBeVisible();
+    await fold.click();
+  }
   await expect(
     page
       .getByText(/WELCOME10/)

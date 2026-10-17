@@ -15,15 +15,11 @@ async function signInAsJonas(page: Page) {
 
 test('return a damaged mug: approved with a label, then cancelled', async ({ page }) => {
   await signInAsJonas(page);
-  // The delivered order is the one with a Start a return button.
-  const cards = page.getByTestId('order-card').filter({ hasText: 'Delivered' });
-  await expect(cards.first()).toBeVisible();
-  const count = await cards.count();
-  for (let i = 0; i < count; i++) {
-    await cards.nth(i).click();
-    if (await page.getByTestId('start-return').isVisible()) break;
-    await page.goBack();
-  }
+  // Jonas has one delivered order (the other one is still on its way).
+  const delivered = page.getByTestId('order-card').filter({ hasText: 'Delivered' });
+  await expect(delivered).toHaveCount(1);
+  await delivered.click();
+  await expect(page).toHaveURL(/\/account\/orders\/\d+$/);
   await expect(page.getByTestId('return-by')).toBeVisible();
   await page.getByTestId('start-return').click();
   await expect(page).toHaveURL(/\/return$/);
