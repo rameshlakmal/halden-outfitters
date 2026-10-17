@@ -14,6 +14,10 @@ export default function InboxPage() {
  This demo shop never sends real email. Every message it would send lands here instead, so you can follow
  confirmation and password reset links while testing.
  </p>
+ <p className="leading-relaxed text-ink-2">
+ Register with an address at a test domain such as <code>you@halden.test</code> or <code>you@example.com</code>
+ and anyone can read its mail here. Mail to any other address is shown only to its owner, signed in.
+ </p>
  </header>
  <Suspense>
  <Inbox />

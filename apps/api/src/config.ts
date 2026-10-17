@@ -14,8 +14,16 @@ const Env = z.object({
   APP_URL: z.url().default('http://localhost:3001'),
   /** Origins allowed to send state-changing requests (comma-separated). APP_URL's origin is always allowed. */
   ALLOWED_ORIGINS: z.string().default(''),
-  /** Behind Vercel's proxy, X-Forwarded-* headers are trusted for the client IP and protocol. */
-  TRUST_PROXY: bool.default(false),
+  /**
+   * How many proxy hops in front of the API may set X-Forwarded-For (the client IP behind every per-IP rate limit).
+   * A number, not "true": trusting every hop would take the left-most address, which the client writes itself, so
+   * a made-up header per request would dodge the limits. 0 means no proxy. "false"/"true" are read as 0/1.
+   */
+  TRUST_PROXY: z
+    .string()
+    .default('0')
+    .transform((v) => (v === 'false' ? 0 : v === 'true' ? 1 : Number(v)))
+    .pipe(z.number().int().min(0).max(5)),
   /** The QA lab (fake inbox, shop clock, planted bugs). On for this demo shop; a real shop would turn it off. */
   QA_LAB_ENABLED: bool.default(true),
   /** Off only for end-to-end test runs, where one machine signs up many accounts in minutes. */
@@ -40,7 +48,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const allowedOrigins = new Set(
     [new URL(c.APP_URL).origin, ...c.ALLOWED_ORIGINS.split(',')].map((o) => o.trim()).filter(Boolean),
   );
-  if (c.NODE_ENV === 'production' && c.HALDENPAY_WEBHOOK_SECRET === 'whsec_local_development_only') {
+  // Any deploy counts, not only NODE_ENV=production: with the public default secret anyone could sign a fake
+  // "payment.authorized" webhook and get an order confirmed without paying.
+  const deployed = c.NODE_ENV === 'production' || Boolean(env.VERCEL);
+  if (deployed && c.HALDENPAY_WEBHOOK_SECRET === 'whsec_local_development_only') {
     throw new Error('Invalid configuration:\n  HALDENPAY_WEBHOOK_SECRET: set a real secret in production');
   }
   return { ...c, allowedOrigins, secureCookies: new URL(c.APP_URL).protocol === 'https:' };

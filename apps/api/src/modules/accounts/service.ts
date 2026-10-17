@@ -37,6 +37,7 @@ type CustomerRow = {
   failed_logins: number;
   locked_until: Date | null;
   created_at: Date;
+  is_demo?: boolean;
 };
 
 export const toMe = (c: Pick<CustomerRow, 'id' | 'name' | 'email' | 'role' | 'email_verified_at' | 'created_at'>): Me => ({
@@ -173,12 +174,13 @@ export class AccountService {
   async login(req: FastifyRequest, email: string, password: string) {
     const { db, limiter } = this.ctx;
     await limiter.hit(LIMITS.loginPerIp, req.ip);
-    await limiter.hit(LIMITS.loginPerEmail, email);
+    // Per email *and* IP: keyed on the email alone, anyone could keep a known account's owner from signing in.
+    await limiter.hit(LIMITS.loginPerEmail, `${email}|${req.ip}`);
     const now = req.now;
     const wrong = () => new AppError('invalid_credentials', 'That email and password do not match.');
 
     const customer = await db.one<CustomerRow>(
-      `SELECT id, name, email, role, password_hash, email_verified_at, failed_logins, locked_until, created_at
+      `SELECT id, name, email, role, password_hash, email_verified_at, failed_logins, locked_until, created_at, is_demo
          FROM customers WHERE email = $1`,
       [email],
     );
@@ -189,6 +191,9 @@ export class AccountService {
     if (customer.locked_until && customer.locked_until > now) throw this.locked(customer.locked_until, now);
 
     if (!(await verifyPassword(customer.password_hash, password))) {
+      // The shared demo accounts never lock: their mail is hidden from the public inbox, so nobody could unlock them,
+      // and anyone could keep them locked with five wrong passwords every 15 minutes.
+      if (customer.is_demo) throw wrong();
       const lockedUntil = await db.tx(async (tx) => {
         const { rows } = await tx.query<{ failed_logins: number }>(
           'UPDATE customers SET failed_logins = failed_logins + 1, updated_at = $2 WHERE id = $1 RETURNING failed_logins',
@@ -302,6 +307,8 @@ export class AccountService {
     const hash = await hashPassword(next);
     await this.ctx.db.tx(async (tx) => {
       await tx.query('UPDATE customers SET password_hash = $2, updated_at = $3 WHERE id = $1', [user.id, hash, now]);
+      // A reset link sent before the change must not still work after it.
+      await tx.query("UPDATE auth_tokens SET used_at = $2 WHERE customer_id = $1 AND kind = 'reset_password' AND used_at IS NULL", [user.id, now]);
       await tx.query('UPDATE sessions SET revoked_at = $3 WHERE customer_id = $1 AND id <> $2 AND revoked_at IS NULL', [
         user.id,
         user.sessionId,

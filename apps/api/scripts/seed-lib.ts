@@ -5,10 +5,12 @@ import { BUGS } from '../src/core/bugs.js';
 import { ACCOUNTS, ADDRESSES, CATEGORIES, COUNTRIES, COUPONS, PRODUCTS, RATES, SIZED, ZONES, zoneOf } from './seed-data.js';
 import { seedOrders } from './seed-orders.js';
 
-export type SeedPasswords = { staff: string; shopper: string };
+/** admin: the admin account. staff: support and warehouse, so their testers can't sign in as admin. */
+export type SeedPasswords = { admin: string; staff: string; shopper: string };
 
 export async function seed(db: Db, passwords: SeedPasswords, opts: { orders?: boolean } = {}): Promise<string> {
   // Hash outside the transaction: argon2 is deliberately slow.
+  const adminHash = await hashPassword(passwords.admin);
   const staffHash = await hashPassword(passwords.staff);
   const shopperHash = await hashPassword(passwords.shopper);
 
@@ -106,7 +108,7 @@ export async function seed(db: Db, passwords: SeedPasswords, opts: { orders?: bo
         `INSERT INTO customers (email, name, password_hash, role, email_verified_at, is_demo, created_at, updated_at)
          VALUES ($1, $2, $3, $4, now() - interval '60 days', true, now() - interval '60 days', now() - interval '60 days')
          RETURNING id`,
-        [a.email, a.name, a.staff ? staffHash : shopperHash, a.role],
+        [a.email, a.name, a.role === 'admin' ? adminHash : a.staff ? staffHash : shopperHash, a.role],
       );
       for (const [i, ad] of (ADDRESSES[a.email] ?? []).entries()) {
         await tx.query(
@@ -123,8 +125,12 @@ export async function seed(db: Db, passwords: SeedPasswords, opts: { orders?: bo
 }
 
 export function seedPasswordsFromEnv(env = process.env): SeedPasswords {
-  const staff = env.SEED_ADMIN_PASSWORD;
+  const admin = env.SEED_ADMIN_PASSWORD;
+  const staff = env.SEED_STAFF_PASSWORD;
   const shopper = env.SEED_SHOPPER_PASSWORD;
-  if (!staff || !shopper) throw new Error('Set SEED_ADMIN_PASSWORD and SEED_SHOPPER_PASSWORD (see .env.example).');
-  return { staff, shopper };
+  if (!admin || !staff || !shopper) {
+    throw new Error('Set SEED_ADMIN_PASSWORD, SEED_STAFF_PASSWORD and SEED_SHOPPER_PASSWORD (see .env.example).');
+  }
+  if (new Set([admin, staff, shopper]).size < 3) throw new Error('The three SEED_*_PASSWORD values must all differ.');
+  return { admin, staff, shopper };
 }

@@ -110,6 +110,12 @@ export class OrderService {
   async confirm(tx: pg.PoolClient, orderId: string, now: Date): Promise<boolean> {
     const o = await this.lockOrder(tx, orderId);
     if (o.status !== 'pending_payment') return false; // already handled (webhook and redirect both arrive)
+    // A bank step answered after the 30 minutes: the stock hold has lapsed and may be sold to someone else, so the
+    // order is cancelled (and the late authorization voided) instead of confirmed.
+    if (o.payment_expires_at && o.payment_expires_at <= now) {
+      await this.settle(tx, orderId, now);
+      return false;
+    }
     await tx.query(
       "UPDATE orders SET status = 'confirmed', confirmed_at = $2, payment_expires_at = NULL, version = version + 1, updated_at = $2 WHERE id = $1",
       [orderId, now],
@@ -327,8 +333,10 @@ export class OrderService {
     if (o.status === 'pending_payment' && o.payment_expires_at && o.payment_expires_at <= now) {
       const locked = await this.lockOrder(tx, orderId);
       if (locked.status !== 'pending_payment') return;
-      await tx.query("UPDATE payments SET status = 'failed', failure_code = 'timeout', updated_at = $2 WHERE order_id = $1", [orderId, now]);
+      // Release first: it voids the intent while the payment still reads requires_action, so its bank step can't be
+      // approved later. Then record the payment as failed by timeout.
       await this.release(tx, locked, 'payment_timeout', null, systemActor, now, { voidPayment: true });
+      await tx.query("UPDATE payments SET status = 'failed', failure_code = 'timeout', updated_at = $2 WHERE order_id = $1", [orderId, now]);
       await queueEmail(
         tx,
         o.email,

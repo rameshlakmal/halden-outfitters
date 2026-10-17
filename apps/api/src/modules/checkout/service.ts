@@ -17,6 +17,7 @@ import type { AppContext } from '../../core/context.js';
 import type { Queryable } from '../../core/db.js';
 import { addSeconds } from '../../core/clock.js';
 import { AppError, fieldError } from '../../core/errors.js';
+import { LIMITS } from '../../core/rate-limit.js';
 import { couponProblem, loadCoupon, toPricingCoupon, type CouponBugs } from '../promotions/coupons.js';
 import { PAYMENT_MINUTES } from '../orders/lifecycle.js';
 import { OrderService } from '../orders/service.js';
@@ -25,6 +26,9 @@ import { luhnValid } from '../payments/haldenpay.js';
 import { balance, lockPoints, redeem } from '../loyalty/points.js';
 import { creditBalance, spendCredit } from '../loyalty/store-credit.js';
 import { amounts, maxRedeemablePoints, price, type PricingLine } from './pricing.js';
+
+/** Unpaid orders (waiting for the bank step) one customer may have open at once. */
+export const MAX_UNPAID_ORDERS = 3;
 
 type Input = z.infer<typeof QuoteInput>;
 type ShipAddress = {
@@ -173,7 +177,7 @@ export class CheckoutService {
     const base = price({ lines, coupon: pricingCoupon, rate: { price: rate.price, freeFrom: rate.free_from }, taxRatePercent: taxRate, bugs: { couponTwice } });
 
     // Halden Points: checked against the balance and the half-of-the-order limit.
-    const points = await balance(client, user.id);
+    const points = await balance(client, user.id, now);
     const maxRedeemable = Math.min(maxRedeemablePoints(base.subtotal - base.discount), Math.floor(points.available / 100) * 100);
     if (input.pointsToRedeem > points.available) throw fieldError('pointsToRedeem', `You have ${points.available} points.`);
     if (input.pointsToRedeem > maxRedeemablePoints(base.subtotal - base.discount)) {
@@ -217,9 +221,18 @@ export class CheckoutService {
       throw new AppError('email_not_verified', 'Confirm your email address before your first order. We sent you a link.');
     }
     if (input.card && !luhnValid(input.card.number)) throw fieldError('card.number', 'That card number is not valid.', 'Please check the card number.');
+    await this.ctx.limiter.hit(LIMITS.checkoutPerCustomer, user.id);
     const orderId = await this.ctx.db.tx(async (tx) => {
       // Lock the customer's points and store credit first, so two checkouts can't spend them twice.
       await lockPoints(tx, user.id);
+      // Each unpaid order holds stock for 30 minutes: a cap stops one account from holding the whole shelf.
+      const { rows: open } = await tx.query<{ n: number }>(
+        "SELECT count(*)::int AS n FROM orders WHERE customer_id = $1 AND status = 'pending_payment' AND payment_expires_at > $2",
+        [user.id, now],
+      );
+      if ((open[0]?.n ?? 0) >= MAX_UNPAID_ORDERS) {
+        throw new AppError('conflict', 'You have unpaid orders waiting for the bank check. Finish or cancel one of them first.');
+      }
       const { lines } = await this.cartLines(tx, user.id, true);
       if (lines.length === 0) throw new AppError('cart_empty', 'Your cart is empty.');
       const bad = lines.find((l) => !l.active || l.available < l.qty);
@@ -239,6 +252,9 @@ export class CheckoutService {
         if (problem) throw new AppError('coupon_invalid', `Code ${code}: ${problem} Remove it to continue.`);
       }
       const q = await this.quote(user, input, now, tx);
+      // The quote re-reads the coupon after the lock. If it no longer applies (another order took the last use),
+      // say so instead of quietly charging full price.
+      if (code && !q._couponCode) throw new AppError('coupon_invalid', `Code ${code} can no longer be used. Remove it to continue.`);
       const a = q._address;
       if (toCents(q.totals.amountDue) > 0 && !input.card) throw fieldError('card', 'Enter a card for the amount left to pay.');
       if ('address' in input.shipTo) await this.saveAddress(tx, user.id, input.shipTo.address, now);

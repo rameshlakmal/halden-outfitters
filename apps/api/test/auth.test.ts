@@ -103,19 +103,28 @@ describe('login', () => {
   });
 
   it('locks sign-in for 15 minutes after 5 wrong passwords in a row, and emails the owner', async () => {
+    const email = 'lockme@halden.test';
+    const password = 'a long walk in the woods';
+    expect((await new Client(t.app).post('/auth/register', { name: 'Lock Me', email, password })).statusCode).toBe(201);
     const c = new Client(t.app);
     const tries = [];
-    for (let i = 0; i < 5; i++) tries.push(await c.post('/auth/login', { email: 'jonas@halden.test', password: `wrong guess ${i}` }));
+    for (let i = 0; i < 5; i++) tries.push(await c.post('/auth/login', { email, password: `wrong guess ${i}` }));
     expect(tries.slice(0, 4).every((r) => r.statusCode === 401)).toBe(true);
     expect(tries[4]!.statusCode).toBe(423);
     expect(tries[4]!.headers['retry-after']).toBe('900');
 
-    const right = await c.post('/auth/login', { email: 'jonas@halden.test', password: PASSWORDS.shopper });
+    const right = await c.post('/auth/login', { email, password });
     expect(right.statusCode).toBe(423);
     expect(json(right).code).toBe('account_locked');
-    expect((await lastEmail(t.db, 'jonas@halden.test'))?.template).toBe('account_locked');
+    expect((await lastEmail(t.db, email))?.template).toBe('account_locked');
 
     await t.advance(15 * 60 + 1);
+    expect((await c.post('/auth/login', { email, password })).statusCode).toBe(200);
+  });
+
+  it('never locks the shared demo accounts, so nobody can keep them locked', async () => {
+    const c = new Client(t.app);
+    for (let i = 0; i < 8; i++) expect((await c.post('/auth/login', { email: 'jonas@halden.test', password: `wrong guess ${i}` })).statusCode).toBe(401);
     expect((await c.post('/auth/login', { email: 'jonas@halden.test', password: PASSWORDS.shopper })).statusCode).toBe(200);
   });
 

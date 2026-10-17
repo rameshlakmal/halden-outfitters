@@ -92,13 +92,13 @@ export const returnRoutes: FastifyPluginAsyncZod = async (app) => {
       const user = requireUser(req);
       const db = app.ctx.db;
       const [b, summit, next, history] = await Promise.all([
-        balance(db.pool, user.id),
+        balance(db.pool, user.id, req.now),
         isSummit(db.pool, user.id, req.now),
         db.one<{ points: number; expires_at: Date }>(
           `SELECT sum(remaining)::int AS points, min(expires_at) AS expires_at FROM loyalty_ledger
-            WHERE customer_id = $1 AND remaining > 0
-              AND expires_at = (SELECT min(expires_at) FROM loyalty_ledger WHERE customer_id = $1 AND remaining > 0)`,
-          [user.id],
+            WHERE customer_id = $1 AND remaining > 0 AND expires_at > $2
+              AND expires_at = (SELECT min(expires_at) FROM loyalty_ledger WHERE customer_id = $1 AND remaining > 0 AND expires_at > $2)`,
+          [user.id, req.now],
         ),
         db.query<{ kind: string; points: number; bucket: 'pending' | 'available'; order_id: string | null; note: string | null; created_at: Date }>(
           'SELECT kind, points, bucket, order_id, note, created_at FROM loyalty_ledger WHERE customer_id = $1 ORDER BY created_at DESC, id DESC LIMIT 100',

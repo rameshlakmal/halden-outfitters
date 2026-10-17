@@ -15,10 +15,22 @@ export function useNextParam(): string {
   );
 }
 
-/** Only same-site paths: "/account" is fine, "//evil.example" and "https://..." are not. */
+/**
+ * Only same-site paths: "/account" is fine, "//evil.example" and "https://..." are not. The value is resolved the way
+ * the browser would ("/\t/evil.example" becomes "//evil.example" once tabs are stripped) and must stay on this site.
+ */
 export function safeNext(next: string | null | undefined, fallback = '/account'): string {
-  if (!next || !next.startsWith('/') || next.startsWith('//') || next.startsWith('/\\')) return fallback;
-  return next;
+  // eslint-disable-next-line no-control-regex -- control characters are exactly what's being refused
+  if (!next || !next.startsWith('/') || /[\u0000-\u001f\\]/.test(next)) return fallback;
+  const base = 'https://halden.invalid';
+  let url: URL;
+  try {
+    url = new URL(next, base);
+  } catch {
+    return fallback;
+  }
+  if (url.origin !== base) return fallback;
+  return url.pathname + url.search + url.hash;
 }
 
 /** A sentence for an error that isn't about one field. */

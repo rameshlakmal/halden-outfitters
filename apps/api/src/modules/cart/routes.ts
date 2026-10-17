@@ -3,6 +3,7 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { CART_COOKIE } from '../../core/auth.js';
+import { LIMITS } from '../../core/rate-limit.js';
 import { CartCoupons } from './coupon.js';
 import { CartService, type CartOwner } from './service.js';
 
@@ -95,6 +96,8 @@ export const cartRoutes: FastifyPluginAsyncZod = async (app) => {
       },
     },
     async (req, reply) => {
+      // Slows down guessing codes: each answer says whether a code exists.
+      await app.ctx.limiter.hit(LIMITS.couponPerIp, req.ip);
       const o = owner(req);
       let id = await carts.find(o);
       if (!id) {

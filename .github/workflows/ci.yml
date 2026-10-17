@@ -12,6 +12,10 @@ concurrency:
 env:
   NODE_VERSION: 24
 
+# The workflow only reads the repository; it never needs write access to it.
+permissions:
+  contents: read
+
 jobs:
   quality:
     name: Lint, format, typecheck
@@ -61,7 +65,8 @@ jobs:
       APP_URL: http://localhost:3001
       API_URL: http://127.0.0.1:4000
       RATE_LIMITS: 'false'
-      SEED_ADMIN_PASSWORD: ci-staff-password-1
+      SEED_ADMIN_PASSWORD: ci-admin-password-1
+      SEED_STAFF_PASSWORD: ci-staff-password-1
       SEED_SHOPPER_PASSWORD: ci-shopper-password-1
       HALDENPAY_WEBHOOK_SECRET: whsec_ci_only_not_a_real_secret
       CRON_SECRET: ci-cron-secret-not-real
@@ -77,7 +82,7 @@ jobs:
         run: |
           npm run build -w @halden/api
           NODE_ENV=production nohup npm run start -w @halden/api > api.log 2>&1 &
-          npx wait-on -t 60000 http://127.0.0.1:4000/api/v1/health || { bash scripts/ci-annotate.sh 'API did not start' api.log; exit 1; }
+          npx --yes wait-on@9.5.1 -t 60000 http://127.0.0.1:4000/api/v1/health || { bash scripts/ci-annotate.sh 'API did not start' api.log; exit 1; }
       - name: Build the web app
         run: npm run build -w @halden/web
       - name: Install Playwright Chromium
@@ -92,7 +97,7 @@ jobs:
       - name: Start the web app for the budgets
         run: |
           NODE_ENV=production nohup npm run start -w @halden/web > web.log 2>&1 &
-          npx wait-on -t 60000 http://localhost:3001/ || { bash scripts/ci-annotate.sh 'Web app did not start' web.log; exit 1; }
+          npx --yes wait-on@9.5.1 -t 60000 http://localhost:3001/ || { bash scripts/ci-annotate.sh 'Web app did not start' web.log; exit 1; }
       - name: First-load JavaScript budget
         run: node apps/web/scripts/check-js-budget.mjs http://localhost:3001
       - name: Lighthouse budgets (mobile)

@@ -2,13 +2,17 @@
 // camp pillow review is held for moderation because it has a link.
 import { expect, type Page, test } from '@playwright/test';
 
-const PASSWORD = process.env.SEED_ADMIN_PASSWORD;
-test.skip(!PASSWORD, 'Set SEED_ADMIN_PASSWORD to the staff password the demo data was seeded with.');
+const ADMIN = process.env.SEED_ADMIN_PASSWORD;
+const STAFF = process.env.SEED_STAFF_PASSWORD;
+test.skip(
+  !ADMIN || !STAFF,
+  'Set SEED_ADMIN_PASSWORD and SEED_STAFF_PASSWORD to the passwords the demo data was seeded with.',
+);
 
 async function signIn(page: Page, email: string, next: string) {
   await page.goto(`/sign-in?next=${encodeURIComponent(next)}`);
   await page.getByLabel('Email').fill(email);
-  await page.getByLabel('Password', { exact: true }).fill(PASSWORD!);
+  await page.getByLabel('Password', { exact: true }).fill((email.startsWith('admin@') ? ADMIN : STAFF)!);
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(page).toHaveURL(new RegExp(`${next.replace('/', '\\/')}$`));
 }

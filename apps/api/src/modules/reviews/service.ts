@@ -153,6 +153,8 @@ export class ReviewService {
       const r = await this.lock(tx, id);
       const staff = user.role === 'support' || user.role === 'admin';
       if (r.customer_id !== user.id && !staff) throw notFound('That review');
+      // A hidden review stays (and keeps its product slot), or deleting and posting it again would undo moderation.
+      if (r.status === 'hidden' && !staff) throw new AppError('forbidden', 'This review was hidden by our team, so it cannot be deleted. Contact support.');
       await tx.query('DELETE FROM reviews WHERE id = $1', [id]);
       await this.rerate(tx, r.product_id);
       if (r.customer_id !== user.id) await audit(tx, user, 'review.delete', { type: 'review', id }, { before: this.snapshot(r) });
@@ -160,6 +162,8 @@ export class ReviewService {
   }
 
   async vote(id: string, user: CurrentUser, helpful: boolean, now: Date) {
+    // Only confirmed accounts vote, which makes stuffing votes from throwaway accounts slower.
+    if (!user.emailVerified) throw new AppError('email_not_verified', 'Confirm your email address before voting on reviews.');
     await this.ctx.db.tx(async (tx) => {
       const r = await this.lock(tx, id);
       if (r.status !== 'published') throw notFound('That review');

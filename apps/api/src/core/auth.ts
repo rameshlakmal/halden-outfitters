@@ -1,5 +1,6 @@
 // Server-side sessions: the cookie holds a random token, the database holds its hash. Sessions slide: each use
-// pushes the expiry out again (written at most once an hour), and they can be revoked one by one or all at once.
+// pushes the expiry out again (written at most once an hour), up to SESSION_MAX_DAYS after sign-in, and they can be
+// revoked one by one or all at once.
 import type { Role } from '@halden/contracts';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { Db, Queryable } from './db.js';
@@ -10,6 +11,8 @@ import { AppError } from './errors.js';
 export const SESSION_COOKIE = 'halden_session';
 export const CART_COOKIE = 'halden_cart';
 export const SESSION_DAYS = 14;
+/** However often it's used, a session ends this long after sign-in, so a stolen cookie can't live forever. */
+export const SESSION_MAX_DAYS = 90;
 
 export type CurrentUser = {
   id: string;
@@ -39,8 +42,9 @@ export async function loadSession(db: Db, token: string | undefined, now: Date):
     `SELECT s.id AS session_id, s.last_seen_at, c.id, c.name, c.email, c.role, c.email_verified_at, c.created_at
        FROM sessions s
        JOIN customers c ON c.id = s.customer_id
-      WHERE s.token_hash = $1 AND s.revoked_at IS NULL AND s.expires_at > $2`,
-    [tokenHash(token), now],
+      WHERE s.token_hash = $1 AND s.revoked_at IS NULL AND s.expires_at > $2
+        AND s.created_at > $2::timestamptz - make_interval(days => $3)`,
+    [tokenHash(token), now, SESSION_MAX_DAYS],
   );
   if (!row) return null;
   if (now.getTime() - row.last_seen_at.getTime() > 3600_000) {

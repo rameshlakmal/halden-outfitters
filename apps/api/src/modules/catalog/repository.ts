@@ -115,10 +115,12 @@ export class CatalogRepository {
     if (q.category) where.push(`c.slug = ${p(q.category)}`);
     if (q.q) {
       // Full-text match on whole words, or a prefix match on the name for "half-typed" searches.
+      // % and _ in the search are literal characters, not LIKE wildcards ("_" alone must not match everything).
       const words = p(q.q);
+      const literal = p(q.q.replace(/[\\%_]/g, '\\$&'));
       where.push(
         `(to_tsvector('english', p.name || ' ' || p.summary) @@ websearch_to_tsquery('english', ${words})
-          OR p.name ILIKE '%' || ${words} || '%')`,
+          OR p.name ILIKE '%' || ${literal} || '%' ESCAPE '\\')`,
       );
     }
     if (q.minPrice !== undefined) where.push(`p.price >= ${p(q.minPrice)}`);

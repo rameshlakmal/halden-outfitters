@@ -7,7 +7,7 @@ import { Clock } from '../src/core/clock.js';
 import { Db } from '../src/core/db.js';
 import { seed } from '../scripts/seed-lib.js';
 
-export const PASSWORDS = { staff: 'staff-test-password-1', shopper: 'shopper-test-password-1' };
+export const PASSWORDS = { admin: 'admin-test-password-1', staff: 'staff-test-password-1', shopper: 'shopper-test-password-1' };
 export const APP_URL = 'http://localhost:3000';
 
 export function testDbUrl(): string {

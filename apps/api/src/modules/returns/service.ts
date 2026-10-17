@@ -24,7 +24,7 @@ import type { AppContext } from '../../core/context.js';
 import type { Queryable } from '../../core/db.js';
 import { AppError, fieldError, notFound } from '../../core/errors.js';
 import { queueEmail } from '../../core/outbox.js';
-import { giveBack, reversePending } from '../loyalty/points.js';
+import { giveBack, lockPoints, reversePending } from '../loyalty/points.js';
 import { returnWindowClosed, returnWindowEnds } from '../orders/lifecycle.js';
 import { OrderService } from '../orders/service.js';
 import {
@@ -100,6 +100,11 @@ const money = (i: ItemRow) => ({
 
 const isStaff = (u: CurrentUser) => u.role !== 'customer';
 const day = 86400_000;
+
+/** Staff don't approve, grade or pay out on their own orders: the four-eyes rule for money leaving the shop. */
+function notOwn(user: CurrentUser, customerId: string) {
+  if (user.id === customerId) throw new AppError('forbidden', "You can't handle your own order or return. Ask a colleague.");
+}
 const dateText = (d: Date) => d.toISOString().slice(0, 10);
 
 export class ReturnService {
@@ -161,6 +166,8 @@ export class ReturnService {
       );
       const o = rows[0];
       if (!o || o.customer_id !== user.id) throw notFound('That order');
+      // Serialises this customer's return requests, so parallel requests can't all count the same "recent returns".
+      await lockPoints(tx, user.id);
       const blocked = await this.blocker(tx, o, now);
       if (blocked) throw new AppError('return_not_allowed', blocked);
       if (input.reason === 'other' && !input.note) throw fieldError('note', 'Tell us what is wrong.');
@@ -236,6 +243,7 @@ export class ReturnService {
   private async approveLocked(tx: pg.PoolClient, returnId: string, actor: CurrentUser | null, now: Date, auto: boolean) {
     const actorId = actor?.id ?? null;
     const r = await this.lock(tx, returnId);
+    if (actor) notOwn(actor, r.customer_id);
     if (r.status !== 'requested') throw new AppError('invalid_transition', `A return that is ${r.status} cannot be approved.`);
     const code = `HRL-${returnId}-${randomBytes(3).toString('hex').toUpperCase()}`;
     const expires = new Date(now.getTime() + LABEL_DAYS * day);
@@ -259,6 +267,7 @@ export class ReturnService {
   async reject(returnId: string, user: CurrentUser, reason: string, now: Date) {
     await this.ctx.db.tx(async (tx) => {
       const r = await this.lock(tx, returnId);
+      notOwn(user, r.customer_id);
       if (r.status !== 'requested') throw new AppError('invalid_transition', `A return that is ${r.status} cannot be rejected.`);
       await tx.query(
         "UPDATE returns SET status = 'rejected', rejected_reason = $2, decided_at = $3, decided_by = $4, updated_at = $3 WHERE id = $1",
@@ -278,6 +287,7 @@ export class ReturnService {
     await this.ctx.db.tx(async (tx) => {
       await this.settleReturn(tx, returnId, now);
       const r = await this.lock(tx, returnId);
+      notOwn(user, r.customer_id);
       if (r.status !== 'approved') {
         throw new AppError('invalid_transition', r.status === 'requested' ? 'This return has not been approved yet.' : `A return that is ${r.status} cannot be received.`);
       }
@@ -399,6 +409,7 @@ export class ReturnService {
       );
       const o = rows[0];
       if (!o) throw notFound('That order');
+      notOwn(user, o.customer_id);
       if (!['shipped', 'delivered', 'completed'].includes(o.status)) {
         throw new AppError('invalid_transition', 'Goodwill refunds are for orders that have shipped. Cancel the order instead.');
       }

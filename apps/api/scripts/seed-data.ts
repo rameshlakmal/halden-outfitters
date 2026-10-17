@@ -317,7 +317,10 @@ export type SeedAccount = {
   staff: boolean;
 };
 
-/** Staff accounts use SEED_ADMIN_PASSWORD, shoppers SEED_SHOPPER_PASSWORD. All are verified demo accounts. */
+/**
+ * The admin uses SEED_ADMIN_PASSWORD, support and warehouse SEED_STAFF_PASSWORD, shoppers SEED_SHOPPER_PASSWORD.
+ * All are verified demo accounts.
+ */
 export const ACCOUNTS: SeedAccount[] = [
   { email: 'admin@halden.test', name: 'Halden admin', role: 'admin', staff: true },
   { email: 'support@halden.test', name: 'Noor Haddad', role: 'support', staff: true },

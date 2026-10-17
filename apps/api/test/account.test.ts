@@ -170,14 +170,14 @@ describe('QA lab', () => {
     await new Client(t.app).post('/auth/forgot-password', { email: 'maya@halden.test' });
     expect(json(await new Client(t.app).get('/qa/inbox?email=maya@halden.test')).items).toEqual([]);
     const admin = new Client(t.app);
-    await admin.login('admin@halden.test', PASSWORDS.staff);
+    await admin.login('admin@halden.test', PASSWORDS.admin);
     expect(json(await admin.get('/qa/inbox?email=maya@halden.test')).items).toHaveLength(1);
   });
 
   it('only admins move the shop clock, and only forward', async () => {
     expect(json(await maya.put('/qa/clock', { offsetSeconds: 3600 })).code).toBe('forbidden');
     const admin = new Client(t.app);
-    await admin.login('admin@halden.test', PASSWORDS.staff);
+    await admin.login('admin@halden.test', PASSWORDS.admin);
     expect(json(await admin.put('/qa/clock', { offsetSeconds: -1 })).code).toBe('validation_failed');
     const res = json(await admin.put('/qa/clock', { offsetSeconds: 86400 }));
     expect(res.offsetSeconds).toBe(86400);

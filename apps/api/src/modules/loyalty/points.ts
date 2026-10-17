@@ -17,12 +17,16 @@ export const EXPIRY_DAYS = 365;
 
 export type Balance = { available: number; pending: number };
 
-export async function balance(db: Queryable, customerId: string): Promise<Balance> {
+/**
+ * Available counts only unexpired batches: points past their 12 months stay in the ledger until the sweep writes
+ * them off, but they can't be spent in between.
+ */
+export async function balance(db: Queryable, customerId: string, now: Date): Promise<Balance> {
   const { rows } = await db.query<{ available: number; pending: number }>(
-    `SELECT coalesce(sum(points) FILTER (WHERE bucket = 'available'), 0)::int AS available,
+    `SELECT coalesce(sum(remaining) FILTER (WHERE bucket = 'available' AND remaining > 0 AND (expires_at IS NULL OR expires_at > $2)), 0)::int AS available,
             coalesce(sum(points) FILTER (WHERE bucket = 'pending'), 0)::int AS pending
        FROM loyalty_ledger WHERE customer_id = $1`,
-    [customerId],
+    [customerId, now],
   );
   return rows[0] ?? { available: 0, pending: 0 };
 }
@@ -32,9 +36,12 @@ export const lockPoints = (db: Queryable, customerId: string) =>
   db.query('SELECT 1 FROM customers WHERE id = $1 FOR UPDATE', [customerId]);
 
 export async function isSummit(db: Queryable, customerId: string, now: Date): Promise<boolean> {
+  // Return refunds come off: buying 500.00 and sending most of it back must not earn the Summit rate.
   const { rows } = await db.query<{ goods: string | null }>(
-    `SELECT sum(subtotal - discount - points_discount)::text AS goods FROM orders
-      WHERE customer_id = $1 AND status = 'completed' AND completed_at > $2::timestamptz - interval '365 days'`,
+    `SELECT sum(o.subtotal - o.discount - o.points_discount
+                - coalesce((SELECT sum(r.amount) FROM refunds r WHERE r.order_id = o.id AND r.kind = 'return'), 0))::text AS goods
+       FROM orders o
+      WHERE o.customer_id = $1 AND o.status = 'completed' AND o.completed_at > $2::timestamptz - interval '365 days'`,
     [customerId, now],
   );
   return toCents(rows[0]?.goods ?? '0') >= SUMMIT_THRESHOLD_CENTS;
@@ -45,11 +52,12 @@ const expiresAt = (now: Date) => new Date(now.getTime() + EXPIRY_DAYS * 86400_00
 /** Spends points, oldest first. */
 export async function redeem(db: Queryable, customerId: string, points: number, orderId: string, now: Date) {
   if (points <= 0) return;
-  const { available } = await balance(db, customerId);
+  const { available } = await balance(db, customerId, now);
   if (points > available) throw new AppError('validation_failed', `You have ${available} points.`, { errors: [{ path: 'pointsToRedeem', message: `You have ${available} points.` }] });
   let left = points;
-  const { rows } = await db.query<{ id: string; remaining: number }>(
-    `SELECT id, remaining FROM loyalty_ledger WHERE customer_id = $1 AND remaining > 0 AND (expires_at IS NULL OR expires_at > $2)
+  let earliest: Date | null = null;
+  const { rows } = await db.query<{ id: string; remaining: number; expires_at: Date | null }>(
+    `SELECT id, remaining, expires_at FROM loyalty_ledger WHERE customer_id = $1 AND remaining > 0 AND (expires_at IS NULL OR expires_at > $2)
       ORDER BY created_at, id FOR UPDATE`,
     [customerId, now],
   );
@@ -58,14 +66,20 @@ export async function redeem(db: Queryable, customerId: string, points: number, 
     const take = Math.min(left, r.remaining);
     await db.query('UPDATE loyalty_ledger SET remaining = remaining - $2 WHERE id = $1', [r.id, take]);
     left -= take;
+    if (r.expires_at && (!earliest || r.expires_at < earliest)) earliest = r.expires_at;
   }
+  if (left > 0) throw new AppError('conflict', 'Your points balance changed. Please try again.');
+  // The redeem row keeps the earliest expiry it drew on, so points given back on a cancel or return keep it.
   await db.query(
-    "INSERT INTO loyalty_ledger (customer_id, bucket, kind, points, order_id, created_at) VALUES ($1, 'available', 'redeem', $2, $3, $4)",
-    [customerId, -points, orderId, now],
+    "INSERT INTO loyalty_ledger (customer_id, bucket, kind, points, expires_at, order_id, created_at) VALUES ($1, 'available', 'redeem', $2, $3, $4, $5)",
+    [customerId, -points, earliest, orderId, now],
   );
 }
 
-/** Gives points back as a fresh available batch (cancel, return). */
+/**
+ * Gives points back as an available batch (cancel, return). Points given back for an order keep the expiry of the
+ * points it spent: a fresh 12 months would let anyone keep points alive forever by ordering and cancelling.
+ */
 export async function giveBack(
   db: Queryable,
   customerId: string,
@@ -75,10 +89,18 @@ export async function giveBack(
   now: Date,
 ) {
   if (points <= 0) return;
+  let expiry = expiresAt(now);
+  if (kind === 'redeem_reversal' && refs.orderId) {
+    const { rows } = await db.query<{ at: Date | null }>(
+      "SELECT min(expires_at) AS at FROM loyalty_ledger WHERE order_id = $1 AND kind = 'redeem'",
+      [refs.orderId],
+    );
+    if (rows[0]?.at) expiry = rows[0].at;
+  }
   await db.query(
     `INSERT INTO loyalty_ledger (customer_id, bucket, kind, points, remaining, expires_at, order_id, return_id, actor_id, note, created_at)
      VALUES ($1, 'available', $2, $3, $3, $4, $5, $6, $7, $8, $9)`,
-    [customerId, kind, points, expiresAt(now), refs.orderId ?? null, refs.returnId ?? null, refs.actorId ?? null, refs.note ?? null, now],
+    [customerId, kind, points, expiry, refs.orderId ?? null, refs.returnId ?? null, refs.actorId ?? null, refs.note ?? null, now],
   );
 }
 

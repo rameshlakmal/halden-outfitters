@@ -71,7 +71,8 @@ export async function buildApp({ config, db, clock, rateLimits = config.RATE_LIM
       const given = req.headers['x-request-id'];
       return typeof given === 'string' && REQUEST_ID.test(given) ? given : randomUUID();
     },
-    trustProxy: config.TRUST_PROXY,
+    // Trust exactly TRUST_PROXY hops (see config.ts); 0 trusts none, so req.ip is the socket address.
+    trustProxy: config.TRUST_PROXY > 0 ? (_address: string, hop: number) => hop < config.TRUST_PROXY : false,
     bodyLimit: 64 * 1024,
     routerOptions: { ignoreTrailingSlash: true },
   });

@@ -1,11 +1,13 @@
 // The QA lab: tools that a real shop wouldn't have, for testing this one.
-//   - Fake inbox: every email the shop "sends". Anyone can read the mail of an address they type in, so testers
-//     can follow confirmation and reset links, except mail to the seeded demo accounts, which only an admin can
-//     read (otherwise anyone could reset a demo account's password).
+//   - Fake inbox: every email the shop "sends". Anyone can read the mail of an address at a reserved test domain
+//     (RFC 2606: *.test, *.example, *.invalid, *.localhost, example.com/net/org), so testers can follow confirmation
+//     and reset links. Other addresses (someone's real email) are readable only by their signed-in owner. Mail to
+//     the seeded demo accounts and to staff is only shown to admins: otherwise anyone could reset their passwords.
 //   - Shop clock: admins can move business time forward to test expiry rules.
 import { Clock, Email, InboxEmail, Problem, SetClock } from '@halden/contracts';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import type { FastifyRequest } from 'fastify';
+import { timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
 import { requireRole } from '../../core/auth.js';
 import { audit } from '../../core/audit.js';
@@ -17,6 +19,7 @@ import { expire } from '../loyalty/points.js';
 type OutboxRow = { id: string; to_email: string; template: string; subject: string; body_text: string; created_at: Date };
 
 const LINK = /https?:\/\/[^\s]+/g;
+const TEST_DOMAIN = /@(?:[^@]+\.)?(?:[^@.]+\.(?:test|example|invalid|localhost)|example\.(?:com|net|org))$/;
 
 const toEmail = (r: OutboxRow): InboxEmail => ({
   id: r.id,
@@ -37,8 +40,10 @@ export const qaRoutes: FastifyPluginAsyncZod = async (app) => {
   };
   const canRead = async (req: FastifyRequest, email: string) => {
     if (req.user?.role === 'admin') return true;
-    const demo = await db.one('SELECT 1 FROM customers WHERE email = $1 AND is_demo', [email]);
-    return !demo;
+    if (req.user?.email === email) return true;
+    if (!TEST_DOMAIN.test(email)) return false;
+    const guarded = await db.one("SELECT 1 FROM customers WHERE email = $1 AND (is_demo OR role <> 'customer')", [email]);
+    return !guarded;
   };
 
   app.get(
@@ -89,8 +94,10 @@ export const qaRoutes: FastifyPluginAsyncZod = async (app) => {
       enabled();
       const user = requireRole(req, 'admin');
       const before = await clock.offsetSeconds();
-      await clock.setOffsetSeconds(req.body.offsetSeconds);
-      await audit(db.pool, user, 'qa.clock', { type: 'setting', id: 'clock_offset_seconds' }, { before, after: req.body.offsetSeconds });
+      await db.tx(async (tx) => {
+        await clock.setOffsetSeconds(req.body.offsetSeconds, tx);
+        await audit(tx, user, 'qa.clock', { type: 'setting', id: 'clock_offset_seconds' }, { before, after: req.body.offsetSeconds });
+      });
       return { now: (await clock.now()).toISOString(), offsetSeconds: req.body.offsetSeconds };
     },
   );
@@ -134,13 +141,17 @@ export const qaRoutes: FastifyPluginAsyncZod = async (app) => {
     async (req) => {
       enabled();
       const user = requireRole(req, 'admin');
-      const row = await db.one<{ key: string; phase: number; title: string; description: string; how_to_see: string; rule: string; enabled: boolean }>(
-        'UPDATE qa_bugs SET enabled = $2 WHERE key = $1 RETURNING key, phase, title, description, how_to_see, rule, enabled',
-        [req.params.key, req.body.enabled],
-      );
-      if (!row) throw new AppError('not_found', 'No planted bug with that key.');
+      const row = await db.tx(async (tx) => {
+        const { rows } = await tx.query<{ key: string; phase: number; title: string; description: string; how_to_see: string; rule: string; enabled: boolean }>(
+          'UPDATE qa_bugs SET enabled = $2 WHERE key = $1 RETURNING key, phase, title, description, how_to_see, rule, enabled',
+          [req.params.key, req.body.enabled],
+        );
+        const r = rows[0];
+        if (!r) throw new AppError('not_found', 'No planted bug with that key.');
+        await audit(tx, user, req.body.enabled ? 'qa.bug_on' : 'qa.bug_off', { type: 'qa_bug', id: r.key });
+        return r;
+      });
       app.ctx.bugs.forget();
-      await audit(db.pool, user, req.body.enabled ? 'qa.bug_on' : 'qa.bug_off', { type: 'qa_bug', id: row.key });
       return { key: row.key, phase: row.phase, title: row.title, description: row.description, howToSee: row.how_to_see, rule: row.rule, enabled: row.enabled };
     },
   );
@@ -176,8 +187,10 @@ export const qaRoutes: FastifyPluginAsyncZod = async (app) => {
     },
     async (req) => {
       enabled();
-      requireRole(req, 'admin');
-      return runSweep(req.now);
+      const user = requireRole(req, 'admin');
+      const result = await runSweep(req.now);
+      await audit(db.pool, user, 'qa.sweep', { type: 'setting', id: 'sweep' }, { after: result });
+      return result;
     },
   );
 
@@ -243,9 +256,10 @@ export const qaRoutes: FastifyPluginAsyncZod = async (app) => {
     },
     async (req) => {
       enabled();
-      requireRole(req, 'admin');
+      const user = requireRole(req, 'admin');
       const rows = await db.query("UPDATE haldenpay.events SET delivered_at = NULL, deliver_after = now() WHERE id = $1 RETURNING id", [req.params.id]);
       if (rows.length === 0) throw new AppError('not_found', 'No webhook event with that id.');
+      await audit(db.pool, user, 'qa.webhook_redeliver', { type: 'webhook_event', id: req.params.id });
       return { delivered: await app.ctx.deliverWebhooks() };
     },
   );
@@ -253,7 +267,10 @@ export const qaRoutes: FastifyPluginAsyncZod = async (app) => {
   // Vercel Cron calls this once a day with the CRON_SECRET as a bearer token.
   app.get('/internal/cron/sweep', { schema: { hide: true } }, async (req) => {
     const secret = app.ctx.config.CRON_SECRET;
-    if (!secret || req.headers.authorization !== `Bearer ${secret}`) throw new AppError('forbidden', 'Not allowed.');
+    const given = Buffer.from(String(req.headers.authorization ?? ''));
+    const expected = Buffer.from(`Bearer ${secret}`);
+    // Constant-time, so the secret can't be guessed one character at a time from response times.
+    if (!secret || given.length !== expected.length || !timingSafeEqual(given, expected)) throw new AppError('forbidden', 'Not allowed.');
     return runSweep(req.now);
   });
 };

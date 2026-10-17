@@ -35,8 +35,10 @@ export const Email = z
   .string()
   .trim()
   .toLowerCase()
-  .max(120, 'At most 120 characters.')
-  .regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Enter an email address like name@example.com.');
+  // abort: zod would otherwise still run the regex on an over-long string. The domain labels exclude dots, so the
+  // pattern can't backtrack (the old [^\s@]+\.[^\s@]+ took seconds on a domain made of 30,000 dots).
+  .max(120, { message: 'At most 120 characters.', abort: true })
+  .regex(/^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$/, 'Enter an email address like name@example.com.');
 
 export const Page = <T extends z.ZodType>(item: T) =>
   z.object({

@@ -14,7 +14,7 @@ export const card = (number: string = CARDS.ok) => ({ number, expMonth: 12, expY
 
 export async function signedIn(t: TestApp, email: string, staff = false) {
   const c = new Client(t.app);
-  await c.login(email, staff ? PASSWORDS.staff : PASSWORDS.shopper);
+  await c.login(email, email === 'admin@halden.test' ? PASSWORDS.admin : staff ? PASSWORDS.staff : PASSWORDS.shopper);
   return c;
 }
 

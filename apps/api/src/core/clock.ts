@@ -1,6 +1,6 @@
 // All business time comes from the shop clock: real time plus an offset that the QA lab can move forward,
 // so time-based rules (link expiry, lockouts, later the return window) can be tested without waiting.
-import type { Db } from './db.js';
+import type { Db, Queryable } from './db.js';
 
 const CACHE_MS = 2_000;
 
@@ -28,8 +28,9 @@ export class Clock {
     return Math.round(this.offsetMs / 1000);
   }
 
-  async setOffsetSeconds(seconds: number): Promise<void> {
-    await this.db.query("UPDATE qa_settings SET value = to_jsonb($1::int) WHERE key = 'clock_offset_seconds'", [seconds]);
+  /** Pass `client` to move the clock inside a transaction (with its audit row). */
+  async setOffsetSeconds(seconds: number, client: Queryable = this.db.pool): Promise<void> {
+    await client.query("UPDATE qa_settings SET value = to_jsonb($1::int) WHERE key = 'clock_offset_seconds'", [seconds]);
     this.loadedAt = -Infinity;
   }
 }

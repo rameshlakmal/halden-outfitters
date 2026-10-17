@@ -85,7 +85,10 @@ export function Inbox() {
       </form>
 
       {email === '' ? (
-        <Empty title="Type an address to read its mail" text="Use any address you registered with on this demo shop." />
+        <Empty
+          title="Type an address to read its mail"
+          text="Use an address at a test domain (like you@halden.test), or your own address while signed in."
+        />
       ) : inbox.isPending ? (
         <div className="grid gap-3 md:grid-cols-[320px_1fr]">
           <Skeleton className="h-64 rounded-[2px]" />
@@ -96,7 +99,7 @@ export function Inbox() {
       ) : items.length === 0 ? (
         <Empty
           title={`No mail for ${email}`}
-          text="Nothing has been sent to this address yet. Mail to the seeded demo accounts is only shown to admins, so nobody can reset their passwords."
+          text="Nothing to show for this address. Only test-domain addresses (like you@halden.test) are open to everyone; other addresses only to their signed-in owner. Mail to the demo and staff accounts is only shown to admins, so nobody can reset their passwords."
         />
       ) : (
         <div className="grid gap-4 md:grid-cols-[320px_minmax(0,1fr)]">

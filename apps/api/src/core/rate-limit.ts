@@ -12,6 +12,8 @@ export const LIMITS = {
   resetPerEmail: { name: 'reset-email', max: 3, windowSeconds: 3600 },
   resetPerIp: { name: 'reset-ip', max: 10, windowSeconds: 3600 },
   verifyResend: { name: 'verify-resend', max: 3, windowSeconds: 3600 },
+  checkoutPerCustomer: { name: 'checkout-customer', max: 20, windowSeconds: 3600 },
+  couponPerIp: { name: 'coupon-ip', max: 30, windowSeconds: 600 },
 } satisfies Record<string, Limit>;
 
 export class RateLimiter {
