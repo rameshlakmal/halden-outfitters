@@ -3,6 +3,7 @@ import type { NextConfig } from 'next';
 // The browser only talks to this origin. /api/v1/* is forwarded to the API, so its session cookie stays
 // first-party (two *.vercel.app hosts can't share cookies: vercel.app is a public suffix).
 const API_URL = process.env.API_URL ?? 'http://127.0.0.1:4000';
+const ADMIN_URL = (process.env.NEXT_PUBLIC_ADMIN_URL ?? 'http://localhost:3002').replace(/\/$/, '');
 
 const securityHeaders = [
   { key: 'X-Content-Type-Options', value: 'nosniff' },
@@ -44,6 +45,14 @@ const config: NextConfig = {
   },
   async rewrites() {
     return [{ source: '/api/v1/:path*', destination: `${API_URL}/api/v1/:path*` }];
+  },
+  // The staff console and the QA lab moved to the admin app (apps/admin): old bookmarks land on the same page there.
+  async redirects() {
+    return [
+      { source: '/staff', destination: ADMIN_URL, permanent: false },
+      { source: '/staff/:path*', destination: `${ADMIN_URL}/:path*`, permanent: false },
+      { source: '/qa', destination: `${ADMIN_URL}/qa`, permanent: false },
+    ];
   },
   async headers() {
     return [

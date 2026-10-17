@@ -35,7 +35,7 @@ function state(c: Coupon, now = Date.now()): { label: string; tone: string } {
     return { label: 'Scheduled', tone: 'bg-surface-2 text-ink-2' };
   if (c.endsAt && new Date(c.endsAt).getTime() <= now) return { label: 'Ended', tone: 'bg-surface-2 text-ink-3' };
   if (c.maxUses !== null && c.uses >= c.maxUses) return { label: 'Used up', tone: 'bg-danger-soft text-danger' };
-  return { label: 'Live', tone: 'bg-brand-soft text-accent' };
+  return { label: 'Live', tone: 'bg-brand-soft text-accent-text' };
 }
 
 const rules = (c: Coupon) =>
@@ -56,13 +56,20 @@ export function Coupons() {
   const [editing, setEditing] = useState<Coupon | 'new' | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
+  const setCoupon = (next: Coupon) =>
+    qc.setQueryData<{ items: Coupon[] }>(
+      staffKeys.coupons,
+      (old) => old && { items: old.items.map((x) => (x.code === next.code ? next : x)) },
+    );
   const toggle = async (c: Coupon) => {
+    // Flip at once, so the switch answers the click; put it back if the API refuses.
+    setCoupon({ ...c, active: !c.active });
     setBusy(c.code);
     try {
-      await patch(`/staff/coupons/${c.code}`, { active: !c.active });
+      setCoupon(await patch<Coupon>(`/staff/coupons/${c.code}`, { active: !c.active }));
       toast.show(`${c.code} ${c.active ? 'switched off' : 'switched on'}`);
-      await qc.invalidateQueries({ queryKey: staffKeys.coupons });
     } catch (err) {
+      setCoupon(c);
       toast.show(errorMessage(err), 'error');
     } finally {
       setBusy(null);

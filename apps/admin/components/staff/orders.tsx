@@ -187,7 +187,10 @@ export function StaffOrderDetail({ id }: { id: string }) {
                 <ul className="flex flex-wrap gap-2 text-[13px]">
                   {o.returns.map((r) => (
                     <li key={r.id}>
-                      <Link href={`/returns/${r.id}`} className="font-semibold transition-colors hover:text-accent">
+                      <Link
+                        href={`/returns/${r.id}`}
+                        className="font-semibold transition-colors hover:text-accent-text"
+                      >
                         Return #{r.id}
                       </Link>{' '}
                       <span className="text-ink-3">{RETURN_STATUS_LABEL[r.status]}</span>

@@ -45,7 +45,7 @@ export function CommandPalette({
     router.push(href);
   };
   const item =
-    'flex cursor-pointer items-center gap-3 rounded-[var(--radius-field)] px-3 py-2.5 text-sm text-ink-2 data-[selected=true]:bg-brand-soft data-[selected=true]:text-accent';
+    'flex cursor-pointer items-center gap-3 rounded-[var(--radius-field)] px-3 py-2.5 text-sm text-ink-2 data-[selected=true]:bg-brand-soft data-[selected=true]:text-accent-text';
 
   return (
     <Command.Dialog

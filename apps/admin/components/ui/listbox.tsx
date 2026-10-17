@@ -138,7 +138,7 @@ export function Listbox({
               } ${i === selected ? 'font-bold' : ''}`}
             >
               {o.label}
-              {i === selected && <Check weight="bold" className="size-4 text-accent" aria-hidden="true" />}
+              {i === selected && <Check weight="bold" className="size-4 text-accent-text" aria-hidden="true" />}
             </li>
           ))}
         </ul>

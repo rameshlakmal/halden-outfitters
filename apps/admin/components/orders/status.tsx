@@ -8,10 +8,10 @@ import { formatDateTime, REASON_LABEL, STATUS_LABEL } from '@/lib/orders';
 
 const CHIP: Record<OrderStatus, string> = {
   // Open orders in the accent tag, finished ones neutral (as on the dashboard).
-  pending_payment: 'border-transparent bg-brand-soft text-accent',
-  confirmed: 'border-transparent bg-brand-soft text-accent',
-  packed: 'border-transparent bg-brand-soft text-accent',
-  shipped: 'border-transparent bg-brand-soft text-accent',
+  pending_payment: 'border-transparent bg-brand-soft text-accent-text',
+  confirmed: 'border-transparent bg-brand-soft text-accent-text',
+  packed: 'border-transparent bg-brand-soft text-accent-text',
+  shipped: 'border-transparent bg-brand-soft text-accent-text',
   delivered: 'border-transparent bg-surface-2 text-ink-2',
   completed: 'border-transparent bg-surface-2 text-ink-2',
   cancelled: 'border-transparent bg-danger-soft text-danger',

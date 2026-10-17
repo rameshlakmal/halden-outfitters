@@ -45,7 +45,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             }`}
           >
             {t.tone === 'success' ? (
-              <CheckCircle weight="fill" className="size-5 shrink-0 text-accent" />
+              <CheckCircle weight="fill" className="size-5 shrink-0 text-accent-text" />
             ) : (
               <WarningCircle weight="fill" className="size-5 shrink-0 text-danger" />
             )}

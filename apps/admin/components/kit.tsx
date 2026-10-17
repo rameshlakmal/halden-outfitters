@@ -47,7 +47,7 @@ export function CardTitle({ children, action }: { children: ReactNode; action?: 
 
 const TAG = {
   neutral: 'bg-surface-2 text-ink-2',
-  accent: 'bg-brand-soft text-accent',
+  accent: 'bg-brand-soft text-accent-text',
   danger: 'bg-danger-soft text-danger',
   success: 'bg-surface-2 text-success',
 } as const;

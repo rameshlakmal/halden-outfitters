@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 import { bounce } from '@/lib/motion';
+import { ADMIN_URL } from '@/lib/admin';
 import { useCart, useSession } from '@/lib/queries';
 import { preloadCartDrawer, useCartDrawer } from './cart-drawer';
 import { SearchButton } from './search';
@@ -78,14 +79,14 @@ export function TopBar() {
           {[
             ...NAV,
             { href: '/account', label: 'Your account' },
-            ...(staffRole ? [{ href: '/staff', label: 'Staff' }] : []),
+            ...(staffRole ? [{ href: ADMIN_URL, label: 'Staff admin' }] : []),
           ].map((n) => {
             const current = n.href === '/shop' ? pathname === '/shop' : pathname.startsWith(n.href);
             return (
               <Link
                 key={n.href}
                 href={n.href}
-                prefetch={n.href === '/account' || n.href === '/staff' ? false : undefined}
+                prefetch={n.href === '/account' || n.href === ADMIN_URL ? false : undefined}
                 onClick={() => menu.current?.close()}
                 aria-current={current ? 'page' : undefined}
                 className={`flex items-center justify-between border-b border-line py-4 text-[clamp(32px,9vw,48px)] leading-none font-extrabold uppercase [font-stretch:72%] transition-colors ${
@@ -107,19 +108,18 @@ export function TopBar() {
   );
 }
 
-/** Only for support, warehouse and admin accounts: the way into the staff console. */
+/** Only for support, warehouse and admin accounts: the way into the staff admin (its own app and sign-in). */
 function StaffLink() {
   const { data: me } = useSession();
   if (!me || me.role === 'customer') return null;
   return (
-    <Link
-      href="/staff"
-      prefetch={false}
+    <a
+      href={ADMIN_URL}
       className="hidden h-10 items-center gap-1.5 rounded-[2px] px-3 text-[12px] font-bold tracking-[0.08em] text-ink uppercase transition-colors hover:bg-surface-2 hover:text-accent sm:flex"
     >
       <Briefcase className="size-4" />
       Staff
-    </Link>
+    </a>
   );
 }
 

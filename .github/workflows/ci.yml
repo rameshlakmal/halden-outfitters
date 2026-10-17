@@ -112,3 +112,53 @@ jobs:
             apps/web/playwright-report
             .lighthouseci
           retention-days: 14
+
+  admin-e2e:
+    name: Admin end-to-end
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env: { POSTGRES_USER: halden, POSTGRES_PASSWORD: halden, POSTGRES_DB: halden_admin_e2e }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U halden" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://halden:halden@localhost:5432/halden_admin_e2e
+      APP_URL: http://localhost:3001
+      # The admin is its own origin: the API must accept its writes.
+      ALLOWED_ORIGINS: http://localhost:3002
+      API_URL: http://127.0.0.1:4000
+      RATE_LIMITS: 'false'
+      SEED_ADMIN_PASSWORD: ci-admin-password-1
+      SEED_STAFF_PASSWORD: ci-staff-password-1
+      SEED_SHOPPER_PASSWORD: ci-shopper-password-1
+      HALDENPAY_WEBHOOK_SECRET: whsec_ci_only_not_a_real_secret
+      CRON_SECRET: ci-cron-secret-not-real
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '${{ env.NODE_VERSION }}', cache: npm }
+      - run: npm ci
+      - name: Migrate and seed
+        run: npm run db:migrate && npm run db:seed
+      - name: Build and start the API
+        run: |
+          npm run build -w @halden/api
+          NODE_ENV=production nohup npm run start -w @halden/api > api.log 2>&1 &
+          npx --yes wait-on@9.5.1 -t 60000 http://127.0.0.1:4000/api/v1/health || { bash scripts/ci-annotate.sh 'API did not start' api.log; exit 1; }
+      - name: Build the admin
+        run: npm run build -w @halden/admin
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+        working-directory: apps/admin
+      - name: End-to-end tests
+        run: |
+          set -o pipefail
+          npm run test:e2e -w @halden/admin 2>&1 | tee admin-e2e.log || { bash scripts/ci-annotate.sh 'Admin end-to-end tests' admin-e2e.log; bash scripts/ci-annotate.sh 'API log' api.log; exit 1; }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: admin-report
+          path: apps/admin/playwright-report
+          retention-days: 14

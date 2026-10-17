@@ -47,7 +47,7 @@ export function TotalsTable({
 
 function Row({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
   return (
-    <div className={`flex justify-between gap-4 ${accent ? 'text-accent' : ''}`}>
+    <div className={`flex justify-between gap-4 ${accent ? 'text-accent-text' : ''}`}>
       <dt className={accent ? '' : 'text-ink-2'}>{label}</dt>
       <dd className="tabular-nums">{value}</dd>
     </div>

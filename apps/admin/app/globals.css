@@ -93,18 +93,25 @@
   --hero: var(--brand);
   --hero-ink: var(--brand-ink);
   --chart: var(--accent);
+  /* Orange text on white or on the pale orange highlight: one step deeper than the accent so it passes AA (5.2:1). */
+  --accent-text: oklch(0.5 0.17 37);
+  /* Figures on the revenue tile, which is dark in both modes. */
+  --hero-good: oklch(0.82 0.14 155);
+  --hero-bad: oklch(0.78 0.13 25);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     --hero: oklch(0.24 0 0);
     --hero-ink: oklch(0.96 0 0);
     --chart: oklch(0.64 0.19 42);
+    --accent-text: var(--accent);
   }
 }
 :root[data-theme='dark'] {
   --hero: oklch(0.24 0 0);
   --hero-ink: oklch(0.96 0 0);
   --chart: oklch(0.64 0.19 42);
+  --accent-text: var(--accent);
 }
 
 @theme inline {
@@ -131,6 +138,9 @@
   --color-hero: var(--hero);
   --color-hero-ink: var(--hero-ink);
   --color-chart: var(--chart);
+  --color-accent-text: var(--accent-text);
+  --color-hero-good: var(--hero-good);
+  --color-hero-bad: var(--hero-bad);
   --font-sans: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   /* Shapes: cards 14px, fields 10px, buttons, nav items and tags are pills. */
@@ -182,12 +192,12 @@
 /* Utilities the staff screens share with the shop (same behaviour, see apps/web/app/globals.css). */
 @layer components {
   .link {
-    color: var(--accent);
+    color: var(--accent-text);
     font-weight: 600;
     transition: color 160ms ease;
   }
   .link:hover {
-    color: var(--accent-hover);
+    text-decoration: underline;
   }
   /* Pressable: a physical push on :active. */
   .press {

@@ -20,25 +20,11 @@ export default defineConfig({
     // Locally, use the installed Edge; CI installs Playwright's Chromium.
     ...(ci ? {} : { channel: 'msedge' }),
   },
-  // The shopper specs run on both screens against the same seeded data, so they leave it as they found it. The
-  // staff spec changes the demo data for good (packs an order, publishes a held review), so it runs once, last.
+  // The shopper specs run on both screens against the same seeded data, so they leave it as they found it.
+  // (Staff journeys are tested in apps/admin.)
   projects: [
-    {
-      name: 'desktop',
-      testIgnore: /staff\.spec/,
-      use: { ...devices['Desktop Chrome'], ...(ci ? {} : { channel: 'msedge' }) },
-    },
-    {
-      name: 'mobile',
-      testIgnore: /staff\.spec/,
-      use: { ...devices['Pixel 7'], ...(ci ? {} : { channel: 'msedge' }) },
-    },
-    {
-      name: 'staff',
-      testMatch: /staff\.spec/,
-      dependencies: ['desktop', 'mobile'],
-      use: { ...devices['Desktop Chrome'], ...(ci ? {} : { channel: 'msedge' }) },
-    },
+    { name: 'desktop', use: { ...devices['Desktop Chrome'], ...(ci ? {} : { channel: 'msedge' }) } },
+    { name: 'mobile', use: { ...devices['Pixel 7'], ...(ci ? {} : { channel: 'msedge' }) } },
   ],
   webServer: ci
     ? [

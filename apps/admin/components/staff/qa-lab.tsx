@@ -32,7 +32,7 @@ export function QaLab() {
             href={`${SHOP_URL}/qa/inbox`}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex min-h-9 items-center gap-1.5 text-[13px] font-medium transition-colors hover:text-accent pointer-coarse:min-h-11"
+            className="inline-flex min-h-9 items-center gap-1.5 text-[13px] font-medium transition-colors hover:text-accent-text pointer-coarse:min-h-11"
           >
             <EnvelopeSimple className="size-4" /> Fake inbox (in the shop)
           </a>

@@ -13,7 +13,7 @@
   ],
   "scripts": {
     "dev": "node tools/dev.mjs",
-    "build": "npm run build -w @halden/api && npm run build -w @halden/web",
+    "build": "npm run build -w @halden/api && npm run build -w @halden/web && npm run build -w @halden/admin",
     "test": "npm run test -w @halden/money -w @halden/api",
     "test:e2e": "npm run test:e2e -w @halden/web",
     "typecheck": "npm run typecheck --workspaces --if-present",

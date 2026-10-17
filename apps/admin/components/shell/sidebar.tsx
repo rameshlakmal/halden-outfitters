@@ -13,7 +13,7 @@ export function Logo() {
       className="flex items-center gap-2.5 px-2.5 py-1 text-[17px] font-bold"
       aria-label="Halden admin, dashboard"
     >
-      <Mountains weight="fill" className="size-6 text-accent" />
+      <Mountains weight="fill" className="size-6 text-accent-text" />
       Halden admin
     </Link>
   );
@@ -41,7 +41,9 @@ export function SideNav({ role, onNavigate }: { role: Role; onNavigate?: () => v
                   onClick={onNavigate}
                   aria-current={active ? 'page' : undefined}
                   className={`flex items-center gap-2.5 rounded-full px-3 py-2 text-[14.5px] transition-colors ${
-                    active ? 'bg-brand-soft font-semibold text-accent' : 'text-ink-2 hover:bg-surface-2 hover:text-ink'
+                    active
+                      ? 'bg-brand-soft font-semibold text-accent-text'
+                      : 'text-ink-2 hover:bg-surface-2 hover:text-ink'
                   }`}
                 >
                   <item.icon className="size-[18px] shrink-0" weight={active ? 'fill' : 'regular'} />

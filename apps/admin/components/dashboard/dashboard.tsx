@@ -9,13 +9,26 @@ import { type DashboardData, useDashboard } from '@/lib/staff';
 
 const RANGES = [7, 30, 90] as const;
 
-function Delta({ value, previous, upIsGood = true }: { value: string; previous: string; upIsGood?: boolean }) {
+function Delta({
+  value,
+  previous,
+  upIsGood = true,
+  onHero = false,
+}: {
+  value: string;
+  previous: string;
+  upIsGood?: boolean;
+  /** On the dark revenue tile: its own green, red and muted ink, which pass contrast there. */
+  onHero?: boolean;
+}) {
   const c = change(value, previous);
-  if (!c) return <p className="tabular text-xs text-ink-3">No earlier period to compare</p>;
+  const muted = onHero ? 'text-hero-ink/70' : 'text-ink-3';
+  if (!c) return <p className={`tabular text-xs ${muted}`}>No earlier period to compare</p>;
   const good = c.up === upIsGood;
+  const tone = onHero ? (good ? 'text-hero-good' : 'text-hero-bad') : good ? 'text-success' : 'text-danger';
   return (
-    <p className={`tabular text-xs ${good ? 'text-success' : 'text-danger'}`}>
-      {c.text} <span className="text-ink-3">vs previous period</span>
+    <p className={`tabular text-xs ${tone}`}>
+      {c.text} <span className={muted}>vs previous period</span>
     </p>
   );
 }
@@ -73,8 +86,8 @@ function RevenueTile({ d }: { d: DashboardData }) {
         <p className="text-[12.5px] opacity-75">Revenue</p>
         <p className="tabular mt-1.5 text-[40px] leading-none font-semibold sm:text-[46px]">{money(d.revenue.value)}</p>
       </div>
-      <EChart build={spark} height={72} label={`Revenue per day over the last ${d.days} days`} />
-      <Delta value={d.revenue.value} previous={d.revenue.previous} />
+      <EChart build={spark} height={72} label={`Revenue trend, last ${d.days} days`} />
+      <Delta value={d.revenue.value} previous={d.revenue.previous} onHero />
     </div>
   );
 }
@@ -303,7 +316,7 @@ export function DashboardView() {
             <Card className="overflow-hidden">
               <CardTitle
                 action={
-                  <Link href="/orders" className="text-[13px] text-accent hover:underline">
+                  <Link href="/orders" className="text-[13px] text-accent-text hover:underline">
                     All orders
                   </Link>
                 }
@@ -327,7 +340,7 @@ export function DashboardView() {
                       {d.recentOrders.map((o) => (
                         <tr key={o.id} className="border-t border-line">
                           <td className="px-5 py-2.5 whitespace-nowrap">
-                            <Link href={`/orders/${o.id}`} className="tabular font-medium hover:text-accent">
+                            <Link href={`/orders/${o.id}`} className="tabular font-medium hover:text-accent-text">
                               #{o.id}
                             </Link>
                             <p className="text-xs text-ink-3">{when(o.placedAt)}</p>
@@ -360,7 +373,7 @@ export function DashboardView() {
             <Card className="overflow-hidden">
               <CardTitle
                 action={
-                  <Link href="/products?low=1" className="text-[13px] text-accent hover:underline">
+                  <Link href="/products?low=1" className="text-[13px] text-accent-text hover:underline">
                     Restock
                   </Link>
                 }

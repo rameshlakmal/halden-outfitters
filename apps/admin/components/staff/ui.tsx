@@ -150,7 +150,7 @@ export function Tabs<T extends string>({
             tabIndex={on ? 0 : -1}
             onClick={() => onChange(t.value)}
             className={`-mb-px flex min-h-10 items-center gap-1.5 border-b-2 px-3 text-[13px] font-medium whitespace-nowrap transition-colors pointer-coarse:min-h-11 ${
-              on ? 'border-accent text-ink' : 'border-transparent text-ink-2 hover:text-accent'
+              on ? 'border-accent text-ink' : 'border-transparent text-ink-2 hover:text-accent-text'
             }`}
           >
             {t.label}
@@ -190,7 +190,7 @@ export function Facts({ rows }: { rows: [string, ReactNode][] }) {
 
 export function RowLink({ href, children }: { href: string; children: ReactNode }) {
   return (
-    <Link href={href} className="font-semibold text-ink tabular-nums transition-colors hover:text-accent">
+    <Link href={href} className="font-semibold text-ink tabular-nums transition-colors hover:text-accent-text">
       {children}
     </Link>
   );

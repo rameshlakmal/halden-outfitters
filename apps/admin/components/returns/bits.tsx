@@ -4,7 +4,7 @@ import { LABEL_FEE, RESTOCKING_PERCENT, RETURN_STATUS_LABEL } from '@/lib/return
 import { chipClass } from '../orders/status';
 
 const TONE: Record<ReturnStatus, string> = {
-  requested: 'border-accent text-accent',
+  requested: 'border-accent text-accent-text',
   approved: 'border-line bg-ink text-bg',
   rejected: 'border-danger/40 text-danger',
   received: 'border-line text-ink',

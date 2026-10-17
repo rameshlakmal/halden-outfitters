@@ -145,7 +145,10 @@ export function StaffReturnDetail({ id }: { id: string }) {
         sub={
           <>
             For{' '}
-            <Link href={`/orders/${r.orderId}`} className="font-semibold text-ink transition-colors hover:text-accent">
+            <Link
+              href={`/orders/${r.orderId}`}
+              className="font-semibold text-ink transition-colors hover:text-accent-text"
+            >
               order #{r.orderId}
             </Link>{' '}
             · requested {formatDateTime(r.requestedAt)}

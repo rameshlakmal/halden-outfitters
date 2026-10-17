@@ -1,10 +1,11 @@
-// npm run dev: the API (http://127.0.0.1:4000) and the web app (http://localhost:3001) together, with
-// prefixed output. Ctrl+C stops both.
+// npm run dev: the API (http://127.0.0.1:4000), the shop (http://localhost:3001) and the staff admin
+// (http://localhost:3002) together, with prefixed output. Ctrl+C stops all three.
 import { spawn } from 'node:child_process';
 
 const procs = [
   { name: 'api', color: 36, args: ['run', 'dev', '-w', '@halden/api'] },
   { name: 'web', color: 35, args: ['run', 'dev', '-w', '@halden/web'] },
+  { name: 'adm', color: 33, args: ['run', 'dev', '-w', '@halden/admin'] },
 ].map(({ name, color, args }) => {
   const child = spawn('npm', args, { shell: true, env: process.env });
   const tag = `\x1b[${color}m${name.padEnd(3)}\x1b[0m |`;

@@ -88,7 +88,7 @@ function ReviewItem({ review: r }: { review: OwnReview }) {
             href={`${SHOP_URL}/products/${r.product.slug}`}
             target="_blank"
             rel="noreferrer"
-            className="font-semibold transition-colors hover:text-accent"
+            className="font-semibold transition-colors hover:text-accent-text"
           >
             {r.product.name}
           </a>
@@ -97,7 +97,7 @@ function ReviewItem({ review: r }: { review: OwnReview }) {
               <Star
                 key={n}
                 weight={n <= r.rating ? 'fill' : 'regular'}
-                className="size-3.5 text-accent"
+                className="size-3.5 text-accent-text"
                 aria-hidden="true"
               />
             ))}
@@ -120,7 +120,7 @@ function ReviewItem({ review: r }: { review: OwnReview }) {
           )}
         </span>
       </div>
-      {r.heldFor && <p className="text-[13px] font-medium text-accent">Held: {r.heldFor}</p>}
+      {r.heldFor && <p className="text-[13px] font-medium text-accent-text">Held: {r.heldFor}</p>}
       {r.hiddenReason && <p className="text-[13px] font-medium text-danger">Hidden: {r.hiddenReason}</p>}
       <p className="font-semibold">{r.title}</p>
       <p className="text-[14px] leading-relaxed whitespace-pre-wrap text-ink-2">{r.body}</p>

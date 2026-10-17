@@ -31,7 +31,7 @@ export function Stars({ average, count }: { average: number | null; count: numbe
     <span className="inline-flex items-center gap-1.5 text-sm text-ink-2">
       <span className="flex" aria-hidden="true">
         {[1, 2, 3, 4, 5].map((n) => (
-          <Star key={n} weight={average >= n - 0.25 ? 'fill' : 'regular'} className="size-4 text-accent" />
+          <Star key={n} weight={average >= n - 0.25 ? 'fill' : 'regular'} className="size-4 text-accent-text" />
         ))}
       </span>
       <span>
