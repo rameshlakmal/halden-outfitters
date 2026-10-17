@@ -22,7 +22,8 @@
     "format:check": "prettier --check .",
     "db:migrate": "npm run db:migrate -w @halden/api",
     "db:seed": "npm run db:seed -w @halden/api",
-    "db:reset": "npm run db:reset -w @halden/api"
+    "db:reset": "npm run db:reset -w @halden/api",
+    "db:set-passwords": "npm run db:set-passwords -w @halden/api"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",
