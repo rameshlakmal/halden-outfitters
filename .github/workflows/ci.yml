@@ -64,7 +64,7 @@ jobs:
       SEED_ADMIN_PASSWORD: ci-staff-password-1
       SEED_SHOPPER_PASSWORD: ci-shopper-password-1
       HALDENPAY_WEBHOOK_SECRET: whsec_ci_only_not_a_real_secret
-      CRON_SECRET: ci-cron-secret
+      CRON_SECRET: ci-cron-secret-not-real
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
