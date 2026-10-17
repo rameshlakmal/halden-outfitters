@@ -2,7 +2,7 @@
 import { hashPassword } from '../src/core/crypto.js';
 import type { Db } from '../src/core/db.js';
 import { BUGS } from '../src/core/bugs.js';
-import { ACCOUNTS, ADDRESSES, CATEGORIES, COUNTRIES, COUPONS, PRODUCTS, RATES, SIZED, ZONES, zoneOf } from './seed-data.js';
+import { ACCOUNTS, ADDRESSES, CATEGORIES, COUNTRIES, COUPONS, GALLERY, PRODUCTS, RATES, SIZED, ZONES, zoneOf } from './seed-data.js';
 import { seedOrders } from './seed-orders.js';
 
 /** admin: the admin account. staff: support and warehouse, so their testers can't sign in as admin. */
@@ -74,6 +74,12 @@ export async function seed(db: Db, passwords: SeedPasswords, opts: { orders?: bo
         'INSERT INTO product_images (product_id, url, alt, width, height, position) VALUES ($1, $2, $3, 1200, 1200, 1)',
         [id, `/images/products/${p.slug}.jpg`, p.name],
       );
+      for (const [i, alt] of (GALLERY[p.slug] ?? []).entries()) {
+        await tx.query(
+          'INSERT INTO product_images (product_id, url, alt, width, height, position) VALUES ($1, $2, $3, 1200, 1200, $4)',
+          [id, `/images/products/${p.slug}-${i + 2}.jpg`, alt, i + 2],
+        );
+      }
       await tx.query('INSERT INTO inventory (product_id, on_hand) VALUES ($1, $2)', [id, p.stock]);
       if (p.stock > 0) {
         await tx.query(

@@ -268,6 +268,58 @@ export const PRODUCTS: SeedProduct[] = [
   },
 ];
 
+/**
+ * More photos per product, after the main one: /images/products/<slug>-2.jpg, -3.jpg (alt texts in that order).
+ * Credited in apps/web/public/images/CREDITS.md.
+ */
+export const GALLERY: Record<string, string[]> = {
+  'ridgeline-2p-tent': [
+    'Ridgeline 2P Tent pitched on a grassy ridge below snowy peaks',
+    'Ridgeline 2P Tent set up in an alpine meadow under dramatic clouds',
+  ],
+  'trail-tarp': [
+    'Campers rigging the Trail Tarp between poles in the forest',
+    'Trail Tarp pitched over hammocks in a sunlit forest camp',
+  ],
+  'drift-hammock': [
+    'Drift Hammock slung between two forest trees',
+    'Relaxing in the Drift Hammock with hiking boots up',
+  ],
+  'fold-camp-chair': [
+    'Fold Camp Chair beside a tent on a calm lakeshore',
+    'Fold Camp Chair set up at camp next to a backpack',
+  ],
+  'alpine-down-bag': [
+    'Two campers wrapped in Alpine Down Bags watching the sunrise',
+    'Camper asleep in the Alpine Down Bag inside a tent',
+  ],
+  'loft-sleeping-pad': [
+    'Lounging on the Loft Sleeping Pad in a tent with morning coffee',
+    'Rolled sleeping pad strapped to a pack in the mountains',
+  ],
+  'camp-pillow': ['Camp Pillow resting on a sleeping pad inside a tent'],
+  'wool-camp-blanket': [
+    'Wool Camp Blanket laid out by the campfire',
+    'Camper wrapped in the Wool Camp Blanket in a snowy forest',
+  ],
+  'ember-stove': ['Ember Stove boiling a pot on a rocky overlook', 'Ember Stove heating a kettle on the forest floor'],
+  'titanium-pot': [
+    'Cooking oatmeal in the Titanium Pot on a camp stove',
+    'Titanium Pot of noodles on a stove at a rocky campsite',
+  ],
+  'insulated-mug': ['Pouring fresh coffee into the Insulated Mug at camp', 'Insulated Mug of coffee on a camp chair'],
+  'summit-45l-pack': [
+    'Hiker carrying the Summit 45L Pack through a pine forest',
+    'Summit 45L Pack on a backpacker crossing an open ridge',
+  ],
+  'daypack-22l': ['Daypack 22L resting in a mountain meadow', 'Hiker wearing the Daypack 22L on a forest trail'],
+  'roll-top-dry-bag': [
+    'Roll-top Dry Bag strapped to a bike on a pebble beach',
+    'Roll-top Dry Bag mounted on handlebars',
+  ],
+  'headlamp-400': ['Headlamp 400 glowing at a starlit campsite', 'Hiker on a night ridge lit by the Headlamp 400'],
+};
+
 export const COUNTRIES: [code: string, name: string][] = [
   ['AT', 'Austria'],
   ['AU', 'Australia'],
