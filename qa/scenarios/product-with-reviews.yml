@@ -1,0 +1,193 @@
+# A product with two published reviews (5 and 4 stars: 4.5 from 2) by customers who received it. Password: see README.md.
+name: Product with reviews
+description: "A product with a rating and published reviews by verified buyers. For the rating summary, sorting and helpful votes."
+tags: [products, reviews]
+
+seed:
+  products:
+    $as: item
+    slug: test-item-{{unique}}
+    sku: HO-T{{run}}A
+    category_id: 4
+    name: Test Stove {{run}}
+    summary: A test product made by Propmaster.
+    description: Seeded for a test. Remove it with propmaster clean.
+    price: 80.00
+    rating_avg: 4.5
+    rating_count: 2
+    inventory:
+      on_hand: 8
+
+  customers:
+    - $as: first
+      email: reviewer-a-{{unique}}@test.halden.dev
+      name: Robin Fell
+      password_hash: "$argon2id$v=19$m=19456,t=2,p=1$c2dDkHwpLcQfBQATIka2Zg$FWri3HdXgEPvAjUsEAL36I269D0IQZc5cR7pUTOvtG0"
+      role: customer
+      email_verified_at: yesterday
+      orders:
+        $as: first_order
+        email: reviewer-a-{{unique}}@test.halden.dev
+        status: delivered
+        subtotal: 80.00
+        discount: 0
+        shipping: 0
+        tax: 6.40
+        total: 86.40
+        tax_rate: 8.00
+        shipping_zone: domestic
+        shipping_method: standard
+        ship_name: Robin Fell
+        ship_line1: 12 Birch Lane
+        ship_city: Portland
+        ship_region: OR
+        ship_postcode: "97201"
+        ship_country: US
+        placed_at: yesterday
+        confirmed_at: yesterday
+        updated_at: yesterday
+        packed_at: yesterday
+        shipped_at: yesterday
+        tracking_number: HX{{run}}
+        delivered_at: yesterday
+        points_earned: 80
+        order_items:
+          $as: first_order_line
+          product_id: { $ref: item }
+          sku: HO-T{{run}}A
+          name: Test product {{run}}
+          image: /images/products/headlamp-400.jpg
+          category_id: 4
+          unit_price: 80.00
+          qty: 1
+          line_total: 80.00
+          discount_alloc: 0
+          tax_alloc: 6.40
+          returnable: true
+          points_earned: 80
+        stock_reservations:
+          product_id: { $ref: item }
+          qty: 1
+          created_at: yesterday
+          consumed_at: yesterday
+        payments:
+          intent_id: pi_seed_{{unique}}
+          status: captured
+          amount: 86.40
+          amount_captured: 86.40
+          card_brand: visa
+          card_last4: "4242"
+          created_at: yesterday
+          updated_at: yesterday
+        order_events:
+          to_status: delivered
+          note: Seeded by Propmaster
+          created_at: yesterday
+        loyalty_ledger:
+          bucket: pending
+          kind: earn_pending
+          points: 80
+          created_at: yesterday
+      reviews:
+        $via: customer_id
+        product_id: { $ref: item }
+        rating: 5
+        title: Boils water in no time
+        body: Took it on a cold weekend trip and it boiled a litre in under four minutes.
+        status: published
+        created_at: today
+        updated_at: today
+    - $as: second
+      email: reviewer-b-{{unique}}@test.halden.dev
+      name: Sam Alder
+      password_hash: "$argon2id$v=19$m=19456,t=2,p=1$c2dDkHwpLcQfBQATIka2Zg$FWri3HdXgEPvAjUsEAL36I269D0IQZc5cR7pUTOvtG0"
+      role: customer
+      email_verified_at: yesterday
+      orders:
+        $as: second_order
+        email: reviewer-b-{{unique}}@test.halden.dev
+        status: delivered
+        subtotal: 80.00
+        discount: 0
+        shipping: 0
+        tax: 6.40
+        total: 86.40
+        tax_rate: 8.00
+        shipping_zone: domestic
+        shipping_method: standard
+        ship_name: Sam Alder
+        ship_line1: 12 Birch Lane
+        ship_city: Portland
+        ship_region: OR
+        ship_postcode: "97201"
+        ship_country: US
+        placed_at: yesterday
+        confirmed_at: yesterday
+        updated_at: yesterday
+        packed_at: yesterday
+        shipped_at: yesterday
+        tracking_number: HX{{run}}
+        delivered_at: yesterday
+        points_earned: 80
+        order_items:
+          $as: second_order_line
+          product_id: { $ref: item }
+          sku: HO-T{{run}}A
+          name: Test product {{run}}
+          image: /images/products/headlamp-400.jpg
+          category_id: 4
+          unit_price: 80.00
+          qty: 1
+          line_total: 80.00
+          discount_alloc: 0
+          tax_alloc: 6.40
+          returnable: true
+          points_earned: 80
+        stock_reservations:
+          product_id: { $ref: item }
+          qty: 1
+          created_at: yesterday
+          consumed_at: yesterday
+        payments:
+          intent_id: pi_seed_{{unique}}
+          status: captured
+          amount: 86.40
+          amount_captured: 86.40
+          card_brand: visa
+          card_last4: "4242"
+          created_at: yesterday
+          updated_at: yesterday
+        order_events:
+          to_status: delivered
+          note: Seeded by Propmaster
+          created_at: yesterday
+        loyalty_ledger:
+          bucket: pending
+          kind: earn_pending
+          points: 80
+          created_at: yesterday
+      reviews:
+        $via: customer_id
+        product_id: { $ref: item }
+        rating: 4
+        title: Good stove, loud flame
+        body: Works well and folds small. The flame is louder than I expected, but it does the job.
+        status: published
+        created_at: today
+        updated_at: today
+
+  stock_movements:
+    - product_id: { $ref: item }
+      change: 10
+      reason: initial
+      note: Opening stock
+    - product_id: { $ref: item }
+      order_id: { $ref: first_order }
+      change: -1
+      reason: sale
+      created_at: yesterday
+    - product_id: { $ref: item }
+      order_id: { $ref: second_order }
+      change: -1
+      reason: sale
+      created_at: yesterday

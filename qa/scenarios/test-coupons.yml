@@ -1,26 +1,32 @@
-# One coupon of each kind a checkout test needs. Codes end in the run id, e.g. PCT42; the seed output lists them.
+# Five coupons, one per rule. Codes end in the run id and a letter, e.g. TST42A; the seed output lists them.
 name: Test coupons
-description: A working 15% coupon, 25.00 off from 100.00, a single-use coupon, an expired one and an inactive one.
-tags: [coupons, discount, checkout, negative, boundary]
+description: Coupons that work, need a minimum spend, have one use, have ended, or are switched off.
+tags: [coupons, checkout]
 
 seed:
   coupons:
-    - code: PCT{{run}}           # works: 15% off anything
+    - code: TST{{run}}A
       kind: percent
       value: 15
-    - code: OFF{{run}}           # works from 100.00: try 99.99 and 100.00
+      description: Works, 15% off
+    - code: TST{{run}}B
       kind: fixed
-      value: 25
+      value: 10
       min_subtotal: 100
-    - code: ONCE{{run}}          # works once, then must be refused
+      description: 10.00 off orders of 100.00 or more
+    - code: TST{{run}}C
+      kind: percent
+      value: 20
+      max_uses: 1
+      description: One use only
+    - code: TST{{run}}D
       kind: fixed
       value: 5
-      max_uses: 1
-    - code: OLD{{run}}           # expired: must be refused
+      starts_at: 2025-12-01T00:00:00Z
+      ends_at: 2026-01-01T00:00:00Z
+      description: Ended on 1 January 2026
+    - code: TST{{run}}E
       kind: percent
-      value: 10
-      expires_at: 2026-01-01T00:00:00Z
-    - code: OFFLINE{{run}}       # switched off: must be refused
-      kind: percent
-      value: 10
+      value: 50
       active: false
+      description: Switched off

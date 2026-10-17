@@ -1,0 +1,109 @@
+# A review with a link, held for support. The product has no published reviews yet. Password: see README.md.
+name: Held review
+description: "A pending review by a verified buyer, waiting for moderation. For the staff reviews queue and waiting-for-a-check tests."
+tags: [reviews, moderation, staff]
+
+seed:
+  products:
+    $as: item
+    slug: test-item-{{unique}}
+    sku: HO-T{{run}}A
+    category_id: 4
+    name: Test Stove {{run}}
+    summary: A test product made by Propmaster.
+    description: Seeded for a test. Remove it with propmaster clean.
+    price: 80.00
+    inventory:
+      on_hand: 9
+
+  customers:
+    - $as: author
+      email: held-{{unique}}@test.halden.dev
+      name: Kit Moss
+      password_hash: "$argon2id$v=19$m=19456,t=2,p=1$c2dDkHwpLcQfBQATIka2Zg$FWri3HdXgEPvAjUsEAL36I269D0IQZc5cR7pUTOvtG0"
+      role: customer
+      email_verified_at: yesterday
+      orders:
+        $as: author_order
+        email: held-{{unique}}@test.halden.dev
+        status: delivered
+        subtotal: 80.00
+        discount: 0
+        shipping: 0
+        tax: 6.40
+        total: 86.40
+        tax_rate: 8.00
+        shipping_zone: domestic
+        shipping_method: standard
+        ship_name: Kit Moss
+        ship_line1: 12 Birch Lane
+        ship_city: Portland
+        ship_region: OR
+        ship_postcode: "97201"
+        ship_country: US
+        placed_at: yesterday
+        confirmed_at: yesterday
+        updated_at: yesterday
+        packed_at: yesterday
+        shipped_at: yesterday
+        tracking_number: HX{{run}}
+        delivered_at: yesterday
+        points_earned: 80
+        order_items:
+          $as: author_order_line
+          product_id: { $ref: item }
+          sku: HO-T{{run}}A
+          name: Test product {{run}}
+          image: /images/products/headlamp-400.jpg
+          category_id: 4
+          unit_price: 80.00
+          qty: 1
+          line_total: 80.00
+          discount_alloc: 0
+          tax_alloc: 6.40
+          returnable: true
+          points_earned: 80
+        stock_reservations:
+          product_id: { $ref: item }
+          qty: 1
+          created_at: yesterday
+          consumed_at: yesterday
+        payments:
+          intent_id: pi_seed_{{unique}}
+          status: captured
+          amount: 86.40
+          amount_captured: 86.40
+          card_brand: visa
+          card_last4: "4242"
+          created_at: yesterday
+          updated_at: yesterday
+        order_events:
+          to_status: delivered
+          note: Seeded by Propmaster
+          created_at: yesterday
+        loyalty_ledger:
+          bucket: pending
+          kind: earn_pending
+          points: 80
+          created_at: yesterday
+      reviews:
+        $via: customer_id
+        product_id: { $ref: item }
+        rating: 2
+        title: Dented on the first trip
+        body: It dented on day one, photos and details on www.example.com for anyone curious.
+        status: pending
+        held_for: Contains a link
+        created_at: today
+        updated_at: today
+
+  stock_movements:
+    - product_id: { $ref: item }
+      change: 10
+      reason: initial
+      note: Opening stock
+    - product_id: { $ref: item }
+      order_id: { $ref: author_order }
+      change: -1
+      reason: sale
+      created_at: yesterday

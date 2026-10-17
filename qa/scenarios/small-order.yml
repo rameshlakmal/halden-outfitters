@@ -1,55 +1,80 @@
-# An order under 75.00, so it paid shipping: 1 x 40.00 + 7.95 shipping + 3.20 tax = 51.15. Password: Halden-Test-1
-name: Small order with shipping
-description: A paid order below the free-shipping limit, for shipping-charge and threshold tests.
-tags: [orders, shipping, payments]
+# 1 x 28.00, under 75.00 so it pays 7.95 shipping; tax 2.24 (goods only), total 38.19. Password: see README.md.
+name: Small order
+description: "A confirmed order that paid domestic standard shipping. For shipping and tax display tests."
+tags: [orders, shipping, tax]
 
 seed:
   products:
     $as: lantern
     slug: test-lantern-{{unique}}
-    category_id: 1
-    name: Test Lantern {{run}}
+    sku: HO-T{{run}}A
+    category_id: 3
+    name: Test Mug {{run}}
     summary: A test product made by Propmaster.
     description: Seeded for a test. Remove it with propmaster clean.
-    price: 40.00
-    image: /images/products/headlamp-400.jpg
+    price: 28.00
     inventory:
-      stock: 9                   # 10 in, 1 sold
-    stock_movements:
-      change: 10
-      reason: initial
+      on_hand: 10
 
   customers:
     email: small-{{unique}}@test.halden.dev
     name: Small Order Shopper
-    password_hash: scrypt$s+Uyg7ypWuOuZyIuO0aywA==$EM7ORT/kuhjAVsOWApPfnYNBh4LjWy+gBtWZ4xVPoR0=
+    password_hash: "$argon2id$v=19$m=19456,t=2,p=1$c2dDkHwpLcQfBQATIka2Zg$FWri3HdXgEPvAjUsEAL36I269D0IQZc5cR7pUTOvtG0"
+    role: customer
+    email_verified_at: yesterday
     orders:
       $as: order
-      subtotal: 40.00
+      email: small-{{unique}}@test.halden.dev
+      status: confirmed
+      subtotal: 28.00
       discount: 0
       shipping: 7.95
-      tax: 3.20
-      total: 51.15
+      tax: 2.24
+      total: 38.19
+      tax_rate: 8.00
+      shipping_zone: domestic
+      shipping_method: standard
       ship_name: Small Order Shopper
-      ship_line1: 3 Harbour Road
-      ship_city: Tromsø
-      ship_postcode: "9008"
-      ship_country: Norway
+      ship_line1: 12 Birch Lane
+      ship_city: Portland
+      ship_region: OR
+      ship_postcode: "97201"
+      ship_country: US
+      placed_at: yesterday
+      confirmed_at: yesterday
+      updated_at: yesterday
       order_items:
+        $as: order_line
         product_id: { $ref: lantern }
-        name: Test Lantern {{run}}
-        unit_price: 40.00
+        sku: HO-T{{run}}A
+        name: Test product {{run}}
+        image: /images/products/headlamp-400.jpg
+        category_id: 4
+        unit_price: 28.00
         qty: 1
-        line_total: 40.00
+        line_total: 28.00
+        discount_alloc: 0
+        tax_alloc: 2.24
+        returnable: true
+      stock_reservations:
+        product_id: { $ref: lantern }
+        qty: 1
+        created_at: yesterday
       payments:
-        amount: 51.15
+        intent_id: pi_seed_{{unique}}
+        status: authorized
+        amount: 38.19
+        card_brand: visa
         card_last4: "4242"
+        created_at: yesterday
+        updated_at: yesterday
       order_events:
-        status: paid
+        to_status: confirmed
         note: Seeded by Propmaster
+        created_at: yesterday
 
   stock_movements:
-    product_id: { $ref: lantern }
-    order_id: { $ref: order }
-    change: -1
-    reason: sale
+    - product_id: { $ref: lantern }
+      change: 10
+      reason: initial
+      note: Opening stock

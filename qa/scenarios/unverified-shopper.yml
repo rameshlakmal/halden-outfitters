@@ -1,0 +1,11 @@
+# Signed up, never confirmed the email. Password: see README.md.
+name: Unverified shopper
+description: An account whose email is not confirmed yet. Checkout must ask them to verify first.
+tags: [customers, auth, verify-email]
+
+seed:
+  customers:
+    email: unverified-{{unique}}@test.halden.dev
+    name: Unverified Shopper {{run}}
+    password_hash: "$argon2id$v=19$m=19456,t=2,p=1$c2dDkHwpLcQfBQATIka2Zg$FWri3HdXgEPvAjUsEAL36I269D0IQZc5cR7pUTOvtG0"
+    role: customer

@@ -1,18 +1,59 @@
-# A signed-in shopper with two products in the cart, ready for checkout. Password: Halden-Test-1
-name: Shopper with a full cart
-description: A Trail Tarp (89.00) and Camp Pillows (32.00 each) in the cart, over 75.00 so shipping is free.
+# A cart with 2 Test Lanterns (40.00) and 1 Test Mug (28.00): 108.00. Password: see README.md.
+name: Shopper with cart
+description: "A signed-in shopper with items in their cart. For cart, merge-on-sign-in and checkout tests."
 tags: [customers, cart, checkout]
-params:
-  pillows: { type: int, default: 1, description: How many Camp Pillows (1-20) }
 
 seed:
+  products:
+    - $as: lantern
+      slug: test-lantern-{{unique}}
+      sku: HO-T{{run}}A
+      category_id: 4
+      name: Test Lantern {{run}}
+      summary: A test product made by Propmaster.
+      description: Seeded for a test. Remove it with propmaster clean.
+      price: 40.00
+      inventory:
+        on_hand: 10
+    - $as: mug
+      slug: test-mug-{{unique}}
+      sku: HO-T{{run}}B
+      category_id: 3
+      name: Test Mug {{run}}
+      summary: A test product made by Propmaster.
+      description: Seeded for a test. Remove it with propmaster clean.
+      price: 28.00
+      inventory:
+        on_hand: 10
+
   customers:
     email: cart-{{unique}}@test.halden.dev
     name: Cart Shopper
-    password_hash: scrypt$s+Uyg7ypWuOuZyIuO0aywA==$EM7ORT/kuhjAVsOWApPfnYNBh4LjWy+gBtWZ4xVPoR0=
+    password_hash: "$argon2id$v=19$m=19456,t=2,p=1$c2dDkHwpLcQfBQATIka2Zg$FWri3HdXgEPvAjUsEAL36I269D0IQZc5cR7pUTOvtG0"
+    role: customer
+    email_verified_at: yesterday
+    addresses:
+      label: Home
+      name: Cart Shopper
+      line1: 12 Birch Lane
+      city: Portland
+      region: OR
+      postcode: "97201"
+      country_code: US
+      is_default: true
     carts:
       cart_items:
-        - product_id: 2          # Trail Tarp, 89.00
+        - product_id: { $ref: lantern }
+          qty: 2
+        - product_id: { $ref: mug }
           qty: 1
-        - product_id: 7          # Camp Pillow, 32.00
-          qty: "{{pillows}}"
+
+  stock_movements:
+    - product_id: { $ref: lantern }
+      change: 10
+      reason: initial
+      note: Opening stock
+    - product_id: { $ref: mug }
+      change: 10
+      reason: initial
+      note: Opening stock

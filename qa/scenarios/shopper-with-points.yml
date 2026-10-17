@@ -1,0 +1,32 @@
+# Available Halden Points (100 points = 5.00 off at checkout), expiring at the end of 2030. Password: see README.md.
+name: Shopper with points
+description: "A shopper with available points to spend. For the points stepper at checkout and the points page."
+tags: [customers, points, checkout]
+params:
+  points: { type: int, default: 500, description: Available points }
+
+seed:
+  customers:
+    email: points-{{unique}}@test.halden.dev
+    name: Points Shopper
+    password_hash: "$argon2id$v=19$m=19456,t=2,p=1$c2dDkHwpLcQfBQATIka2Zg$FWri3HdXgEPvAjUsEAL36I269D0IQZc5cR7pUTOvtG0"
+    role: customer
+    email_verified_at: yesterday
+    addresses:
+      label: Home
+      name: Points Shopper
+      line1: 12 Birch Lane
+      city: Portland
+      region: OR
+      postcode: "97201"
+      country_code: US
+      is_default: true
+    loyalty_ledger:
+      $via: customer_id
+      bucket: available
+      kind: adjustment
+      points: "{{points}}"
+      remaining: "{{points}}"
+      expires_at: 2030-12-31T23:59:59Z
+      note: Seeded by Propmaster
+      created_at: today

@@ -1,20 +1,24 @@
-# A product switched off in admin: it must not show in the shop, search or category pages.
+# Switched off by an admin.
 name: Hidden product
-description: An inactive product with stock, for visibility tests and the admin product list.
-tags: [products, admin, negative]
+description: "A product that is not active: not listed, and its page is a 404."
+tags: [products, catalog, negative]
 
 seed:
   products:
-    slug: hidden-lantern-{{unique}}
-    category_id: 1
-    name: Hidden Lantern {{run}}
-    summary: A test product that is switched off.
+    $as: item
+    slug: test-item-{{unique}}
+    sku: HO-T{{run}}A
+    category_id: 4
+    name: Test Lantern {{run}}
+    summary: A test product made by Propmaster.
     description: Seeded for a test. Remove it with propmaster clean.
-    price: 35.00
-    image: /images/products/headlamp-400.jpg
+    price: 40.00
     active: false
     inventory:
-      stock: 10
-    stock_movements:
-      change: 10
+      on_hand: 5
+
+  stock_movements:
+    - product_id: { $ref: item }
+      change: 5
       reason: initial
+      note: Opening stock

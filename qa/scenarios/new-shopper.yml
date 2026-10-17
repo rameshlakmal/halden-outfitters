@@ -1,14 +1,23 @@
-# A shopper who has signed up but never ordered. Password: Halden-Test-1
+# A verified account with no orders. Password: see README.md.
 name: New shopper
-description: A signed-up shopper with no orders and an empty cart, for first-purchase, sign-in and WELCOME10 tests.
-tags: [customers, new-user, checkout]
+description: A verified account with no orders and one saved address. For first-purchase and WELCOME10 tests.
+tags: [customers, checkout, new-user]
 params:
-  name:  { type: text, default: Test Shopper, description: The shopper's name }
-  admin: { type: boolean, default: false, description: Make an admin instead }
+  role: { type: text, default: customer, description: "customer, support, warehouse or admin" }
 
 seed:
   customers:
-    email: shopper-{{unique}}@test.halden.dev
-    name: "{{name}}"
-    password_hash: scrypt$s+Uyg7ypWuOuZyIuO0aywA==$EM7ORT/kuhjAVsOWApPfnYNBh4LjWy+gBtWZ4xVPoR0=
-    is_admin: "{{admin}}"
+    email: new-{{unique}}@test.halden.dev
+    name: New Shopper {{run}}
+    password_hash: "$argon2id$v=19$m=19456,t=2,p=1$c2dDkHwpLcQfBQATIka2Zg$FWri3HdXgEPvAjUsEAL36I269D0IQZc5cR7pUTOvtG0"
+    role: "{{role}}"
+    email_verified_at: yesterday
+    addresses:
+      label: Home
+      name: New Shopper {{run}}
+      line1: 12 Birch Lane
+      city: Portland
+      region: OR
+      postcode: "97201"
+      country_code: US
+      is_default: true

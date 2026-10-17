@@ -1,63 +1,83 @@
-# A cancelled order: refunded, and its item back in stock. 1 x 40.00 + 7.95 + 3.20 = 51.15. Password: Halden-Test-1
+# Cancelled before it shipped: the card hold was voided (nothing charged) and the stock hold released. 2 x 40.00, 86.40. Password: see README.md.
 name: Cancelled order
-description: An order that was paid, then cancelled, refunded and returned to stock. For refund and history tests.
-tags: [orders, cancel, refund, payments, inventory]
+description: "A cancelled order. For the cancelled state, nothing-was-charged and stock-back tests."
+tags: [orders, cancel, payments]
 
 seed:
   products:
     $as: lantern
     slug: test-lantern-{{unique}}
-    category_id: 1
+    sku: HO-T{{run}}A
+    category_id: 4
     name: Test Lantern {{run}}
     summary: A test product made by Propmaster.
     description: Seeded for a test. Remove it with propmaster clean.
     price: 40.00
-    image: /images/products/headlamp-400.jpg
     inventory:
-      stock: 10                  # 10 in, 1 sold, 1 returned
-    stock_movements:
-      change: 10
-      reason: initial
+      on_hand: 10
 
   customers:
     email: cancelled-{{unique}}@test.halden.dev
     name: Cancelled Order Shopper
-    password_hash: scrypt$s+Uyg7ypWuOuZyIuO0aywA==$EM7ORT/kuhjAVsOWApPfnYNBh4LjWy+gBtWZ4xVPoR0=
+    password_hash: "$argon2id$v=19$m=19456,t=2,p=1$c2dDkHwpLcQfBQATIka2Zg$FWri3HdXgEPvAjUsEAL36I269D0IQZc5cR7pUTOvtG0"
+    role: customer
+    email_verified_at: yesterday
     orders:
       $as: order
+      email: cancelled-{{unique}}@test.halden.dev
       status: cancelled
-      subtotal: 40.00
+      subtotal: 80.00
       discount: 0
-      shipping: 7.95
-      tax: 3.20
-      total: 51.15
+      shipping: 0
+      tax: 6.40
+      total: 86.40
+      tax_rate: 8.00
+      shipping_zone: domestic
+      shipping_method: standard
       ship_name: Cancelled Order Shopper
-      ship_line1: 8 Fjord Street
-      ship_city: Oslo
-      ship_postcode: "0150"
-      ship_country: Norway
+      ship_line1: 12 Birch Lane
+      ship_city: Portland
+      ship_region: OR
+      ship_postcode: "97201"
+      ship_country: US
+      placed_at: yesterday
+      confirmed_at: yesterday
+      updated_at: yesterday
+      cancelled_at: yesterday
+      cancel_reason: changed_mind
       order_items:
+        $as: order_line
         product_id: { $ref: lantern }
-        name: Test Lantern {{run}}
+        sku: HO-T{{run}}A
+        name: Test product {{run}}
+        image: /images/products/headlamp-400.jpg
+        category_id: 4
         unit_price: 40.00
-        qty: 1
-        line_total: 40.00
+        qty: 2
+        line_total: 80.00
+        discount_alloc: 0
+        tax_alloc: 6.40
+        returnable: true
+      stock_reservations:
+        product_id: { $ref: lantern }
+        qty: 2
+        created_at: yesterday
+        released_at: yesterday
       payments:
-        amount: 51.15
+        intent_id: pi_seed_{{unique}}
+        status: voided
+        amount: 86.40
+        card_brand: visa
         card_last4: "4242"
-        status: refunded
+        created_at: yesterday
+        updated_at: yesterday
       order_events:
-        - status: paid
-          note: Seeded by Propmaster
-        - status: cancelled
-          note: Cancelled by the shopper
+        to_status: cancelled
+        note: Seeded by Propmaster
+        created_at: yesterday
 
   stock_movements:
     - product_id: { $ref: lantern }
-      order_id: { $ref: order }
-      change: -1
-      reason: sale
-    - product_id: { $ref: lantern }
-      order_id: { $ref: order }
-      change: 1
-      reason: cancel
+      change: 10
+      reason: initial
+      note: Opening stock

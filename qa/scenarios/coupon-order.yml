@@ -1,64 +1,92 @@
-# An order that used a 10% coupon: 3 x 40.00 = 120.00 - 12.00 = 108.00, free shipping, tax 8.64 = 116.64.
-# The coupon is made with it (used once), so coupon use counts stay right. Password: Halden-Test-1
-name: Order with a coupon
-description: A paid order with a 10% discount from its own coupon, for discount display and coupon tests.
-tags: [orders, coupons, discount, payments]
+# 2 x 40.00 = 80.00 with its own 10% coupon: 8.00 off, 72.00 is under 75.00 so shipping 7.95, tax 5.76, total 85.71. Password: see README.md.
+name: Coupon order
+description: "A confirmed order with a 10% discount from a coupon made for it (5 uses, 1 used). For discount display, refund share and cancel tests."
+tags: [orders, coupons]
 
 seed:
   coupons:
     $as: coupon
-    code: TEN{{run}}
+    code: TST{{run}}
     kind: percent
     value: 10
-    used_count: 1
+    max_uses: 5
+    description: 10% test coupon seeded by Propmaster
 
   products:
     $as: lantern
     slug: test-lantern-{{unique}}
-    category_id: 1
+    sku: HO-T{{run}}A
+    category_id: 4
     name: Test Lantern {{run}}
     summary: A test product made by Propmaster.
     description: Seeded for a test. Remove it with propmaster clean.
     price: 40.00
-    image: /images/products/headlamp-400.jpg
     inventory:
-      stock: 7                   # 10 in, 3 sold
-    stock_movements:
-      change: 10
-      reason: initial
+      on_hand: 10
 
   customers:
     email: coupon-{{unique}}@test.halden.dev
     name: Coupon Shopper
-    password_hash: scrypt$s+Uyg7ypWuOuZyIuO0aywA==$EM7ORT/kuhjAVsOWApPfnYNBh4LjWy+gBtWZ4xVPoR0=
+    password_hash: "$argon2id$v=19$m=19456,t=2,p=1$c2dDkHwpLcQfBQATIka2Zg$FWri3HdXgEPvAjUsEAL36I269D0IQZc5cR7pUTOvtG0"
+    role: customer
+    email_verified_at: yesterday
     orders:
       $as: order
+      email: coupon-{{unique}}@test.halden.dev
+      status: confirmed
+      subtotal: 80.00
+      discount: 8.00
+      shipping: 7.95
+      tax: 5.76
+      total: 85.71
+      tax_rate: 8.00
       coupon_code: { $ref: coupon }
-      subtotal: 120.00
-      discount: 12.00
-      shipping: 0
-      tax: 8.64
-      total: 116.64
+      shipping_zone: domestic
+      shipping_method: standard
       ship_name: Coupon Shopper
-      ship_line1: 21 Pine Close
-      ship_city: Stavanger
-      ship_postcode: "4006"
-      ship_country: Norway
+      ship_line1: 12 Birch Lane
+      ship_city: Portland
+      ship_region: OR
+      ship_postcode: "97201"
+      ship_country: US
+      placed_at: yesterday
+      confirmed_at: yesterday
+      updated_at: yesterday
       order_items:
+        $as: order_line
         product_id: { $ref: lantern }
-        name: Test Lantern {{run}}
+        sku: HO-T{{run}}A
+        name: Test product {{run}}
+        image: /images/products/headlamp-400.jpg
+        category_id: 4
         unit_price: 40.00
-        qty: 3
-        line_total: 120.00
+        qty: 2
+        line_total: 80.00
+        discount_alloc: 8.00
+        tax_alloc: 5.76
+        returnable: true
+      stock_reservations:
+        product_id: { $ref: lantern }
+        qty: 2
+        created_at: yesterday
       payments:
-        amount: 116.64
+        intent_id: pi_seed_{{unique}}
+        status: authorized
+        amount: 85.71
+        card_brand: visa
         card_last4: "4242"
+        created_at: yesterday
+        updated_at: yesterday
       order_events:
-        status: paid
+        to_status: confirmed
         note: Seeded by Propmaster
+        created_at: yesterday
+      coupon_redemptions:
+        coupon_code: { $ref: coupon }
+        created_at: yesterday
 
   stock_movements:
-    product_id: { $ref: lantern }
-    order_id: { $ref: order }
-    change: -3
-    reason: sale
+    - product_id: { $ref: lantern }
+      change: 10
+      reason: initial
+      note: Opening stock

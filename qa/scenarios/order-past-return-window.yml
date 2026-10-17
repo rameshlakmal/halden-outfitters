@@ -1,0 +1,92 @@
+# Delivered on 10 January 2026 and completed: returns must be refused. 2 x 40.00, total 86.40. Password: see README.md.
+name: Order past its return window
+description: "A completed order delivered long ago. For the return-window-closed message and negative return tests."
+tags: [orders, returns, negative]
+
+seed:
+  products:
+    $as: lantern
+    slug: test-lantern-{{unique}}
+    sku: HO-T{{run}}A
+    category_id: 4
+    name: Test Lantern {{run}}
+    summary: A test product made by Propmaster.
+    description: Seeded for a test. Remove it with propmaster clean.
+    price: 40.00
+    inventory:
+      on_hand: 8
+
+  customers:
+    email: late-{{unique}}@test.halden.dev
+    name: Late Returner
+    password_hash: "$argon2id$v=19$m=19456,t=2,p=1$c2dDkHwpLcQfBQATIka2Zg$FWri3HdXgEPvAjUsEAL36I269D0IQZc5cR7pUTOvtG0"
+    role: customer
+    email_verified_at: yesterday
+    orders:
+      $as: order
+      email: late-{{unique}}@test.halden.dev
+      status: completed
+      subtotal: 80.00
+      discount: 0
+      shipping: 0
+      tax: 6.40
+      total: 86.40
+      tax_rate: 8.00
+      shipping_zone: domestic
+      shipping_method: standard
+      ship_name: Late Returner
+      ship_line1: 12 Birch Lane
+      ship_city: Portland
+      ship_region: OR
+      ship_postcode: "97201"
+      ship_country: US
+      placed_at: '2026-01-05'
+      confirmed_at: '2026-01-05'
+      updated_at: '2026-02-10'
+      packed_at: '2026-01-05'
+      shipped_at: '2026-01-05'
+      tracking_number: HX{{run}}
+      delivered_at: '2026-01-10'
+      completed_at: '2026-02-10'
+      order_items:
+        $as: order_line
+        product_id: { $ref: lantern }
+        sku: HO-T{{run}}A
+        name: Test product {{run}}
+        image: /images/products/headlamp-400.jpg
+        category_id: 4
+        unit_price: 40.00
+        qty: 2
+        line_total: 80.00
+        discount_alloc: 0
+        tax_alloc: 6.40
+        returnable: true
+      stock_reservations:
+        product_id: { $ref: lantern }
+        qty: 2
+        created_at: '2026-01-05'
+        consumed_at: '2026-01-05'
+      payments:
+        intent_id: pi_seed_{{unique}}
+        status: captured
+        amount: 86.40
+        amount_captured: 86.40
+        card_brand: visa
+        card_last4: "4242"
+        created_at: '2026-01-05'
+        updated_at: '2026-01-05'
+      order_events:
+        to_status: completed
+        note: Seeded by Propmaster
+        created_at: '2026-02-10'
+
+  stock_movements:
+    - product_id: { $ref: lantern }
+      change: 10
+      reason: initial
+      note: Opening stock
+    - product_id: { $ref: lantern }
+      order_id: { $ref: order }
+      change: -2
+      reason: sale
+      created_at: yesterday

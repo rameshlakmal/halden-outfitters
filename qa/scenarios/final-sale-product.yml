@@ -1,0 +1,24 @@
+# Not returnable: a return of it must be refused.
+name: Final-sale product
+description: "An active, in-stock product that is final sale."
+tags: [products, returns, negative]
+
+seed:
+  products:
+    $as: item
+    slug: test-item-{{unique}}
+    sku: HO-T{{run}}A
+    category_id: 4
+    name: Test Lantern {{run}}
+    summary: A test product made by Propmaster.
+    description: Seeded for a test. Remove it with propmaster clean.
+    price: 40.00
+    returnable: false
+    inventory:
+      on_hand: 20
+
+  stock_movements:
+    - product_id: { $ref: item }
+      change: 20
+      reason: initial
+      note: Opening stock

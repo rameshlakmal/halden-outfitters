@@ -1,0 +1,140 @@
+# A delivered order (2 x 40.00, 86.40) with 1 unit returned as damaged: 43.20 back to the card, the unit restocked, its 40 pending points taken back. Password: see README.md.
+name: Refunded return
+description: "A finished return with its refund, restock and points reversal. For return history, refund display and second-return tests."
+tags: [returns, refunds, points]
+
+seed:
+  products:
+    $as: lantern
+    slug: test-lantern-{{unique}}
+    sku: HO-T{{run}}A
+    category_id: 4
+    name: Test Lantern {{run}}
+    summary: A test product made by Propmaster.
+    description: Seeded for a test. Remove it with propmaster clean.
+    price: 40.00
+    inventory:
+      on_hand: 9
+
+  customers:
+    email: refunded-{{unique}}@test.halden.dev
+    name: Refunded Shopper
+    password_hash: "$argon2id$v=19$m=19456,t=2,p=1$c2dDkHwpLcQfBQATIka2Zg$FWri3HdXgEPvAjUsEAL36I269D0IQZc5cR7pUTOvtG0"
+    role: customer
+    email_verified_at: yesterday
+    orders:
+      $as: order
+      email: refunded-{{unique}}@test.halden.dev
+      status: delivered
+      subtotal: 80.00
+      discount: 0
+      shipping: 0
+      tax: 6.40
+      total: 86.40
+      tax_rate: 8.00
+      shipping_zone: domestic
+      shipping_method: standard
+      ship_name: Refunded Shopper
+      ship_line1: 12 Birch Lane
+      ship_city: Portland
+      ship_region: OR
+      ship_postcode: "97201"
+      ship_country: US
+      placed_at: yesterday
+      confirmed_at: yesterday
+      updated_at: yesterday
+      packed_at: yesterday
+      shipped_at: yesterday
+      tracking_number: HX{{run}}
+      delivered_at: yesterday
+      points_earned: 80
+      order_items:
+        $as: order_line
+        product_id: { $ref: lantern }
+        sku: HO-T{{run}}A
+        name: Test product {{run}}
+        image: /images/products/headlamp-400.jpg
+        category_id: 4
+        unit_price: 40.00
+        qty: 2
+        line_total: 80.00
+        discount_alloc: 0
+        tax_alloc: 6.40
+        returnable: true
+        points_earned: 80
+      stock_reservations:
+        product_id: { $ref: lantern }
+        qty: 2
+        created_at: yesterday
+        consumed_at: yesterday
+      payments:
+        intent_id: pi_seed_{{unique}}
+        status: partially_refunded
+        amount: 86.40
+        amount_captured: 86.40
+        amount_refunded: 43.20
+        card_brand: visa
+        card_last4: "4242"
+        created_at: yesterday
+        updated_at: yesterday
+      order_events:
+        to_status: delivered
+        note: Seeded by Propmaster
+        created_at: yesterday
+      loyalty_ledger:
+        bucket: pending
+        kind: earn_pending
+        points: 80
+        created_at: yesterday
+      returns:
+        $as: ret
+        status: refunded
+        reason: damaged
+        shop_fault: true
+        refund_method: card
+        refund_total: 43.20
+        estimate: 43.20
+        requested_at: today
+        decided_at: today
+        received_at: today
+        refunded_at: today
+        updated_at: today
+        return_items:
+          order_item_id: { $ref: order_line }
+          qty: 1
+          condition: as_new
+          refund_amount: 43.20
+          restocked: true
+        refunds:
+          kind: return
+          method: card
+          amount: 43.20
+          reason: Return seeded by Propmaster
+          created_at: today
+        loyalty_ledger:
+          order_id: { $ref: order }
+          bucket: pending
+          kind: return_reversal
+          points: -40
+          created_at: today
+        return_events:
+          to_status: refunded
+          note: Seeded by Propmaster
+          created_at: today
+
+  stock_movements:
+    - product_id: { $ref: lantern }
+      change: 10
+      reason: initial
+      note: Opening stock
+    - product_id: { $ref: lantern }
+      order_id: { $ref: order }
+      change: -2
+      reason: sale
+      created_at: yesterday
+    - product_id: { $ref: lantern }
+      order_id: { $ref: order }
+      change: 1
+      reason: return
+      note: Seeded return, as new
+      created_at: today

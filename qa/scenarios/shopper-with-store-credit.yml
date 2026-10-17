@@ -1,0 +1,29 @@
+# Store credit to spend, alone or with a card. Password: see README.md.
+name: Shopper with store credit
+description: "A shopper with a store-credit balance. For paying with credit at checkout and the store credit page."
+tags: [customers, store-credit, checkout]
+params:
+  amount: { type: numeric, default: 25.00, description: Store credit balance }
+
+seed:
+  customers:
+    email: credit-{{unique}}@test.halden.dev
+    name: Credit Shopper
+    password_hash: "$argon2id$v=19$m=19456,t=2,p=1$c2dDkHwpLcQfBQATIka2Zg$FWri3HdXgEPvAjUsEAL36I269D0IQZc5cR7pUTOvtG0"
+    role: customer
+    email_verified_at: yesterday
+    addresses:
+      label: Home
+      name: Credit Shopper
+      line1: 12 Birch Lane
+      city: Portland
+      region: OR
+      postcode: "97201"
+      country_code: US
+      is_default: true
+    store_credit_ledger:
+      $via: customer_id
+      amount: "{{amount}}"
+      reason: adjustment
+      note: Seeded by Propmaster
+      created_at: today

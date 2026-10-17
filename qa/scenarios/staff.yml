@@ -1,0 +1,14 @@
+# A staff account for the staff console. Password: see README.md.
+name: Staff account
+description: A verified support, warehouse or admin account, for staff console and permission tests.
+tags: [staff, roles, permissions]
+params:
+  role: { type: text, default: support, description: "support, warehouse or admin" }
+
+seed:
+  customers:
+    email: staff-{{unique}}@test.halden.dev
+    name: Test {{role}} {{run}}
+    password_hash: "$argon2id$v=19$m=19456,t=2,p=1$c2dDkHwpLcQfBQATIka2Zg$FWri3HdXgEPvAjUsEAL36I269D0IQZc5cR7pUTOvtG0"
+    role: "{{role}}"
+    email_verified_at: yesterday

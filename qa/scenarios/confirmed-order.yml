@@ -1,0 +1,81 @@
+# One order of 2 x 40.00 = 80.00: free domestic shipping (75.00 or more), 8% tax 6.40, total 86.40.
+# The card is authorized, not charged yet, and the 2 units are held for the order. Password: see README.md.
+name: Confirmed order
+description: A paid order that has not shipped (confirmed or packed). For cancel, pack and ship tests.
+tags: [orders, payments, cancel, warehouse]
+params:
+  status: { type: text, default: confirmed, description: "confirmed or packed (for shipped use shipped-order)" }
+
+seed:
+  products:
+    $as: lantern
+    slug: test-lantern-{{unique}}
+    sku: HO-T{{run}}A
+    category_id: 4
+    name: Test Lantern {{run}}
+    summary: A test product made by Propmaster.
+    description: Seeded for a test. Remove it with propmaster clean.
+    price: 40.00
+    inventory:
+      on_hand: 10
+
+  customers:
+    email: buyer-{{unique}}@test.halden.dev
+    name: Confirmed Order Shopper
+    password_hash: "$argon2id$v=19$m=19456,t=2,p=1$c2dDkHwpLcQfBQATIka2Zg$FWri3HdXgEPvAjUsEAL36I269D0IQZc5cR7pUTOvtG0"
+    role: customer
+    email_verified_at: yesterday
+    orders:
+      $as: order
+      email: buyer-{{unique}}@test.halden.dev
+      status: "{{status}}"
+      subtotal: 80.00
+      discount: 0
+      shipping: 0
+      tax: 6.40
+      total: 86.40
+      tax_rate: 8.00
+      shipping_zone: domestic
+      shipping_method: standard
+      ship_name: Confirmed Order Shopper
+      ship_line1: 12 Birch Lane
+      ship_city: Portland
+      ship_region: OR
+      ship_postcode: "97201"
+      ship_country: US
+      placed_at: yesterday
+      confirmed_at: yesterday
+      updated_at: yesterday
+      order_items:
+        product_id: { $ref: lantern }
+        sku: HO-T{{run}}A
+        name: Test Lantern {{run}}
+        image: /images/products/headlamp-400.jpg
+        category_id: 4
+        unit_price: 40.00
+        qty: 2
+        line_total: 80.00
+        tax_alloc: 6.40
+        returnable: true
+      stock_reservations:
+        product_id: { $ref: lantern }
+        qty: 2
+        created_at: yesterday
+      payments:
+        intent_id: pi_seed_{{unique}}
+        status: authorized
+        amount: 86.40
+        card_brand: visa
+        card_last4: "4242"
+        created_at: yesterday
+        updated_at: yesterday
+      order_events:
+        to_status: confirmed
+        note: Seeded by Propmaster
+        created_at: yesterday
+
+  stock_movements:
+    product_id: { $ref: lantern }
+    change: 10
+    reason: initial
+    note: Opening stock
