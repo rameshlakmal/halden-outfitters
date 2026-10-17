@@ -4,10 +4,11 @@
 
 **A realistic outdoor-gear web shop, built for QA engineers to practise testing UI, API and data.**
 
-It behaves like a production store, with real business rules, a full staff back office and a mock payment
-provider. It also hides **18 planted bugs** you can switch on, each one caught by exactly one SQL rule.
+It behaves like a production store, with real business rules, a staff admin app and a mock payment provider.
+It also hides **18 planted bugs** you can switch on, each one caught by exactly one SQL rule.
 
 [**🛒 Open the shop**](https://halden-outfitters.vercel.app) ·
+[**🗂️ Staff admin**](https://halden-admin.vercel.app) ·
 [**📘 API docs (try it live)**](https://halden-api.vercel.app/api/v1/docs/) ·
 [**🧾 OpenAPI 3.1 spec**](https://halden-api.vercel.app/api/v1/docs/openapi.json) ·
 [**🐞 Planted bugs**](#-the-18-planted-bugs) ·
@@ -30,12 +31,13 @@ Halden is a complete shop you can test the way you test real software:
 | You want to practise… | Halden gives you… |
 |---|---|
 | **UI testing** (Playwright, Cypress, Selenium) | A modern Next.js storefront, desktop and mobile, light and dark, with stable roles and labels to select by |
-| **API testing** (Postman, REST Assured, k6, curl) | 86 documented operations, an OpenAPI 3.1 spec, problem+json errors with stable codes, idempotency keys, rate limits |
+| **API testing** (Postman, REST Assured, k6, curl) | 89 documented operations, an OpenAPI 3.1 spec, problem+json errors with stable codes, idempotency keys, rate limits |
 | **Business-rule testing** | Checkout, payments, cancellations, returns, refunds, store credit, loyalty points and reviews, each with written rules |
 | **Data and SQL checks** | `qa/rules.sql`: 38 rules that must hold in the database, and a recorder that checks them per test step |
 | **Bug hunting** | [18 planted bugs](#-the-18-planted-bugs) you can switch on. Can your tests catch them? |
 | **Time-based rules** | A shop clock you can move forward (31 days, 13 months) to test return windows and point expiry |
 | **Email flows** | A fake inbox that shows every email the shop would send, with its links |
+| **Back-office testing** | A separate staff admin: dashboard with charts, orders, warehouse, returns, reviews, products (add, edit, restock), coupons, customers, audit log |
 
 ---
 
@@ -72,15 +74,16 @@ test('sign up with a test address', async ({ page }) => {
 });
 ```
 
-The repo's own Playwright suite (`apps/web/e2e`) covers browsing, checkout, the bank step, cancelling, returns,
-reviews, accessibility (axe) and the staff console. It's a good reference.
+The repo's own Playwright suites are a good reference: `apps/web/e2e` covers browsing, checkout, the bank step,
+cancelling, returns, reviews and accessibility (axe); `apps/admin/e2e` covers the staff journeys, the dashboard,
+coupons, adding products and accessibility in both themes.
 
 </details>
 
 <details>
 <summary><b>🔌 I test the API</b>: a full purchase with curl</summary>
 
-The API lives at `https://halden-api.vercel.app/api/v1` (or `/api/v1` on the shop's own domain). The session is an
+The API lives at `https://halden-api.vercel.app/api/v1` (or `/api/v1` on the shop's or the admin's domain). The session is an
 HttpOnly cookie, so keep a cookie jar. Every error is `application/problem+json` with a stable `code`.
 
 ```sh
@@ -142,11 +145,34 @@ propmaster seed --scenarios qa/scenarios delivered-order-for-return
 
 </details>
 
+<details>
+<summary><b>🗂️ I test the back office</b>: the staff admin</summary>
+
+The [staff admin](https://halden-admin.vercel.app) is its own app, with its own sign-in. Each staff role sees only
+its sections:
+
+| Section | What you can do there | Roles |
+|---|---|---|
+| **Dashboard** | revenue, orders, average order, return rate against the previous period; revenue and orders per day; orders by status; return reasons; low stock (7, 30 or 90 days of shop time) | all staff |
+| **Orders** | every order with its payment and history; cancel; goodwill refunds | all staff |
+| **Warehouse** | pack confirmed orders, ship packed ones, mark them delivered | warehouse, admin |
+| **Returns** | approve or reject requests; receive parcels and grade each line (refund and restock follow the grade) | all staff |
+| **Reviews** | publish held reviews, hide published ones | support, admin |
+| **Products** | add products with photos, edit details and prices (with optimistic locking), restock and adjust stock | all staff (add: admin) |
+| **Coupons** | create, schedule, limit and switch coupons on or off | admin |
+| **Customers, settings, audit log** | roles, shipping rates, the tax rate, and every staff action with its before and after | admin (customers: support too) |
+| **QA lab** | switch planted bugs, move the shop clock, run the time-based sweeps, replay payment webhooks | admin |
+
+Press **Ctrl+K** anywhere to jump to a section or open an order by its number. Staff accounts are not public: ask
+the owner of the instance you test (see [demo accounts](#-test-data-you-can-use)).
+
+</details>
+
 ---
 
 ## 🐞 The 18 planted bugs
 
-Every bug is **off** until an admin switches it on in the **QA lab**. Each one breaks **exactly one** rule in
+Every bug is **off** until an admin switches it on in the admin's **QA lab**. Each one breaks **exactly one** rule in
 `qa/rules.sql`; `apps/api/test/rules.test.ts` proves that on every CI run. Try to catch one with your own test
 before you open the hint.
 
@@ -168,7 +194,7 @@ before you open the hint.
 | 14 | Support can refund any amount as goodwill | Support goodwill refunds stay within 50.00 per order | <details><summary>hint</summary>Sign in as support and give a 120.00 goodwill refund.</details> |
 | 15 | Points earned on tax and shipping | Points are earned on goods only | <details><summary>hint</summary>Deliver an order that paid shipping: it earns more points than its goods are worth.</details> |
 | 16 | Returned items keep their points | Returned lines hold no points | <details><summary>hint</summary>Return a delivered item before the window closes: the pending points stay.</details> |
-| 17 | Hidden reviews still count in the rating | A product rating is the average of its published reviews | <details><summary>hint</summary>Hide a 1-star review in the staff console: the rating doesn't go up.</details> |
+| 17 | Hidden reviews still count in the rating | A product rating is the average of its published reviews | <details><summary>hint</summary>Hide a 1-star review in the staff admin: the rating doesn't go up.</details> |
 | 18 | Price edits rewrite past orders | An order subtotal is the sum of its lines | <details><summary>hint</summary>Change the price of a product someone ordered: their order lines no longer add up.</details> |
 
 ---
@@ -182,12 +208,14 @@ before you open the hint.
 `*.test`, `*.example`, `*.invalid`, `*.localhost`, and `example.com`, `example.net`, `example.org`. Mail to any
 other address is shown only to its signed-in owner, so use a test domain for automation.
 
-**Demo accounts:** the seeded staff and shopper accounts are protected. Their passwords are set by whoever deploys
-the shop; ask the owner of the instance you test.
+**Demo accounts:** the seeded staff and shopper accounts are protected and their passwords are not published, so
+nobody can lock others out or change shared data. Register your own shopper account instead (it takes a minute
+with the fake inbox); for staff access, ask the owner of the instance you test. Whoever deploys the shop sets the
+passwords (`SEED_*_PASSWORD`) and can change them without losing data: `npm run db:set-passwords`.
 
 | Role | Email | Can |
 |---|---|---|
-| Admin | `admin@halden.test` | everything, including the QA lab |
+| Admin | `admin@halden.test` | everything in the staff admin, including the QA lab |
 | Support | `support@halden.test` | orders, cancellations, return decisions, goodwill up to 50.00, reviews, customers |
 | Warehouse | `warehouse@halden.test` | pack, ship, deliver, receive and grade returns, stock |
 | Shoppers | `maya@`, `jonas@`, `ari@halden.test` | order history, a delivered order to return, reviews |
@@ -227,7 +255,10 @@ the shop; ask the owner of the instance you test.
 ```mermaid
 flowchart LR
   B[Browser or your tests] -->|pages| W[Shop: Next.js<br/>halden-outfitters.vercel.app]
+  S[Staff] -->|pages| M[Staff admin: Next.js<br/>halden-admin.vercel.app]
   W -->|/api/v1/* rewrite<br/>cookies stay first-party| A[API: Fastify<br/>halden-api.vercel.app]
+  M -->|/api/v1/* rewrite| A
+  M -->|product photos| BL[(Vercel Blob)]
   T[API tests] -->|/api/v1| A
   A --> D[(PostgreSQL<br/>Neon)]
   A -.->|signed webhooks| A
@@ -238,7 +269,9 @@ flowchart LR
   limits, idempotency keys, signed webhooks from HaldenPay, and an injectable shop clock.
 - **Shop:** Next.js 16 and React 19, Tailwind v4, the "Alpine Signal" design, View Transitions, light and dark,
   mobile first, with performance budgets in CI.
-- **Shared:** `packages/contracts` (Zod schemas used by both apps) and `packages/money` (integer-cent maths and
+- **Staff admin:** Next.js 16, the shop's colours with soft cards and Outfit, ECharts dashboards, Ctrl+K command
+  palette, light and dark; photo uploads go straight to Vercel Blob.
+- **Shared:** `packages/contracts` (Zod schemas used by every app) and `packages/money` (integer-cent maths and
   exact allocation).
 
 </details>
@@ -305,13 +338,15 @@ Needs Node 22.12+ (24 recommended) and PostgreSQL 13+. Full guide: [docs/DEVELOP
 npm install
 cp apps/api/.env.example apps/api/.env     # set DATABASE_URL and the three SEED_*_PASSWORD values
 npm run db:reset                            # migrate and seed a local database
-npm run dev                                 # API on http://127.0.0.1:4000, shop on http://localhost:3001
+npm run dev                                 # API :4000, shop http://localhost:3001, admin http://localhost:3002
 ```
 
 | Command | Runs |
 |---|---|
 | `npm test` | unit tests and API integration tests against real Postgres: concurrency races, security regressions and the planted-bug proof |
-| `npm run test:e2e` | the Playwright journeys on desktop and mobile (start the API with `RATE_LIMITS=false`) |
+| `npm run test:e2e` | the shop's Playwright journeys on desktop and mobile (start the API with `RATE_LIMITS=false`) |
+| `npm run test:e2e -w @halden/admin` | the admin's Playwright journeys and axe scan (the API needs `ALLOWED_ORIGINS=http://localhost:3002`) |
+| `npm run db:set-passwords` | give the demo accounts new `SEED_*_PASSWORD` values without reseeding |
 | `npm run typecheck`, `npm run lint` | TypeScript and ESLint across the workspace |
 
 CI runs all of these, plus a JavaScript budget and Lighthouse budgets on mobile.
@@ -324,7 +359,8 @@ CI runs all of these, plus a JavaScript budget and Lighthouse budgets on mobile.
 ```text
 apps/api            Fastify API (also the Vercel project "halden-api")
 apps/web            Next.js shop (the Vercel project "halden-outfitters")
-packages/contracts  Zod schemas shared by the API and the shop
+apps/admin          Next.js staff admin (the Vercel project "halden-admin")
+packages/contracts  Zod schemas shared by the API, the shop and the admin
 packages/money      integer-cent arithmetic and exact allocation
 db/migrations       forward-only SQL migrations
 qa/                 Propmaster rules, recipes and scenarios
