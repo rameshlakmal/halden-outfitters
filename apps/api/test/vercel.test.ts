@@ -1,4 +1,5 @@
 // The Vercel entry: requests arrive the way vercel.json's rewrite delivers them (/api?path=...), over real HTTP.
+import { readdirSync, readFileSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -27,6 +28,18 @@ describe('originalUrl', () => {
     expect(originalUrl('/api?q=tent&path=products')).toBe('/api/v1/products?q=tent');
     expect(originalUrl('/api?path=docs/')).toBe('/api/v1/docs/');
     expect(originalUrl('/api/v1/health')).toBe('/api/v1/health');
+  });
+});
+
+describe('runs on Vercel', () => {
+  it("never calls Fastify's inject in app code: it loads light-my-request, which fails on Vercel's runtime", () => {
+    const files = readdirSync(new URL('../src/', import.meta.url), { recursive: true, encoding: 'utf8' }).filter((f) =>
+      f.endsWith('.ts'),
+    );
+    const offenders = files.filter((f) =>
+      /\.inject\(/.test(readFileSync(new URL(`../src/${f}`, import.meta.url), 'utf8')),
+    );
+    expect(offenders).toEqual([]);
   });
 });
 
