@@ -54,6 +54,8 @@ const config: NextConfig = {
       { source: '/staff', destination: ADMIN_URL, permanent: false },
       { source: '/staff/:path*', destination: `${ADMIN_URL}/:path*`, permanent: false },
       { source: '/qa', destination: `${ADMIN_URL}/qa`, permanent: false },
+      // The API docs need their trailing slash (/docs/), which this site removes: send them to the API's own address.
+      { source: '/api/v1/docs', destination: `${API_URL}/api/v1/docs/`, permanent: false },
     ];
   },
   async headers() {

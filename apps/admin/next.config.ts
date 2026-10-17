@@ -42,6 +42,10 @@ const config: NextConfig = {
   async rewrites() {
     return [{ source: '/api/v1/:path*', destination: `${API_URL}/api/v1/:path*` }];
   },
+  // The API docs need their trailing slash (/docs/), which this site removes: send them to the API's own address.
+  async redirects() {
+    return [{ source: '/api/v1/docs', destination: `${API_URL}/api/v1/docs/`, permanent: false }];
+  },
   async headers() {
     return [{ source: '/(.*)', headers: securityHeaders }];
   },
