@@ -40,6 +40,7 @@ const TITLES: Record<ErrorCode, string> = {
   account_locked: 'Account temporarily locked',
   rate_limited: 'Too many requests',
   qa_lab_disabled: 'QA lab is switched off',
+  simulated_error: 'Simulated error',
   internal_error: 'Something went wrong',
   service_unavailable: 'Service unavailable',
 };

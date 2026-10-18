@@ -12,7 +12,24 @@ This guide is tool-neutral: the scenarios work the same in Postman, Playwright, 
 | Base URL | `https://halden-api.vercel.app/api/v1` (live) or `http://127.0.0.1:4000/api/v1` (local) |
 | Interactive reference | [/api/v1/docs](https://halden-api.vercel.app/api/v1/docs/): every route, field and error, and you can send requests from it |
 | OpenAPI 3.1 spec | [/api/v1/docs/openapi.json](https://halden-api.vercel.app/api/v1/docs/openapi.json): for contract tests and code generation |
-| Postman | [postman/halden.postman_collection.json](postman/halden.postman_collection.json) (57 requests with tests) and [postman/halden-live.postman_environment.json](postman/halden-live.postman_environment.json). Import both, put the admin password in `adminPassword` as a *current* value (it then stays on your machine), and run the collection in order |
+| Postman | [postman/halden.postman_collection.json](postman/halden.postman_collection.json) (61 requests with tests) and [postman/halden-live.postman_environment.json](postman/halden-live.postman_environment.json). Import both, put the admin password in `adminPassword` as a *current* value (it then stays on your machine), and run the collection in order |
+
+## New to API testing? Start here
+
+You don't need the whole shop to begin. These five steps take about an hour and use only public endpoints, so you
+need no account:
+
+1. **Send your first request.** `GET /health` should answer `200` with `{ "status": "ok", "database": "ok" }`.
+   Check the status, the body and the `Content-Type` header.
+2. **Read a list.** `GET /products?limit=3`. Check there are at most 3 items, that each has an `id`, `name` and
+   `price`, and that `total` is at least 3.
+3. **Use a filter.** `GET /products?category=shelter`. Check every item really is in that category.
+4. **Get an error on purpose.** `GET /products/no-such-thing` should be `404` with `code: "not_found"`.
+5. **Handle any status and slow answers.** `GET /qa/mock/status/503` answers `503` (with `Retry-After`), and
+   `GET /qa/mock/delay/2000` answers after 2 seconds. Use them to write a retry, and a test that fails when a call
+   takes longer than 1 second.
+
+Then register an account (scenario 11) and work down [the scenario catalogue](#5-scenario-catalogue).
 
 <details>
 <summary><b>Contents</b></summary>
@@ -164,6 +181,18 @@ admin only.
 | `POST /qa/sweeps` | run the time-based jobs now: cancel unpaid orders, expire return labels, complete orders, expire points, deliver webhooks |
 | `GET /qa/bugs`, `PUT /qa/bugs/:key { "enabled": true }` | switch a planted bug on or off (section 6) |
 | `GET /qa/webhooks?orderId=`, `POST /qa/webhooks/:id/redeliver` | look at payment events, and send one again |
+| `POST /qa/reset` | start clean: the clock back to real time, every bug off, and the `@fixtures.test` accounts that never ordered deleted with their data. Orders, stock and the seeded data are left alone |
+
+### Simulated answers (anyone)
+
+For practising how a client copes with errors and slow servers, without having to cause them:
+
+| Endpoint | Answer |
+|---|---|
+| `/qa/mock/status/:code` | that status, to any method (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`). Codes: 200, 201, 202, 204, 400, 401, 403, 404, 409, 422, 429, 500, 502, 503, 504. Errors are problem+json with `code: "simulated_error"`; 429 and 503 add `Retry-After: 30` |
+| `/qa/mock/delay/:ms` | waits `ms` milliseconds (0 to 5000), then answers 200, or `?status=503` for an error after the wait. The `X-Mock-Delay-Ms` header says how long it waited |
+
+They are rate-limited to 300 calls per IP every 10 minutes.
 
 > The clock and the bugs are shared by the whole shop. Put them back (`offsetSeconds: 0`, bugs off) in your
 > teardown, even when the test fails.
@@ -272,7 +301,7 @@ Keep the admin password in environment variables or CI secrets, never in the tes
 
 ## 5. Scenario catalogue
 
-Each row is a test worth writing. **Endpoints** shows the calls, **Check** shows what to assert. Work down the levels:
+Each row is a test worth writing (70 in all). **Endpoints** shows the calls, **Check** shows what to assert. Work down the levels:
 each one builds on the skills of the one before.
 
 <details open>
@@ -362,6 +391,10 @@ each one builds on the skills of the one before.
 | 64 | Expired coupon by clock | create a coupon that ends tomorrow; clock +2 days | 409 `coupon_invalid` |
 | 65 | Reviews | buy and deliver, `POST /products/:slug/reviews`; support hides it | the product rating and count go back to what they were |
 | 66 | Session expiry | get a token; clock +15 days | the token gets 401 everywhere, even on `GET /cart`; a new `POST /auth/token` works |
+| 67 | Retry on 503 | your client calls `/qa/mock/status/503`, waits `Retry-After`, tries again | it retries the number of times you set, then fails with a clear message |
+| 68 | Timeout | call `/qa/mock/delay/3000` with a 1-second timeout | your test fails with a timeout, not a hang |
+| 69 | Error handling per status | loop over the mock codes | your client maps each status to the right outcome (retry, re-sign-in, fail) |
+| 70 | Clean start | `POST /qa/reset` in global setup | clock 0, no bugs on, unused fixture accounts gone |
 
 </details>
 
@@ -411,8 +444,8 @@ Each bug also breaks one SQL rule in [`qa/rules.sql`](../qa/rules.sql), so you c
 - **Unique data.** Use the fixture's generated email, or add a random suffix to anything you create (coupon codes,
   product SKUs).
 - **Don't depend on order.** Every test should pass when run alone, in any order.
-- **Reset shared state in teardown:** the clock (`offsetSeconds: 0`) and any bug you switched on. Run the teardown even
-  when the test fails.
+- **Reset shared state in teardown:** the clock (`offsetSeconds: 0`) and any bug you switched on, or simply
+  `POST /qa/reset`. Run the teardown even when the test fails.
 - **Don't run clock tests in parallel.** The clock is shop-wide, so run those tests one at a time. Remember that a jump
   of 14 days or more ends every token.
 - **Stock is shared.** Prefer products with plenty of stock, and read `available` before you assert on it rather than

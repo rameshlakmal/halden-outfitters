@@ -59,3 +59,36 @@ export const ShopperFixture = z
   })
   .meta({ id: 'ShopperFixture' });
 export type ShopperFixture = z.infer<typeof ShopperFixture>;
+
+/** Statuses the mock route can answer with: the ones API clients most often have to handle. */
+export const MOCK_STATUSES = [200, 201, 202, 204, 400, 401, 403, 404, 409, 422, 429, 500, 502, 503, 504] as const;
+
+export const MockDelayQuery = z.object({
+  status: z.coerce
+    .number()
+    .int()
+    .refine((n) => (MOCK_STATUSES as readonly number[]).includes(n), `One of ${MOCK_STATUSES.join(', ')}.`)
+    .default(200)
+    .describe('The status to answer with once the delay is over'),
+});
+
+export const MockResult = z
+  .object({
+    status: z.number().int(),
+    delayMs: z.number().int(),
+    method: z.string(),
+    requestId: z.string(),
+  })
+  .meta({ id: 'MockResult' });
+
+export const QaReset = z
+  .object({
+    clockOffsetSeconds: z.literal(0),
+    bugsSwitchedOff: z.number().int().describe('Planted bugs that were on'),
+    fixtureAccountsRemoved: z.number().int().describe('@fixtures.test accounts that never ordered, with their data'),
+    fixtureAccountsKept: z
+      .number()
+      .int()
+      .describe('@fixtures.test accounts kept because orders or staff records point at them'),
+  })
+  .meta({ id: 'QaReset' });

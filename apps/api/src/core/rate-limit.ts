@@ -14,6 +14,7 @@ export const LIMITS = {
   verifyResend: { name: 'verify-resend', max: 3, windowSeconds: 3600 },
   checkoutPerCustomer: { name: 'checkout-customer', max: 20, windowSeconds: 3600 },
   couponPerIp: { name: 'coupon-ip', max: 30, windowSeconds: 600 },
+  mockPerIp: { name: 'mock-ip', max: 300, windowSeconds: 600 },
 } satisfies Record<string, Limit>;
 
 export class RateLimiter {

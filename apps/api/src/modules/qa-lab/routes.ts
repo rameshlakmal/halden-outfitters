@@ -5,7 +5,24 @@
 //     the seeded demo accounts and to staff is only shown to admins: otherwise anyone could reset their passwords.
 //   - Shop clock: admins can move business time forward to test expiry rules.
 //   - Fixtures: admins can make a ready-to-use test account in one call, so a test sets up its own data.
-import { Clock, Email, InboxEmail, Problem, SetClock, ShopperFixture, ShopperFixtureInput } from '@halden/contracts';
+//   - Mocks: any status code, after an optional delay, for practising retries, timeouts and error handling.
+//   - Reset: admins put the clock and the bugs back and clear unused fixture accounts.
+import {
+  Clock,
+  Email,
+  InboxEmail,
+  MOCK_STATUSES,
+  MockDelayQuery,
+  MockResult,
+  Problem,
+  QaReset,
+  SetClock,
+  ShopperFixture,
+  ShopperFixtureInput,
+} from '@halden/contracts';
+import type { FastifyReply } from 'fastify';
+import type pg from 'pg';
+import { setTimeout as sleep } from 'node:timers/promises';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import type { FastifyRequest } from 'fastify';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
@@ -13,7 +30,8 @@ import { z } from 'zod';
 import { createSession, requireRole } from '../../core/auth.js';
 import { audit } from '../../core/audit.js';
 import { hashPassword } from '../../core/crypto.js';
-import { AppError } from '../../core/errors.js';
+import { AppError, problemTitle } from '../../core/errors.js';
+import { LIMITS } from '../../core/rate-limit.js';
 import { AccountService, toMe, type CustomerRow } from '../accounts/service.js';
 import { cartRepo } from '../cart/repository.js';
 import { CartService, toCart } from '../cart/service.js';
@@ -413,6 +431,118 @@ export const qaRoutes: FastifyPluginAsyncZod = async (app) => {
         storeCredit: await creditBalance(db.pool, id),
         points: (await balance(db.pool, id, now)).available,
       });
+    },
+  );
+
+  // ---------- mocks ----------
+
+  const MAX_DELAY_MS = 5000;
+  const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] as const;
+  const mockAnswer = async (req: FastifyRequest, reply: FastifyReply, status: number, delayMs: number) => {
+    enabled();
+    await app.ctx.limiter.hit(LIMITS.mockPerIp, req.ip);
+    if (delayMs > 0) await sleep(delayMs);
+    reply.header('x-mock-delay-ms', String(delayMs));
+    if (status === 204) return reply.status(204).send();
+    if (status < 400) return reply.status(status).send({ status, delayMs, method: req.method, requestId: req.id });
+    // An error looks like every other error the API sends, so a client's error handling can be tested on it.
+    if (status === 429 || status === 503) reply.header('retry-after', '30');
+    return reply
+      .status(status)
+      .type('application/problem+json')
+      .send({
+        type: 'https://halden-outfitters.vercel.app/problems/simulated_error',
+        title: problemTitle('simulated_error'),
+        status,
+        detail: `A simulated ${status}: nothing went wrong.`,
+        code: 'simulated_error',
+        requestId: req.id,
+      });
+  };
+  const mockResponses = Object.fromEntries(
+    MOCK_STATUSES.map((s) => [s, s === 204 ? z.null() : s < 400 ? MockResult : Problem]),
+  );
+
+  app.route({
+    method: [...METHODS],
+    url: '/qa/mock/status/:code',
+    schema: {
+      tags,
+      summary: 'Answer with any status code',
+      description:
+        `For practising error handling: answers with the status you ask for, to any method. Errors come as ` +
+        `problem+json with code \`simulated_error\`; 429 and 503 add Retry-After. Codes: ${MOCK_STATUSES.join(', ')}.`,
+      params: z.object({ code: MockDelayQuery.shape.status.unwrap() }),
+      response: mockResponses,
+    },
+    handler: (req, reply) => mockAnswer(req, reply, req.params.code, 0),
+  });
+
+  app.route({
+    method: [...METHODS],
+    url: '/qa/mock/delay/:ms',
+    schema: {
+      tags,
+      summary: 'Answer after a delay',
+      description:
+        `For practising timeouts and loading states: waits \`ms\` milliseconds (0 to ${MAX_DELAY_MS}), then answers ` +
+        `200, or the \`status\` you ask for (\`?status=503\`).`,
+      params: z.object({ ms: z.coerce.number().int().min(0).max(MAX_DELAY_MS) }),
+      querystring: MockDelayQuery,
+      response: mockResponses,
+    },
+    handler: (req, reply) => mockAnswer(req, reply, req.query.status, req.params.ms),
+  });
+
+  // ---------- reset ----------
+
+  app.post(
+    '/qa/reset',
+    {
+      schema: {
+        tags,
+        summary: 'Put the QA lab back to the start (admin)',
+        description:
+          'Sets the shop clock back to real time, switches every planted bug off, and deletes the @fixtures.test ' +
+          'accounts that never placed an order, with their sessions, carts, addresses, credit and points. Orders, ' +
+          'stock and the seeded data are left alone.',
+        security: [{ session: [] }, { bearer: [] }],
+        response: { 200: QaReset, 401: Problem, 403: Problem, 404: Problem },
+      },
+    },
+    async (req) => {
+      enabled();
+      const admin = requireRole(req, 'admin');
+      const result = await db.tx(async (tx) => {
+        await clock.setOffsetSeconds(0, tx);
+        const bugs = await tx.query('UPDATE qa_bugs SET enabled = false WHERE enabled');
+        const { rows } = await tx.query<{ id: string }>(
+          "SELECT id FROM customers WHERE email LIKE '%@fixtures.test' ORDER BY id",
+        );
+        let removed = 0;
+        for (const { id } of rows) {
+          // Orders, refunds and staff records keep their customer, so an account they point at stays.
+          await tx.query('SAVEPOINT fixture');
+          try {
+            await tx.query('DELETE FROM customers WHERE id = $1', [id]);
+            await tx.query('RELEASE SAVEPOINT fixture');
+            removed += 1;
+          } catch (err) {
+            if ((err as pg.DatabaseError).code !== '23503') throw err;
+            await tx.query('ROLLBACK TO SAVEPOINT fixture');
+          }
+        }
+        const summary = {
+          clockOffsetSeconds: 0 as const,
+          bugsSwitchedOff: bugs.rowCount ?? 0,
+          fixtureAccountsRemoved: removed,
+          fixtureAccountsKept: rows.length - removed,
+        };
+        await audit(tx, admin, 'qa.reset', { type: 'setting', id: 'qa_lab' }, { after: summary });
+        return summary;
+      });
+      app.ctx.bugs.forget();
+      return result;
     },
   );
 

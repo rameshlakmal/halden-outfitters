@@ -44,6 +44,7 @@ export const ERROR_CODES = {
   account_locked: 423,
   rate_limited: 429,
   qa_lab_disabled: 404,
+  simulated_error: 500,
   internal_error: 500,
   service_unavailable: 503,
 } as const;

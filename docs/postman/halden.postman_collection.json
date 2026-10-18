@@ -1914,6 +1914,142 @@
               }
             }
           ]
+        },
+        {
+          "name": "Mock: any status (503)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/qa/mock/status/503",
+              "host": ["{{baseUrl}}"],
+              "path": ["qa", "mock", "status", "503"]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 503', () => pm.response.to.have.status(503));",
+                  "pm.test('code is simulated_error', () => pm.expect(pm.response.json().code).to.eql('simulated_error'));",
+                  "pm.test('Retry-After', () => pm.response.to.have.header('Retry-After'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Mock: slow answer (1 s)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/qa/mock/delay/1000",
+              "host": ["{{baseUrl}}"],
+              "path": ["qa", "mock", "delay", "1000"]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('took at least 1 s', () => pm.expect(pm.response.responseTime).to.be.at.least(1000));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Mock: slow error",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/qa/mock/delay/500?status=504",
+              "host": ["{{baseUrl}}"],
+              "path": ["qa", "mock", "delay", "500"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "504"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 504', () => pm.response.to.have.status(504));",
+                  "pm.test('code is simulated_error', () => pm.expect(pm.response.json().code).to.eql('simulated_error'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reset the QA lab",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/qa/reset",
+              "host": ["{{baseUrl}}"],
+              "path": ["qa", "reset"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('clock at 0', () => pm.expect(pm.response.json().clockOffsetSeconds).to.eql(0));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },

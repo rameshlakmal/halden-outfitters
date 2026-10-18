@@ -142,6 +142,8 @@ Only while the QA lab is enabled (`QA_LAB_ENABLED`). All but the inbox are admin
 | `GET /qa/bugs`, `PUT /qa/bugs/:key { enabled }` | the planted bugs |
 | `GET /qa/clock`, `PUT /qa/clock { offsetSeconds }` | move the shop clock ahead; 0 resets it |
 | `POST /qa/fixtures/shopper` | a confirmed, signed-in test account in one call, with an address, cart lines, store credit and points as asked (or a support/warehouse account); returns its password and a Bearer token |
+| `POST /qa/reset` | the clock back to real time, every bug off, unused `@fixtures.test` accounts deleted |
+| `/qa/mock/status/:code`, `/qa/mock/delay/:ms` | simulated answers for any status, after an optional delay (open to anyone, rate-limited) |
 | `POST /qa/sweeps` | run the time-based rules now (payment timeouts, label expiry, order completion, points expiry, webhooks) |
 | `GET /qa/webhooks?orderId=`, `POST /qa/webhooks/:id/redeliver` | payment events, and resending one to test that a repeat changes nothing |
 
