@@ -149,6 +149,13 @@ export async function buildApp({
   app.addHook('preValidation', async (req) => {
     req.now = await ctx.clock.now();
     req.user = await loadSession(ctx.db, sessionToken(req), req.now);
+    // A token that doesn't work is an error even where guests are welcome (cart, catalogue): carrying on as a guest
+    // would hide an expired or revoked token. The sign-in routes stay open, so a client can get a new one, and so does
+    // the cron route, whose Authorization header carries the cron secret instead of a session.
+    const url = req.url.slice(API_PREFIX.length);
+    if (req.headers.authorization !== undefined && !req.user && !/^\/(auth|docs|internal)\//.test(url)) {
+      throw new AppError('unauthenticated', 'That token is not valid any more. Sign in again.');
+    }
   });
 
   app.setErrorHandler((err: FastifyError, req, reply) => {

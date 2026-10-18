@@ -165,5 +165,7 @@ describe('sweeps', () => {
 
   it('the cron endpoint needs the secret', async () => {
     expect((await new Client(t.app).get('/internal/cron/sweep')).statusCode).toBe(403);
+    const wrong = await new Client(t.app).get('/internal/cron/sweep', { authorization: 'Bearer not-the-secret' });
+    expect(wrong.statusCode).toBe(403);
   });
 });

@@ -1,5 +1,7 @@
 # Halden API guide
 
+> Testing the API? Start with the [API testing guide](API-TESTING.md): scenarios, test data and a Postman collection.
+
 The full reference is generated from the code: an interactive OpenAPI 3.1 page at `/api/v1/docs` (try any
 request in the browser; the raw spec is linked from it). This guide covers what the reference can't: how the pieces fit,
 and how to test against them.
@@ -10,13 +12,16 @@ browser uses).
 ## Conventions
 
 - **JSON only**, camelCase. Money is a string with two decimals (`"64.00"`); never parse it to a float for maths.
-- **Writes** (POST, PUT, PATCH, DELETE) must send `Content-Type: application/json` and an `Origin` the API allows.
-  This is the CSRF defence, so a curl test needs `-H "Origin: http://localhost:3001"`.
-- **Sessions** are a cookie (`halden_session`, HttpOnly, SameSite=Lax) set by `POST /auth/login`. They slide: each
-  use within 14 days keeps them alive. `POST /auth/logout` ends one; changing the password ends the others.
+- **Writes** (POST, PUT, PATCH, DELETE) must send `Content-Type: application/json`. A write that carries an `Origin`
+  header must come from an allowed origin (the CSRF defence); curl and test tools send none, so they need nothing.
+- **Sessions** are a cookie (`halden_session`, HttpOnly, SameSite=Lax) set by `POST /auth/login`, or a Bearer token
+  from `POST /auth/token` sent as `Authorization: Bearer <token>`. They slide: each use within 14 days (shop time)
+  keeps them alive. `POST /auth/logout` ends one; changing the password ends the others. A request with an
+  `Authorization` header is judged by it alone, and a bad token is 401 on every route but `/auth/*`.
 - **Request ids:** every response has `X-Request-Id`. Send your own (8 to 100 safe characters) to follow one request
   through the logs and the audit log.
 - **Lists** are cursor-paginated: `?limit=20&cursor=<nextCursor from the last page>`. `nextCursor: null` means the end.
+  `total` counts the items matching the filters, across all pages.
 - **Time:** business rules use the shop clock, which the QA lab can move ahead. `GET /qa/clock` shows it.
 
 ## Errors
@@ -136,6 +141,7 @@ Only while the QA lab is enabled (`QA_LAB_ENABLED`). All but the inbox are admin
 | `GET /qa/inbox?email=<address>` | the fake inbox: every email the shop "sent" there (verification links, order confirmations, refunds). Open to anyone for test addresses; the seeded demo accounts' mail is admin only |
 | `GET /qa/bugs`, `PUT /qa/bugs/:key { enabled }` | the planted bugs |
 | `GET /qa/clock`, `PUT /qa/clock { offsetSeconds }` | move the shop clock ahead; 0 resets it |
+| `POST /qa/fixtures/shopper` | a confirmed, signed-in test account in one call, with an address, cart lines, store credit and points as asked (or a support/warehouse account); returns its password and a Bearer token |
 | `POST /qa/sweeps` | run the time-based rules now (payment timeouts, label expiry, order completion, points expiry, webhooks) |
 | `GET /qa/webhooks?orderId=`, `POST /qa/webhooks/:id/redeliver` | payment events, and resending one to test that a repeat changes nothing |
 

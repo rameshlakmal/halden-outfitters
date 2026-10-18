@@ -246,6 +246,18 @@ describe('bearer tokens', () => {
     expect(res.statusCode).toBe(401);
   });
 
+  it('refuses a bad token even where guests are welcome, but not on the sign-in routes', async () => {
+    const bad = 'Bearer not-a-real-token-at-all-0123456789';
+    for (const url of ['/cart', '/products', '/categories']) {
+      const res = await api('GET', url, bad);
+      expect(res.statusCode, url).toBe(401);
+      expect(json(res).code).toBe('unauthenticated');
+    }
+    expect(json(await api('GET', '/auth/session', bad))).toEqual({ customer: null });
+    const res = await api('POST', '/auth/token', bad, { email: 'maya@halden.test', password: PASSWORDS.shopper });
+    expect(res.statusCode).toBe(201);
+  });
+
   it('shows in the session list and ends with logout', async () => {
     const { accessToken } = await getToken();
     const sessions = json(await api('GET', '/account/sessions', `Bearer ${accessToken}`));

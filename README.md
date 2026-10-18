@@ -116,7 +116,8 @@ rate limits (`429` with `Retry-After`), optimistic locking on staff product edit
 writes refused by the Origin check, and the order state machine (`allowedActions` on every order).
 
 The [API docs](https://halden-api.vercel.app/api/v1/docs/) list every route, field and error, and can send
-requests for you. The written guide is [docs/API.md](docs/API.md).
+requests for you. The written guide is [docs/API.md](docs/API.md); for automation practice, see the
+[API testing guide](docs/API-TESTING.md) (66 scenarios, test data, a Postman collection).
 
 </details>
 
