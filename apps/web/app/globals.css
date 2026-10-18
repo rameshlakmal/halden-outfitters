@@ -516,3 +516,76 @@
     animation: none !important;
   }
 }
+
+/*
+  BrandLoader: the ridge draws (pathLength 1, so the dash maths is 0..1), the peaks fill, the sun pops, all on one
+  2.4 s loop. It fades in after 150 ms so a fast page never flashes it. Reduced motion shows the still logo.
+*/
+.brand-loader {
+  color: var(--accent);
+  animation: loader-in 200ms ease 150ms both;
+}
+.brand-loader .ridge {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 8;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: loader-draw 2.4s ease-in-out infinite;
+}
+.brand-loader .peaks {
+  fill: currentColor;
+  opacity: 0;
+  animation: loader-fill 2.4s ease-in-out infinite;
+}
+.brand-loader .sun {
+  fill: currentColor;
+  transform-box: view-box;
+  transform-origin: 164px 52px;
+  transform: scale(0);
+  animation: loader-sun 2.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .brand-loader .ridge {
+    display: none;
+  }
+  .brand-loader .peaks,
+  .brand-loader .sun {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes loader-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes loader-draw {
+  45%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes loader-fill {
+  40% {
+    opacity: 0;
+  }
+  60%,
+  85% {
+    opacity: 1;
+  }
+}
+@keyframes loader-sun {
+  45% {
+    transform: scale(0);
+  }
+  60% {
+    transform: scale(1.15);
+  }
+  70%,
+  88% {
+    transform: scale(1);
+  }
+}

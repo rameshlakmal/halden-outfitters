@@ -52,3 +52,21 @@ export function AvailabilityNote({ availability }: { availability: ProductCard['
 export function Skeleton({ className = '' }: { className?: string }) {
   return <div className={`skeleton rounded-[2px] ${className}`} aria-hidden="true" />;
 }
+
+// The mountains logo from icon.svg, split so the loader can draw the ridge and then raise the sun.
+const RIDGE =
+  'M254.88,195.92l-54.56-92.08A15.87,15.87,0,0,0,186.55,96h0a15.85,15.85,0,0,0-13.76,7.84l-15.64,26.39a4,4,0,0,0,0,4.07l26.8,45.47a8.13,8.13,0,0,1-1.89,10.55,8,8,0,0,1-11.8-2.26L101.79,71.88a16,16,0,0,0-27.58,0L1.11,195.94a8,8,0,0,0,1,9.52A8.23,8.23,0,0,0,8.23,208H247.77a8.29,8.29,0,0,0,6.09-2.55A8,8,0,0,0,254.88,195.92Z';
+
+/** The loading screen: the logo's ridge draws itself, fills, and the sun pops in (CSS in globals.css). */
+export function BrandLoader({ label = 'Loading', className = '' }: { label?: string; className?: string }) {
+  return (
+    <div role="status" className={`grid place-items-center ${className}`}>
+      <svg viewBox="0 -8 256 256" className="brand-loader size-14" aria-hidden="true">
+        <path className="ridge" pathLength={1} d={RIDGE} />
+        <path className="peaks" d={`${RIDGE}M64.43,120,88,80l23.57,40Z`} />
+        <circle className="sun" cx="164" cy="52" r="24" />
+      </svg>
+      <span className="sr-only">{label}</span>
+    </div>
+  );
+}

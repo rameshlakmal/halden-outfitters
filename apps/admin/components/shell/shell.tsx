@@ -8,7 +8,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { type ReactNode, useEffect, useState } from 'react';
 import { post } from '@/lib/api';
 import { isStaff, ROLE_LABEL, useSession } from '@/lib/staff';
-import { Button, Skeleton } from '../kit';
+import { BrandLoader, Button } from '../kit';
 import { CommandPalette, useCommandPalette } from './command';
 import { Logo, SideNav } from './sidebar';
 import { useTheme } from './theme';
@@ -34,11 +34,7 @@ export function Shell({ children }: { children: ReactNode }) {
   };
 
   if (!me) {
-    return (
-      <div className="grid min-h-dvh place-items-center">
-        <Skeleton className="h-10 w-48" />
-      </div>
-    );
+    return <BrandLoader label="Loading the admin" className="min-h-dvh" />;
   }
   if (!isStaff(me.role)) {
     return (
