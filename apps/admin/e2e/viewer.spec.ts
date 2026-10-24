@@ -18,11 +18,11 @@ test('the viewer sees the safe sections and a read-only banner', async ({ page }
 
 test('the viewer reads the QA lab but switching a bug on is refused', async ({ page }) => {
   await signIn(page, 'viewer@halden.test', '/qa');
-  const bug = page.getByTestId('bug-coupon_twice');
-  await expect(bug.getByRole('switch')).toHaveAttribute('aria-checked', 'false');
+  const bug = page.getByTestId('bug-coupon_twice').getByRole('switch');
+  await expect(bug).not.toBeChecked();
   await expect(page.getByRole('heading', { name: 'Payment webhooks' })).toHaveCount(0);
 
-  await bug.getByRole('switch').click();
+  await bug.click();
   await expect(page.getByText(/read-only demo account/)).toBeVisible();
-  await expect(bug.getByRole('switch')).toHaveAttribute('aria-checked', 'false');
+  await expect(bug).not.toBeChecked();
 });
