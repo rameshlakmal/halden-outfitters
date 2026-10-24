@@ -1,7 +1,8 @@
 'use client';
 // The admin frame: the grouped sidebar on wide screens (a slide-in menu on phones), the top bar with search,
-// theme and account, and the gate. Signed out goes to sign-in; a customer account sees that this is for staff.
-import { List, MagnifyingGlass, Moon, SignOut, Sun, X } from '@phosphor-icons/react';
+// theme and account, and the gate. Signed out goes to sign-in; a customer account sees that this is for staff;
+// the read-only viewer gets a banner saying it can look but not change anything.
+import { Eye, List, MagnifyingGlass, Moon, SignOut, Sun, X } from '@phosphor-icons/react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useQueryClient } from '@tanstack/react-query';
 import { usePathname, useRouter } from 'next/navigation';
@@ -119,6 +120,17 @@ export function Shell({ children }: { children: ReactNode }) {
             </Button>
           </div>
         </header>
+
+        {me.role === 'viewer' && (
+          <p
+            role="status"
+            className="flex items-center gap-2 border-b border-line bg-brand-soft px-4 py-2 text-sm sm:px-8"
+          >
+            <Eye className="size-4 shrink-0" />
+            Read-only demo account: look around freely. Saving anything is refused, and sections with customer details
+            are hidden.
+          </p>
+        )}
 
         <main id="main" className="grid gap-4 px-4 py-6 sm:px-8">
           {children}

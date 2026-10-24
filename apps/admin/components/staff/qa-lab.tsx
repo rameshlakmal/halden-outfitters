@@ -2,6 +2,7 @@
 // The QA lab: switch planted bugs on and off, move the shop clock, run the time-based rules now, and replay
 // payment webhooks. Each bug breaks exactly one rule in qa/rules.sql.
 import { SHOP_URL } from '@/lib/shop';
+import { useSession } from '@/lib/staff';
 import { ArrowClockwise, EnvelopeSimple } from '@phosphor-icons/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useEffect, useState } from 'react';
@@ -22,6 +23,7 @@ const PHASE_LABEL: Record<number, string> = {
 };
 
 export function QaLab() {
+  const { data: me } = useSession();
   return (
     <>
       <PageHead
@@ -45,7 +47,8 @@ export function QaLab() {
           <Sweeps />
         </div>
       </div>
-      <Webhooks />
+      {/* Webhook payloads are for admins only, not the public viewer login. */}
+      {me?.role === 'admin' && <Webhooks />}
     </>
   );
 }

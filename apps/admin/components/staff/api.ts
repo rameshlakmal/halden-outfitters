@@ -61,15 +61,16 @@ export const SECTION_ROLES: Record<Section, Role[]> = {
   orders: ['support', 'warehouse', 'admin'],
   warehouse: ['warehouse', 'admin'],
   returns: ['support', 'warehouse', 'admin'],
-  products: ['support', 'warehouse', 'admin'],
+  products: ['support', 'warehouse', 'admin', 'viewer'],
   reviews: ['support', 'admin'],
   customers: ['support', 'admin'],
-  settings: ['admin'],
+  settings: ['admin', 'viewer'],
   audit: ['admin'],
-  qa: ['admin'],
+  qa: ['admin', 'viewer'],
 };
 
-export const isStaff = (role: Role | undefined) => role === 'support' || role === 'warehouse' || role === 'admin';
+export const isStaff = (role: Role | undefined) =>
+  role === 'support' || role === 'warehouse' || role === 'admin' || role === 'viewer';
 export const can = (role: Role | undefined, section: Section) => !!role && SECTION_ROLES[section].includes(role);
 
 export const ROLE_LABEL: Record<Role, string> = {
@@ -77,6 +78,7 @@ export const ROLE_LABEL: Record<Role, string> = {
   support: 'Support',
   warehouse: 'Warehouse',
   admin: 'Admin',
+  viewer: 'Viewer (read-only)',
 };
 
 // ---------- requests ----------

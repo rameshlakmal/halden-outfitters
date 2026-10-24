@@ -244,17 +244,20 @@ unlimited. They need a reason and are written to the audit log.
 
 ### 3.10 Staff roles
 
-| Permission | customer | support | warehouse | admin |
-|---|---|---|---|---|
-| View any order | | ✓ | ✓ | ✓ |
-| Cancel order (up to packed) | own, before packing | ✓ | | ✓ |
-| Approve / reject return | | ✓ | | ✓ |
-| Pack, ship, mark delivered, receive return, grade items | | | ✓ | ✓ |
-| Goodwill refund | | ≤ 50.00 | | ✓ |
-| Products, prices, stock adjustments | | | stock only | ✓ |
-| Coupons, shipping rates, tax | | | | ✓ |
-| Staff accounts, QA lab | | | | ✓ |
+| Permission | customer | support | warehouse | admin | viewer |
+|---|---|---|---|---|---|
+| View any order | | ✓ | ✓ | ✓ | |
+| Cancel order (up to packed) | own, before packing | ✓ | | ✓ | |
+| Approve / reject return | | ✓ | | ✓ | |
+| Pack, ship, mark delivered, receive return, grade items | | | ✓ | ✓ | |
+| Goodwill refund | | ≤ 50.00 | | ✓ | |
+| Products, prices, stock adjustments | | | stock only | ✓ | view only |
+| Coupons, shipping rates, tax | | | | ✓ | view only |
+| Dashboard | | ✓ | ✓ | ✓ | initials instead of names |
+| Staff accounts, QA lab | | | | ✓ | QA lab: bugs and clock, view only |
 
+- The **viewer** is the public demo login (`viewer@halden.test`, password in the README). It sees only the sections
+  with no customer details, and the API refuses every write it sends, its own account and cart included.
 - Permissions are checked in services (`can(actor, 'refund.goodwill', order)`), not just by hiding buttons.
 - Every staff action writes `audit_log` (actor, action, entity, before/after JSON, request ID).
 - Product edits use **optimistic locking** (`version` column, `If-Match` header → `412` if someone else saved first).

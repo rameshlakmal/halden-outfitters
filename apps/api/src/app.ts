@@ -156,6 +156,15 @@ export async function buildApp({
     if (req.headers.authorization !== undefined && !req.user && !/^\/(auth|docs|internal)\//.test(url)) {
       throw new AppError('unauthenticated', 'That token is not valid any more. Sign in again.');
     }
+    // The viewer is a shared public login: it may read, sign in and sign out, and nothing else. Checked here once, so
+    // no route can forget it, not even the ones every signed-in account may use (cart, password, addresses).
+    const readOnly = req.method === 'GET' || req.method === 'HEAD' || /^\/auth\/(login|token|logout)$/.test(url);
+    if (req.user?.role === 'viewer' && !readOnly) {
+      throw new AppError(
+        'forbidden',
+        'This is a read-only demo account: you can look around, but not change anything.',
+      );
+    }
   });
 
   app.setErrorHandler((err: FastifyError, req, reply) => {

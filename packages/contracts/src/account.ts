@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { Email, Id, optionalText, text, Timestamp } from './common.ts';
 
-export const ROLES = ['customer', 'support', 'warehouse', 'admin'] as const;
+export const ROLES = ['customer', 'support', 'warehouse', 'admin', 'viewer'] as const;
 export type Role = (typeof ROLES)[number];
 
 export const PASSWORD_MIN = 10;

@@ -12,6 +12,7 @@ import {
   PRODUCTS,
   RATES,
   SIZED,
+  VIEWER,
   ZONES,
   zoneOf,
 } from './seed-data.js';
@@ -25,6 +26,7 @@ export async function seed(db: Db, passwords: SeedPasswords, opts: { orders?: bo
   const adminHash = await hashPassword(passwords.admin);
   const staffHash = await hashPassword(passwords.staff);
   const shopperHash = await hashPassword(passwords.shopper);
+  const viewerHash = await hashPassword(VIEWER.password);
 
   await db.tx(async (tx) => {
     const { rows: tables } = await tx.query<{ name: string }>(
@@ -160,10 +162,15 @@ export async function seed(db: Db, passwords: SeedPasswords, opts: { orders?: bo
         );
       }
     }
+    await tx.query(
+      `INSERT INTO customers (email, name, password_hash, role, email_verified_at, is_demo, created_at, updated_at)
+       VALUES ($1, $2, $3, 'viewer', now() - interval '60 days', true, now() - interval '60 days', now() - interval '60 days')`,
+      [VIEWER.email, VIEWER.name, viewerHash],
+    );
   });
 
   const orders = opts.orders === false ? 0 : await seedOrders(db);
-  return `Shop ready: ${CATEGORIES.length} categories, ${PRODUCTS.length} products, ${ACCOUNTS.length} accounts, ${COUNTRIES.length} countries, ${COUPONS.length} coupons, ${orders} orders.`;
+  return `Shop ready: ${CATEGORIES.length} categories, ${PRODUCTS.length} products, ${ACCOUNTS.length + 1} accounts, ${COUNTRIES.length} countries, ${COUPONS.length} coupons, ${orders} orders.`;
 }
 
 export function seedPasswordsFromEnv(env = process.env): SeedPasswords {

@@ -503,7 +503,7 @@ export class OrderService {
       'SELECT o.*, c.name AS country_name FROM orders o JOIN countries c ON c.code = o.ship_country WHERE o.id = $1',
       [orderId],
     );
-    const isStaff = user.role !== 'customer';
+    const isStaff = user.role !== 'customer' && user.role !== 'viewer'; // the public viewer login sees no orders
     if (!o || (o.customer_id !== user.id && !isStaff)) throw notFound('That order');
 
     const [lines, payment, events, refunds, returns] = await Promise.all([

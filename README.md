@@ -166,10 +166,14 @@ its sections:
 | **Products** | add products with photos, edit details and prices (with optimistic locking), restock and adjust stock | all staff (add: admin) |
 | **Coupons** | create, schedule, limit and switch coupons on or off | admin |
 | **Customers, settings, audit log** | roles, shipping rates, the tax rate, and every staff action with its before and after | admin (customers: support too) |
-| **QA lab** | switch planted bugs, move the shop clock, run the time-based sweeps, replay payment webhooks | admin |
+| **QA lab** | switch planted bugs, move the shop clock, run the time-based sweeps, replay payment webhooks | admin (viewer: read only) |
 
-Press **Ctrl+K** anywhere to jump to a section or open an order by its number. Staff accounts are not public: ask
-the owner of the instance you test (see [demo accounts](#-test-data-you-can-use)).
+Press **Ctrl+K** anywhere to jump to a section or open an order by its number.
+
+**Just want to look around?** Sign in to the admin as `viewer@halden.test` with the password `just-looking-around`.
+It's read-only: you see the dashboard, products, coupons, settings and the QA lab's bug list, nothing with customer
+details, and every save is refused. The other staff accounts are not public: ask the owner of the instance you test
+(see [demo accounts](#-test-data-you-can-use)).
 
 </details>
 
@@ -224,6 +228,7 @@ passwords (`SEED_*_PASSWORD`) and can change them without losing data: `npm run 
 | Support | `support@halden.test` | orders, cancellations, return decisions, goodwill up to 50.00, reviews, customers |
 | Warehouse | `warehouse@halden.test` | pack, ship, deliver, receive and grade returns, stock |
 | Shoppers | `maya@`, `jonas@`, `ari@halden.test` | order history, a delivered order to return, reviews |
+| Viewer (public) | `viewer@halden.test`, password `just-looking-around` | read the staff admin's sections without customer details; change nothing |
 
 **Test cards** (any future expiry, any CVC):
 

@@ -382,6 +382,13 @@ export const ACCOUNTS: SeedAccount[] = [
   { email: 'ari@halden.test', name: 'Ari Takahashi', role: 'customer', staff: false },
 ];
 
+/**
+ * The public demo login for the staff admin. Its role can read the sections with no customer details and change
+ * nothing, so its password is published in the README on purpose. Like the others it is a demo account: it never
+ * locks and its mail stays out of the public inbox.
+ */
+export const VIEWER = { email: 'viewer@halden.test', name: 'Demo viewer', password: 'just-looking-around' };
+
 export const ADDRESSES: Record<
   string,
   { name: string; line1: string; city: string; region?: string; postcode: string; country: string }[]

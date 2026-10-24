@@ -98,7 +98,8 @@ const money = (i: ItemRow) => ({
   pointsEarned: i.points_earned,
 });
 
-const isStaff = (u: CurrentUser) => u.role !== 'customer';
+// The viewer is not staff here: its login is public, and orders and returns carry names and addresses.
+const isStaff = (u: CurrentUser) => u.role !== 'customer' && u.role !== 'viewer';
 const day = 86400_000;
 
 /** Staff don't approve, grade or pay out on their own orders: the four-eyes rule for money leaving the shop. */

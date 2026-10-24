@@ -29,22 +29,24 @@ export type Section =
 
 const ALL_STAFF: Role[] = ['support', 'warehouse', 'admin'];
 
+// The viewer is the public read-only demo login: only the sections that show no customer's details.
 export const SECTION_ROLES: Record<Section, Role[]> = {
-  dashboard: ALL_STAFF,
+  dashboard: [...ALL_STAFF, 'viewer'],
   orders: ALL_STAFF,
   warehouse: ['warehouse', 'admin'],
   returns: ALL_STAFF,
   reviews: ['support', 'admin'],
-  products: ALL_STAFF,
-  coupons: ['admin'],
+  products: [...ALL_STAFF, 'viewer'],
+  coupons: ['admin', 'viewer'],
   banners: ['admin'],
   customers: ['support', 'admin'],
-  settings: ['admin'],
+  settings: ['admin', 'viewer'],
   audit: ['admin'],
-  qa: ['admin'],
+  qa: ['admin', 'viewer'],
 };
 
-export const isStaff = (role: Role | undefined) => !!role && ALL_STAFF.includes(role);
+/** May open the admin at all: every staff role and the viewer. */
+export const isStaff = (role: Role | undefined) => !!role && (ALL_STAFF.includes(role) || role === 'viewer');
 export const can = (role: Role | undefined, section: Section) => !!role && SECTION_ROLES[section].includes(role);
 
 export const ROLE_LABEL: Record<Role, string> = {
@@ -52,6 +54,7 @@ export const ROLE_LABEL: Record<Role, string> = {
   support: 'Support',
   warehouse: 'Warehouse',
   admin: 'Admin',
+  viewer: 'Viewer (read-only)',
 };
 
 /** The signed-in account, or null. */

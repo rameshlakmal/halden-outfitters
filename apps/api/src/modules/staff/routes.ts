@@ -57,7 +57,7 @@ export const staffRoutes: FastifyPluginAsyncZod = async (app) => {
       },
     },
     async (req) => {
-      requireRole(req, 'support', 'warehouse', 'admin');
+      requireRole(req, 'support', 'warehouse', 'admin', 'viewer');
       return staff.products(
         { q: req.query.q, lowStock: req.query.lowStock },
         req.query.cursor ?? null,
@@ -98,7 +98,7 @@ export const staffRoutes: FastifyPluginAsyncZod = async (app) => {
       },
     },
     async (req, reply) => {
-      requireRole(req, 'support', 'warehouse', 'admin');
+      requireRole(req, 'support', 'warehouse', 'admin', 'viewer');
       const p = await staff.product(req.params.id);
       reply.header('etag', `"${p.version}"`);
       return p;
@@ -159,7 +159,7 @@ export const staffRoutes: FastifyPluginAsyncZod = async (app) => {
       },
     },
     async (req) => {
-      requireRole(req, 'support', 'warehouse', 'admin');
+      requireRole(req, 'support', 'warehouse', 'admin', 'viewer');
       await staff.product(req.params.id);
       return { items: await staff.movements(req.params.id) };
     },
@@ -184,8 +184,17 @@ export const staffRoutes: FastifyPluginAsyncZod = async (app) => {
       },
     },
     async (req) => {
-      requireRole(req, 'support', 'warehouse', 'admin');
-      return staff.dashboard(req.query.days, req.now);
+      const user = requireRole(req, 'support', 'warehouse', 'admin', 'viewer');
+      const data = await staff.dashboard(req.query.days, req.now);
+      if (user.role !== 'viewer') return data;
+      // The viewer login is public: recent orders show initials, never a shopper's name.
+      const initials = (name: string) =>
+        name
+          .split(/\s+/)
+          .filter(Boolean)
+          .map((w) => `${w[0]!.toUpperCase()}.`)
+          .join(' ');
+      return { ...data, recentOrders: data.recentOrders.map((o) => ({ ...o, customer: initials(o.customer) })) };
     },
   );
 
@@ -202,7 +211,7 @@ export const staffRoutes: FastifyPluginAsyncZod = async (app) => {
       },
     },
     async (req) => {
-      requireRole(req, 'admin');
+      requireRole(req, 'admin', 'viewer');
       return { items: await staff.coupons() };
     },
   );
@@ -251,7 +260,7 @@ export const staffRoutes: FastifyPluginAsyncZod = async (app) => {
       },
     },
     async (req) => {
-      requireRole(req, 'admin');
+      requireRole(req, 'admin', 'viewer');
       return { items: await staff.rates() };
     },
   );
@@ -284,7 +293,7 @@ export const staffRoutes: FastifyPluginAsyncZod = async (app) => {
       },
     },
     async (req) => {
-      requireRole(req, 'admin');
+      requireRole(req, 'admin', 'viewer');
       return { ratePercent: await staff.taxRate() };
     },
   );
