@@ -1,7 +1,3 @@
-
-
-https://github.com/user-attachments/assets/fd3de253-b4d2-4c7c-b0e8-b383a2d962fd
-
 <div align="center">
 
 # ⛰️ Halden Outfitters
@@ -19,6 +15,10 @@ It also hides **18 planted bugs** you can switch on, each one caught by exactly 
 [**🧪 Start testing**](#-pick-your-path)
 
 </div>
+
+### 🎬 See it in 40 seconds
+
+https://github.com/user-attachments/assets/fd3de253-b4d2-4c7c-b0e8-b383a2d962fd
 
 > [!NOTE]
 > Halden Outfitters is not a real store. Nothing is for sale, no email is ever sent, and payments go to
