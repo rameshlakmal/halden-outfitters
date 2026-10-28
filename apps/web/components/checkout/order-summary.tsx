@@ -2,7 +2,7 @@
 // What's being bought, with the coupon box and the money. Sticky beside the steps on wide screens; on phones a
 // collapsible bar above the steps that shows the total.
 import type { Cart, Quote } from '@halden/contracts';
-import { formatAmount, toCents } from '@halden/money';
+import { formatAmount, fromCents, toCents } from '@halden/money';
 import { CaretDown } from '@phosphor-icons/react';
 import Image from 'next/image';
 import { TotalsTable } from '../orders/totals';
@@ -82,7 +82,7 @@ export function OrderSummary({ cart, quote }: { cart: Cart; quote: Quote | undef
 }
 
 export function MobileSummary({ cart, quote }: { cart: Cart; quote: Quote | undefined }) {
-  const total = quote ? quote.totals.total : formatAmount(toCents(cart.subtotal) - toCents(cart.discount));
+  const total = quote ? quote.totals.total : fromCents(toCents(cart.subtotal) - toCents(cart.discount));
   return (
     <details className="group rounded-[2px] border border-line-strong bg-surface md:hidden">
       <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
