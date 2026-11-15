@@ -74,7 +74,7 @@ function Bugs() {
       </h2>
       {phases.map((phase) => (
         <div key={phase} className="grid gap-2">
-          <h3 className="text-[13px] font-bold text-ink-2">
+          <h3 className="text-[13px] font-semibold text-ink-2">
             Phase {phase}: {PHASE_LABEL[phase] ?? ''}
           </h3>
           <ul className="grid divide-y divide-line rounded-[var(--radius-field)] border border-line">
@@ -127,7 +127,7 @@ function BugRow({ bug: b }: { bug: Bug }) {
       <div className="flex items-start justify-between gap-3">
         <div className="grid min-w-0 gap-0.5">
           <p className="font-semibold">{b.title}</p>
-          <p className="font-mono text-[11px] text-ink-3">{b.key}</p>
+          <p className="font-mono text-[12px] text-ink-3">{b.key}</p>
         </div>
         <label className="flex min-h-9 shrink-0 cursor-pointer items-center gap-2 text-[13px] font-medium pointer-coarse:min-h-11">
           <span className={on ? 'text-danger' : 'text-ink-3'}>{on ? 'On' : 'Off'}</span>
@@ -222,7 +222,7 @@ function ClockPanel() {
         <ErrorBox error={q.error} retry={() => void q.refetch()} />
       ) : (
         <div className="grid gap-0.5">
-          <p className="text-[22px] font-bold tabular-nums" data-testid="shop-now">
+          <p className="text-[22px] font-semibold tabular-nums" data-testid="shop-now">
             {formatDateTime(q.data.now)}
           </p>
           <p className="text-[13px] text-ink-2">{offsetText(q.data.offsetSeconds)}</p>
@@ -311,7 +311,7 @@ function Sweeps() {
           ).map(([k, v]) => (
             <div key={k} className="contents">
               <dt className="text-ink-2">{k}</dt>
-              <dd className="text-right font-bold tabular-nums">{v}</dd>
+              <dd className="text-right font-semibold tabular-nums">{v}</dd>
             </div>
           ))}
         </dl>
@@ -396,7 +396,7 @@ function Webhooks() {
                 <Td className="whitespace-nowrap text-ink-2">{formatDateTime(e.createdAt)}</Td>
                 <Td>
                   <span className="font-semibold">{e.type}</span>
-                  <span className="block font-mono text-[11px] text-ink-3">{e.id}</span>
+                  <span className="block font-mono text-[12px] text-ink-3">{e.id}</span>
                 </Td>
                 <Td>{e.orderId ? <RowLink href={`/orders/${e.orderId}`}>#{e.orderId}</RowLink> : ''}</Td>
                 <Td className="text-right tabular-nums">{e.attempts}</Td>

@@ -35,7 +35,7 @@ function ReturnCard({ r }: { r: ReturnSummaryT }) {
       </span>
       <span className="flex items-center justify-between gap-3 sm:justify-end">
         {DONE.includes(r.status) && (
-          <span className="text-lg font-bold tabular-nums">{formatAmount(r.refundTotal)}</span>
+          <span className="text-lg font-semibold tabular-nums">{formatAmount(r.refundTotal)}</span>
         )}
         <CaretRight
           weight="bold"

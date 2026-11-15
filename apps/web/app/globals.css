@@ -109,8 +109,6 @@
   --color-glass: var(--glass);
   --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  --radius-card: 28px;
-  --radius-field: 14px;
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --shadow-soft: 0 1px 2px hsl(var(--shadow) / 0.06), 0 8px 24px -12px hsl(var(--shadow) / 0.18);
   --shadow-lift: 0 2px 4px hsl(var(--shadow) / 0.06), 0 22px 48px -20px hsl(var(--shadow) / 0.32);
@@ -152,7 +150,7 @@
   }
   h3 {
     font-stretch: 85%;
-    font-weight: 700;
+    font-weight: 600;
   }
   [hidden] {
     display: none !important;
@@ -182,7 +180,7 @@
     contain-intrinsic-size: auto 720px;
   }
 
-  /* Text links: cobalt, never underlined. On hover the colour deepens and a trailing icon nudges forward. */
+  /* Text links: signal orange, never underlined. On hover the colour deepens and a trailing icon nudges forward. */
   .link {
     color: var(--accent);
     font-weight: 600;
@@ -245,36 +243,12 @@
   }
 }
 
-/*
-  Scroll reveal with CSS scroll-driven animations: no JavaScript, runs off the main thread where supported.
-  Browsers without animation-timeline simply show the content.
-*/
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
-    .reveal {
-      animation: reveal linear both;
-      animation-timeline: view();
-      animation-range: entry 0% entry 55%;
-    }
-  }
-}
-@keyframes reveal {
-  from {
-    opacity: 0;
-    transform: translateY(28px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 /* List items, toasts and swapped labels: they ease in when they first appear (@starting-style, no JS). */
 @media (prefers-reduced-motion: no-preference) {
   .enter {
     transition:
       opacity 260ms ease,
-      transform 420ms var(--ease-spring);
+      transform 420ms var(--ease-out-expo);
   }
   @starting-style {
     .enter {
@@ -283,7 +257,7 @@
     }
   }
   .swap-in {
-    animation: swap-in 320ms var(--ease-spring) both;
+    animation: swap-in 320ms var(--ease-out-expo) both;
   }
 }
 @keyframes swap-in {
@@ -291,25 +265,6 @@
     opacity: 0;
     transform: translateY(10px);
   }
-}
-:root {
-  --ease-spring: linear(
-    0,
-    0.009,
-    0.035 2.1%,
-    0.141 4.4%,
-    0.723 12.9%,
-    0.938 16.7%,
-    1.017 20.4%,
-    1.067 24.1%,
-    1.073 26.4%,
-    1.064 29.2%,
-    1.006 37.6%,
-    0.99 42.7%,
-    0.997 53.2%,
-    1.001 66.6%,
-    1
-  );
 }
 
 /* Grid reflow on filter changes: cards that stay glide to their new place (React <ViewTransition>). */

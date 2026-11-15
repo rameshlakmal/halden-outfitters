@@ -34,12 +34,12 @@ export default async function ProductPage({ params }: Props) {
   const details = product.details;
 
   return (
-    <div className="mx-auto max-w-[1400px] px-[var(--gutter)] pt-8 ">
+    <div className="mx-auto max-w-[1400px] px-[var(--gutter)] pt-8">
       <nav aria-label="Breadcrumb" className="mb-6">
         <Link
           href={`/shop/${product.category.slug}`}
           transitionTypes={['nav-back']}
-          className="inline-flex items-center gap-1.5 rounded-[2px] py-1 pr-3 text-[12px] font-bold tracking-[0.08em] text-ink-2 uppercase hover:text-accent pointer-coarse:min-h-11"
+          className="inline-flex items-center gap-1.5 rounded-[2px] py-1 pr-3 text-[12px] font-semibold text-ink-2 hover:text-accent pointer-coarse:min-h-11"
         >
           <ArrowLeft className="size-4" /> {product.category.name}
         </Link>
@@ -87,7 +87,7 @@ export default async function ProductPage({ params }: Props) {
       </div>
 
       <section
-        className="below-fold reveal mt-20 grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] lg:gap-16"
+        className="below-fold mt-20 grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] lg:gap-16"
         aria-labelledby="about"
       >
         <div className="grid content-start gap-4">
@@ -114,7 +114,7 @@ export default async function ProductPage({ params }: Props) {
       <LazyReviews slug={product.slug} productName={product.name} sized={product.sized} />
 
       {product.related.length > 0 && (
-        <section className="below-fold reveal mt-24" aria-labelledby="related">
+        <section className="below-fold mt-24" aria-labelledby="related">
           <div className="mb-8 flex items-end justify-between gap-4">
             <h2 id="related" className="text-2xl font-semibold tracking-tight">
               More {product.category.name.toLowerCase()}

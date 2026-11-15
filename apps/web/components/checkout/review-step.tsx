@@ -164,7 +164,7 @@ function Block({ title, onEdit, children }: { title: string; onEdit: () => void;
         <button
           type="button"
           onClick={onEdit}
-          className="link min-h-9 text-[12px] font-bold tracking-[0.06em] uppercase pointer-coarse:min-h-11"
+          className="link min-h-9 text-[12px] font-semibold pointer-coarse:min-h-11"
           aria-label={`Change ${title.toLowerCase()}`}
         >
           Change

@@ -37,7 +37,7 @@ export function OrderCard({ order: o }: { order: OrderSummary }) {
           />
         ))}
         {more > 0 && (
-          <span className="grid size-14 place-items-center rounded-[2px] border border-line text-[13px] font-bold text-ink-2">
+          <span className="grid size-14 place-items-center rounded-[2px] border border-line text-[13px] font-semibold text-ink-2">
             +{more}
           </span>
         )}
@@ -52,7 +52,7 @@ export function OrderCard({ order: o }: { order: OrderSummary }) {
         </span>
       </span>
       <span className="flex items-center justify-between gap-3 sm:justify-end">
-        <span className="text-lg font-bold tabular-nums">{formatAmount(o.total)}</span>
+        <span className="text-lg font-semibold tabular-nums">{formatAmount(o.total)}</span>
         <CaretRight
           weight="bold"
           className="size-5 text-ink-3 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-ink motion-reduce:transition-none"
@@ -140,7 +140,7 @@ export function LatestOrders() {
       description="Your most recent orders."
       action={
         items.length > 0 ? (
-          <Link href="/account/orders" className="link text-[12px] font-bold tracking-[0.08em] uppercase">
+          <Link href="/account/orders" className="link text-[12px] font-semibold">
             All orders
           </Link>
         ) : undefined

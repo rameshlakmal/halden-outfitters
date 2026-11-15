@@ -91,7 +91,7 @@ export function DeliveryStep({
                 <button
                   type="button"
                   onClick={() => setEditing(true)}
-                  className="link mt-1 inline-flex items-center gap-1.5 justify-self-start text-[13px] font-bold tracking-[0.06em] uppercase"
+                  className="link mt-1 inline-flex items-center gap-1.5 justify-self-start text-[13px] font-semibold"
                 >
                   <PencilSimple className="size-4" /> Edit
                 </button>

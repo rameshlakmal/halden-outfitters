@@ -11,7 +11,7 @@ export function Logo() {
     <Link
       href="/"
       prefetch={false}
-      className="flex items-center gap-2.5 px-2.5 py-1 text-[17px] font-bold"
+      className="flex items-center gap-2.5 px-2.5 py-1 text-[17px] font-semibold"
       aria-label="Halden admin, dashboard"
     >
       <Mountains weight="fill" className="size-6 text-accent-text" />
@@ -41,19 +41,16 @@ export function SideNav({ role, onNavigate }: { role: Role; onNavigate?: () => v
                   href={item.href}
                   onClick={onNavigate}
                   aria-current={active ? 'page' : undefined}
-                  className={`flex items-center gap-2.5 rounded-full px-3 py-2 text-[14.5px] transition-colors ${
+                  className={`flex items-center gap-2.5 rounded-[var(--radius-field)] px-3 py-2 text-[14px] transition-colors ${
                     active
-                      ? 'bg-brand-soft font-semibold text-accent-text'
+                      ? 'bg-surface-2 font-medium text-ink shadow-[inset_0_0_0_1px_var(--line)]'
                       : 'text-ink-2 hover:bg-surface-2 hover:text-ink'
                   }`}
                 >
-                  <item.icon className="size-[18px] shrink-0" weight={active ? 'fill' : 'regular'} />
+                  <item.icon className="size-[18px] shrink-0" weight="regular" />
                   {item.label}
                   {n > 0 && (
-                    <span
-                      className="tabular ml-auto rounded-full bg-accent px-1.5 py-px text-[11.5px] text-accent-ink"
-                      aria-label={`${n} open`}
-                    >
+                    <span className="tabular ml-auto text-[12px] text-ink-3" aria-label={`${n} open`}>
                       {n}
                     </span>
                   )}

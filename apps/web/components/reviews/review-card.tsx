@@ -6,7 +6,7 @@ import { FIT_LABEL } from '@/lib/reviews';
 import { StarRow } from './stars';
 
 const ACTION =
-  'press inline-flex min-h-9 items-center gap-1.5 rounded-[2px] px-2.5 text-[12px] font-bold tracking-[0.06em] uppercase pointer-coarse:min-h-11';
+  'press inline-flex min-h-9 items-center gap-1.5 rounded-[2px] px-2.5 text-[12px] font-semibold pointer-coarse:min-h-11';
 
 export function ReviewCard({
   review,
@@ -38,7 +38,7 @@ export function ReviewCard({
           <SealCheck weight="fill" className="size-4 text-accent" aria-hidden="true" /> Verified buyer
         </span>
         {review.fit && <span className="text-ink-2">Fit: {FIT_LABEL[review.fit]}</span>}
-        {review.mine && <span className="font-bold tracking-[0.08em] text-accent uppercase">Your review</span>}
+        {review.mine && <span className="font-semibold text-accent">Your review</span>}
       </div>
       <div className="-ml-2.5 flex flex-wrap items-center gap-1">
         {!review.mine && (

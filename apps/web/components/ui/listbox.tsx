@@ -104,9 +104,7 @@ export function Listbox({
           open ? 'border-ink bg-ink text-bg' : 'border-line-strong bg-surface text-ink hover:bg-surface-2'
         }`}
       >
-        <span className={`text-[12px] font-bold tracking-[0.08em] uppercase ${open ? 'opacity-70' : 'text-ink-3'}`}>
-          {label}
-        </span>
+        <span className={`text-[12px] font-semibold ${open ? 'opacity-70' : 'text-ink-3'}`}>{label}</span>
         <span className="font-semibold">{options[selected]?.label}</span>
         <CaretDown
           weight="bold"
@@ -137,7 +135,7 @@ export function Listbox({
               onClick={() => pick(i)}
               className={`flex cursor-pointer items-center justify-between gap-6 border-l-[3px] px-3.5 py-2.5 text-sm whitespace-nowrap ${
                 i === active ? 'border-accent bg-surface-2' : 'border-transparent'
-              } ${i === selected ? 'font-bold' : ''}`}
+              } ${i === selected ? 'font-semibold' : ''}`}
             >
               {o.label}
               {i === selected && <Check weight="bold" className="size-4 text-accent" aria-hidden="true" />}

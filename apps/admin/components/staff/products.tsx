@@ -460,7 +460,7 @@ function Movements({ id }: { id: string }) {
         <ol className="grid divide-y divide-line text-[13px]">
           {q.data.items.map((m, i) => (
             <li key={i} className="grid grid-cols-[52px_minmax(0,1fr)] gap-2 py-1.5">
-              <span className={`text-right font-bold tabular-nums ${m.change < 0 ? 'text-danger' : ''}`}>
+              <span className={`text-right font-semibold tabular-nums ${m.change < 0 ? 'text-danger' : ''}`}>
                 {m.change > 0 ? '+' : ''}
                 {m.change}
               </span>

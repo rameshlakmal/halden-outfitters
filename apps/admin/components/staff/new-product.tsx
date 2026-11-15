@@ -119,7 +119,7 @@ export function NewProduct() {
   const label = 'grid gap-1.5 text-[13px] font-medium';
   const field = (k: string, cls = inputClass) => (fields[k] ? `${cls} border-danger` : cls);
   const msg = (k: string) =>
-    fields[k] ? <span className="text-[12.5px] font-normal text-danger">{fields[k]}</span> : null;
+    fields[k] ? <span className="text-[13px] font-normal text-danger">{fields[k]}</span> : null;
   const photoError = Object.entries(fields).find(([k]) => k.startsWith('images'))?.[1];
 
   return (
@@ -322,7 +322,7 @@ export function NewProduct() {
                   </div>
                 </div>
               ))}
-            {photoError && <span className="text-[12.5px] text-danger">{photoError}</span>}
+            {photoError && <span className="text-[13px] text-danger">{photoError}</span>}
           </Panel>
         </div>
 

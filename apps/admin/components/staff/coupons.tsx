@@ -104,7 +104,7 @@ export function Coupons() {
                   {c.maxUses !== null && <span className="text-ink-3"> / {c.maxUses}</span>}
                 </Td>
                 <Td>
-                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${s.tone}`}>{s.label}</span>
+                  <span className={`rounded-[2px] px-2.5 py-0.5 text-xs font-medium ${s.tone}`}>{s.label}</span>
                 </Td>
                 <Td className="text-right whitespace-nowrap">
                   <CouponSwitch coupon={c} />
@@ -197,7 +197,7 @@ function CouponForm({ coupon: c, onClose }: { coupon: Coupon | null; onClose: ()
 
   const label = 'grid gap-1.5 text-[13px] font-medium';
   const fieldError = (name: string) =>
-    fields[name] ? <span className="text-[12.5px] font-normal text-danger">{fields[name]}</span> : null;
+    fields[name] ? <span className="text-[13px] font-normal text-danger">{fields[name]}</span> : null;
   const invalid = (name: string) => (fields[name] ? `${inputClass} border-danger` : inputClass);
 
   return (
@@ -246,7 +246,7 @@ function CouponForm({ coupon: c, onClose }: { coupon: Coupon | null; onClose: ()
           </label>
         )}
         {c && (
-          <p className="-mt-2 text-[12.5px] text-ink-3">
+          <p className="-mt-2 text-[13px] text-ink-3">
             Code, kind and value are fixed. Make a new coupon to change them.
           </p>
         )}

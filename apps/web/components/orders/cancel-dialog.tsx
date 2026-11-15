@@ -82,7 +82,7 @@ export function CancelDialog({ order, open, onClose }: { order: Order; open: boo
             The hold on your card is released straight away and nothing is charged.
           </p>
           <fieldset className="grid gap-2" aria-describedby={errors.reason ? 'cancel-reason-error' : undefined}>
-            <legend className="mb-2 text-[12px] font-bold tracking-[0.08em] uppercase">Why are you cancelling?</legend>
+            <legend className="mb-2 text-[12px] font-semibold">Why are you cancelling?</legend>
             {CUSTOMER_REASONS.map((r) => (
               <label
                 key={r}
@@ -106,7 +106,7 @@ export function CancelDialog({ order, open, onClose }: { order: Order; open: boo
             )}
           </fieldset>
           <div className="grid gap-1.5">
-            <label htmlFor="cancel-note" className="text-[12px] font-bold tracking-[0.08em] uppercase">
+            <label htmlFor="cancel-note" className="text-[12px] font-semibold">
               Note
               {reason !== 'other' && (
                 <span className="ml-1.5 font-semibold tracking-normal text-ink-3 normal-case">optional</span>

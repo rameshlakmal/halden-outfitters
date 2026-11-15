@@ -21,7 +21,7 @@ function StarPicker({ value, onChange, error }: { value: number; onChange: (n: n
   const shown = hover || value;
   return (
     <fieldset className="grid gap-1.5" aria-describedby={error ? `${name}-error` : undefined}>
-      <legend className="mb-1.5 text-[12px] font-bold tracking-[0.08em] uppercase">Your rating</legend>
+      <legend className="mb-1.5 text-[12px] font-semibold">Your rating</legend>
       <div className="flex items-center gap-3" onPointerLeave={() => setHover(0)}>
         <div className="flex">
           {[1, 2, 3, 4, 5].map((n) => (
@@ -168,14 +168,14 @@ export default function ReviewForm({
       </Field>
       {sized && (
         <fieldset className="grid gap-2">
-          <legend className="mb-1.5 text-[12px] font-bold tracking-[0.08em] uppercase">
+          <legend className="mb-1.5 text-[12px] font-semibold">
             How does it fit? <span className="font-semibold tracking-normal text-ink-3 normal-case">optional</span>
           </legend>
           <div className="flex flex-wrap gap-2">
             {(Object.keys(FIT_LABEL) as Fit[]).map((f) => (
               <label
                 key={f}
-                className={`press inline-flex min-h-11 cursor-pointer items-center rounded-[2px] border px-4 text-[13px] font-bold tracking-[0.06em] uppercase has-[:focus-visible]:outline-2 ${
+                className={`press inline-flex min-h-11 cursor-pointer items-center rounded-[2px] border px-4 text-[13px] font-semibold has-[:focus-visible]:outline-2 ${
                   draft.fit === f ? 'border-ink bg-ink text-bg' : 'border-line-strong hover:border-ink-3'
                 }`}
               >

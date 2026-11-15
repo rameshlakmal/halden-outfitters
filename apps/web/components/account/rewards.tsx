@@ -11,8 +11,8 @@ import { FormAlert } from '../ui/field';
 import { errorMessage } from './forms';
 import { Section } from './section';
 
-const big = 'text-4xl font-bold tracking-tight tabular-nums';
-const label = 'text-[12px] font-bold tracking-[0.08em] uppercase text-ink-2';
+const big = 'text-4xl font-semibold tracking-tight tabular-nums';
+const label = 'text-[12px] font-semibold text-ink-2';
 const n = (x: number) => x.toLocaleString('en-GB');
 
 function Loading() {
@@ -64,7 +64,7 @@ export function PointsPage() {
         </div>
         <div className="grid gap-1 bg-surface p-5">
           <span className={label}>Tier</span>
-          <span className="flex items-center gap-2 text-2xl font-bold">
+          <span className="flex items-center gap-2 text-2xl font-semibold">
             <Mountains
               weight={summit ? 'fill' : 'regular'}
               className={`size-6 ${summit ? 'text-accent' : 'text-ink-3'}`}
@@ -188,7 +188,7 @@ export function RewardsSummary() {
         >
           <Coins className="size-7 text-accent" />
           <span className="grid gap-0.5">
-            <span className="text-xl font-bold tabular-nums">{n(p.available)} points</span>
+            <span className="text-xl font-semibold tabular-nums">{n(p.available)} points</span>
             <span className="text-[14px] text-ink-2">
               {p.pending > 0 ? `${n(p.pending)} pending` : 'Available to spend'}
             </span>
@@ -201,7 +201,7 @@ export function RewardsSummary() {
           >
             <Wallet className="size-7 text-accent" />
             <span className="grid gap-0.5">
-              <span className="text-xl font-bold tabular-nums">{formatAmount(credit.data.balance)}</span>
+              <span className="text-xl font-semibold tabular-nums">{formatAmount(credit.data.balance)}</span>
               <span className="text-[14px] text-ink-2">Store credit</span>
             </span>
           </Link>

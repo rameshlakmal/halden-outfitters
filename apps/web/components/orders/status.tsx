@@ -17,7 +17,7 @@ const CHIP: Record<OrderStatus, string> = {
 };
 
 export const chipClass = (tone: string) =>
-  `inline-flex h-7 items-center rounded-[2px] border px-2.5 text-[11px] font-bold tracking-[0.08em] whitespace-nowrap uppercase ${tone}`;
+  `inline-flex h-7 items-center rounded-[2px] border px-2.5 text-[12px] font-semibold whitespace-nowrap ${tone}`;
 
 export function StatusChip({ status }: { status: OrderStatus }) {
   return <span className={chipClass(CHIP[status])}>{STATUS_LABEL[status]}</span>;
@@ -74,9 +74,7 @@ export function Timeline({ order }: { order: Order }) {
               >
                 {done ? <Check weight="bold" className="size-4" /> : <span className="size-1.5 bg-current" />}
               </span>
-              <span className={`text-[11px] font-bold tracking-[0.08em] uppercase ${done ? 'text-ink' : 'text-ink-3'}`}>
-                {STATUS_LABEL[s]}
-              </span>
+              <span className={`text-[12px] font-semibold ${done ? 'text-ink' : 'text-ink-3'}`}>{STATUS_LABEL[s]}</span>
               <span className="text-[12px] text-ink-3">{event ? formatDateTime(event.at) : ''}</span>
             </li>
           );

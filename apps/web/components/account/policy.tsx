@@ -24,7 +24,7 @@ function HelpLink({ href, children }: { href: string; children: ReactNode }) {
   return (
     <Link
       href={href}
-      className="inline-flex min-h-11 items-center rounded-[2px] px-4 text-[12px] font-bold tracking-[0.08em] text-ink uppercase hover:bg-surface-2 hover:text-accent"
+      className="inline-flex min-h-11 items-center rounded-[2px] px-4 text-[12px] font-semibold text-ink hover:bg-surface-2 hover:text-accent"
     >
       {children}
     </Link>

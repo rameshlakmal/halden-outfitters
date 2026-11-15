@@ -24,7 +24,7 @@ export function ReturnPolicy() {
       aria-label="Return policy"
       className="grid content-start gap-3 rounded-[2px] border border-line bg-surface p-5"
     >
-      <h2 className="text-[12px] font-bold tracking-[0.08em] uppercase">How returns work</h2>
+      <h2 className="text-[12px] font-semibold">How returns work</h2>
       <ul className="grid gap-2.5 text-[14px] leading-relaxed text-ink-2">
         <li>You have 30 days from delivery to start a return.</li>
         <li>

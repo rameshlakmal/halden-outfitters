@@ -241,7 +241,7 @@ export function Dialog({
 
 export function Kbd({ children }: { children: ReactNode }) {
   return (
-    <kbd className="inline-grid min-w-5 place-items-center rounded-[var(--radius-field)] border border-line bg-surface px-1 text-[11px] font-bold">
+    <kbd className="inline-grid min-w-5 place-items-center rounded-[var(--radius-field)] border border-line bg-surface px-1 text-[12px] font-semibold">
       {children}
     </kbd>
   );

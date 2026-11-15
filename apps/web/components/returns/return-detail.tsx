@@ -18,7 +18,7 @@ import { FormAlert } from '../ui/field';
 import { useToast } from '../ui/toast';
 import { ReturnChip } from './bits';
 
-const label = 'text-[12px] font-bold tracking-[0.08em] uppercase';
+const label = 'text-[12px] font-semibold';
 const FINAL = ['refunded', 'partially_refunded'];
 
 export function ReturnDetail({ id }: { id: string }) {
@@ -54,7 +54,7 @@ export function ReturnDetail({ id }: { id: string }) {
       <header className="grid gap-4">
         <Link
           href="/account/returns"
-          className="link inline-flex items-center gap-1.5 justify-self-start text-[12px] font-bold tracking-[0.08em] uppercase"
+          className="link inline-flex items-center gap-1.5 justify-self-start text-[12px] font-semibold"
         >
           <ArrowLeft weight="bold" className="size-4" /> All returns
         </Link>
@@ -214,7 +214,7 @@ function LabelCard({ code, expiresAt }: { code: string; expiresAt: string }) {
         <Tag weight="bold" className="size-5 text-accent" /> Your return label
       </p>
       <div className="flex flex-wrap items-center gap-3">
-        <span className="font-mono text-xl font-bold tracking-wide break-all select-all" data-testid="label-code">
+        <span className="font-mono text-xl font-semibold tracking-wide break-all select-all" data-testid="label-code">
           {code}
         </span>
         <Button
@@ -262,7 +262,7 @@ function Breakdown({ r, final }: { r: Return; final: boolean }) {
       ))}
       <div className="mt-1 flex items-baseline justify-between gap-4 border-t border-line pt-3">
         <dt className="font-semibold">{final ? 'Refunded' : 'Estimate'}</dt>
-        <dd className="text-xl font-bold tabular-nums" data-testid="return-total">
+        <dd className="text-xl font-semibold tabular-nums" data-testid="return-total">
           {formatAmount(total)}
         </dd>
       </div>

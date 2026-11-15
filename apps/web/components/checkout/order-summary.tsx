@@ -22,7 +22,7 @@ function Lines({ cart }: { cart: Cart }) {
               sizes="56px"
               className="size-14 rounded-[2px] bg-surface-2 object-cover"
             />
-            <span className="absolute -top-1.5 -right-1.5 grid h-5 min-w-5 place-items-center rounded-[2px] bg-ink px-1 text-[11px] font-bold text-bg tabular-nums">
+            <span className="absolute -top-1.5 -right-1.5 grid h-5 min-w-5 place-items-center rounded-[2px] bg-ink px-1 text-[12px] font-semibold text-bg tabular-nums">
               {l.qty}
             </span>
           </span>
@@ -86,11 +86,11 @@ export function MobileSummary({ cart, quote }: { cart: Cart; quote: Quote | unde
   return (
     <details className="group rounded-[2px] border border-line-strong bg-surface md:hidden">
       <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
-        <span className="flex items-center gap-2 text-[12px] font-bold tracking-[0.08em] uppercase">
+        <span className="flex items-center gap-2 text-[12px] font-semibold">
           Order summary
           <CaretDown weight="bold" className="size-4 transition-transform duration-200 group-open:rotate-180" />
         </span>
-        <span className="font-bold tabular-nums">{formatAmount(total)}</span>
+        <span className="font-semibold tabular-nums">{formatAmount(total)}</span>
       </summary>
       <div className="grid gap-5 border-t border-line px-4 pt-4 pb-5">
         <Lines cart={cart} />

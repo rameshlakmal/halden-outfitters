@@ -43,7 +43,7 @@ export function SearchButton() {
       >
         <MagnifyingGlass className="size-5" />
         <span className="hidden text-sm lg:inline">Search gear</span>
-        <kbd className="hidden rounded-[2px] border border-line bg-surface-2 px-1.5 py-0.5 font-sans text-[11px] text-ink-3 lg:inline">
+        <kbd className="hidden rounded-[2px] border border-line bg-surface-2 px-1.5 py-0.5 font-sans text-[12px] text-ink-3 lg:inline">
           Ctrl K
         </kbd>
       </button>
@@ -128,7 +128,7 @@ function Palette({ onDone }: { onDone: () => void }) {
           aria-activedescendant={items[active] ? `sr-${items[active].id}` : undefined}
           className="h-14 flex-1 bg-transparent text-base outline-none placeholder:text-ink-3"
         />
-        <kbd className="rounded-[2px] border border-line px-1.5 py-0.5 text-[11px] text-ink-3">Esc</kbd>
+        <kbd className="rounded-[2px] border border-line px-1.5 py-0.5 text-[12px] text-ink-3">Esc</kbd>
       </form>
       <ul id="search-results" role="listbox" className="max-h-[50vh] overflow-y-auto p-2">
         {q.trim().length >= 2 && results && items.length === 0 && (

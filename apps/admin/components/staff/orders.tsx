@@ -152,7 +152,7 @@ export function StaffOrderDetail({ id }: { id: string }) {
                 <tr key={l.productId}>
                   <Td>
                     <span className="font-semibold">{l.name}</span>
-                    {!l.returnable && <span className="ml-2 text-[11px] font-bold text-ink-3">Final sale</span>}
+                    {!l.returnable && <span className="ml-2 text-[12px] font-semibold text-ink-3">Final sale</span>}
                   </Td>
                   <Td className="text-ink-2">{l.sku}</Td>
                   <Td className="text-right tabular-nums">{l.qty}</Td>

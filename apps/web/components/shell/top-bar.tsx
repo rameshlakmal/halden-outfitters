@@ -38,7 +38,7 @@ export function TopBar() {
                 key={n.href}
                 href={n.href}
                 aria-current={current ? 'page' : undefined}
-                className={`px-3 py-2 text-[13px] font-bold tracking-[0.08em] uppercase transition-colors ${current ? 'text-accent' : 'text-ink hover:text-accent'}`}
+                className={`px-3 py-2 text-[13px] font-semibold transition-colors ${current ? 'text-accent' : 'text-ink hover:text-accent'}`}
               >
                 {n.label}
               </Link>
@@ -115,7 +115,7 @@ function StaffLink() {
   return (
     <a
       href={ADMIN_URL}
-      className="hidden h-10 items-center gap-1.5 rounded-[2px] px-3 text-[12px] font-bold tracking-[0.08em] text-ink uppercase transition-colors hover:bg-surface-2 hover:text-accent sm:flex"
+      className="hidden h-10 items-center gap-1.5 rounded-[2px] px-3 text-[12px] font-semibold text-ink transition-colors hover:bg-surface-2 hover:text-accent sm:flex"
     >
       <Briefcase className="size-4" />
       Staff
@@ -139,7 +139,7 @@ function AccountLink() {
       aria-label={me ? `Your account (${me.name})` : 'Sign in'}
     >
       {me ? (
-        <span className="grid size-8 place-items-center rounded-[2px] bg-ink text-[12px] font-bold tracking-[0.04em] text-bg">
+        <span className="grid size-8 place-items-center rounded-[2px] bg-ink text-[12px] font-semibold tracking-[0.04em] text-bg">
           {initials}
         </span>
       ) : (
@@ -176,7 +176,7 @@ function CartButton() {
       {count > 0 && (
         <span
           ref={badge}
-          className="absolute -top-0.5 -right-0.5 grid h-5 min-w-5 place-items-center rounded-[2px] bg-accent px-1 text-[11px] font-bold text-accent-ink tabular-nums"
+          className="absolute -top-0.5 -right-0.5 grid h-5 min-w-5 place-items-center rounded-[2px] bg-accent px-1 text-[12px] font-semibold text-accent-ink tabular-nums"
         >
           {count > 99 ? '99+' : count}
         </span>

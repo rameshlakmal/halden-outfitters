@@ -174,7 +174,7 @@ export function PaymentStep({
                   </span>
                   <button
                     type="button"
-                    className="link min-h-9 text-[12px] font-bold tracking-[0.06em] uppercase pointer-coarse:min-h-11"
+                    className="link min-h-9 text-[12px] font-semibold pointer-coarse:min-h-11"
                     aria-label={`Use test card ending ${t.number.slice(-4)}`}
                     onClick={() =>
                       set({
@@ -255,7 +255,7 @@ function PointsControl({
             <output
               aria-live="polite"
               data-testid="points-value"
-              className="min-w-24 text-center text-lg font-bold tabular-nums"
+              className="min-w-24 text-center text-lg font-semibold tabular-nums"
             >
               {value.toLocaleString('en-GB')}
             </output>
@@ -275,7 +275,7 @@ function PointsControl({
           {value < top && (
             <button
               type="button"
-              className="link min-h-9 text-[12px] font-bold tracking-[0.06em] uppercase pointer-coarse:min-h-11"
+              className="link min-h-9 text-[12px] font-semibold pointer-coarse:min-h-11"
               onClick={() => onChange(top)}
             >
               Use the most

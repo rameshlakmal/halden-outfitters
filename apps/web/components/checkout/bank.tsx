@@ -51,7 +51,7 @@ export function TestBank() {
     <div className="rise overflow-hidden rounded-[6px] border border-line-strong bg-surface font-sans normal-case shadow-[0_8px_28px_oklch(0_0_0/0.12)]">
       <div className="flex items-center justify-between gap-3 bg-[oklch(0.3_0.02_250)] px-5 py-3 text-[oklch(0.97_0_0)]">
         <span className="text-[15px] font-semibold tracking-normal">HaldenPay test bank</span>
-        <span className="rounded-[4px] border border-[oklch(0.97_0_0/0.4)] px-2 py-0.5 text-[11px] font-medium">
+        <span className="rounded-[4px] border border-[oklch(0.97_0_0/0.4)] px-2 py-0.5 text-[12px] font-medium">
           Test mode
         </span>
       </div>

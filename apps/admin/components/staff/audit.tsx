@@ -143,7 +143,7 @@ export function AuditLog() {
 function Json({ label, value }: { label: string; value: unknown }) {
   return (
     <div className="grid min-w-0 gap-1">
-      <p className="text-[11px] font-bold text-ink-2">{label}</p>
+      <p className="text-[12px] font-semibold text-ink-2">{label}</p>
       <pre className="max-h-64 overflow-auto rounded-[var(--radius-field)] border border-line bg-surface p-2 font-mono text-[12px] leading-relaxed">
         {value === null || value === undefined ? 'Nothing' : JSON.stringify(value, null, 2)}
       </pre>

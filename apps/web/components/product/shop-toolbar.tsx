@@ -93,7 +93,7 @@ export function ShopToolbar({
           <button
             type="button"
             onClick={clear}
-            className="press inline-flex h-10 items-center gap-1 px-3 text-[12px] font-bold tracking-[0.08em] text-ink-2 uppercase hover:text-accent"
+            className="press inline-flex h-10 items-center gap-1 px-3 text-[12px] font-semibold text-ink-2 hover:text-accent"
           >
             <X weight="bold" className="size-4" /> Clear filters
           </button>
@@ -106,12 +106,12 @@ export function ShopToolbar({
         <button
           type="button"
           onClick={() => sheet.current?.showModal()}
-          className="press inline-flex h-10 items-center gap-2 rounded-[2px] border border-line-strong bg-surface px-3.5 text-[12px] font-bold tracking-[0.08em] uppercase"
+          className="press inline-flex h-10 items-center gap-2 rounded-[2px] border border-line-strong bg-surface px-3.5 text-[12px] font-semibold"
         >
           <SlidersHorizontal weight="bold" className="size-4" />
           Filters
           {activeCount > 0 && (
-            <span className="grid size-5 place-items-center rounded-[2px] bg-accent text-[11px] text-accent-ink">
+            <span className="grid size-5 place-items-center rounded-[2px] bg-accent text-[12px] text-accent-ink">
               {activeCount}
             </span>
           )}
@@ -146,7 +146,7 @@ export function ShopToolbar({
             </SheetRow>
           </div>
           <fieldset className="grid gap-2">
-            <legend className="mb-2 text-[12px] font-bold tracking-[0.08em] text-ink-3 uppercase">Price</legend>
+            <legend className="mb-2 text-[12px] font-semibold text-ink-3">Price</legend>
             {PRICE_BANDS.map((b) => (
               <SheetRow
                 key={b.value}
@@ -163,14 +163,14 @@ export function ShopToolbar({
             type="button"
             onClick={clear}
             disabled={activeCount === 0}
-            className="press h-12 rounded-[2px] border border-line-strong text-[13px] font-bold tracking-[0.06em] uppercase disabled:opacity-40"
+            className="press h-12 rounded-[2px] border border-line-strong text-[13px] font-semibold disabled:opacity-40"
           >
             Clear
           </button>
           <button
             type="button"
             onClick={() => sheet.current?.close()}
-            className="press h-12 rounded-[2px] bg-accent text-[13px] font-bold tracking-[0.06em] text-accent-ink uppercase"
+            className="press h-12 rounded-[2px] bg-accent text-[13px] font-semibold text-accent-ink"
           >
             Show results
           </button>
@@ -186,7 +186,7 @@ function Chip({ href, active, children }: { href: string; active: boolean; child
       href={href}
       scroll={false}
       aria-current={active ? 'page' : undefined}
-      className={`press inline-flex h-10 shrink-0 items-center rounded-[2px] border px-4 text-[12px] font-bold tracking-[0.08em] whitespace-nowrap uppercase ${
+      className={`press inline-flex h-10 shrink-0 items-center rounded-[2px] border px-4 text-sm font-semibold whitespace-nowrap ${
         active ? 'border-ink bg-ink text-bg' : 'border-line-strong bg-surface text-ink hover:bg-surface-2'
       }`}
     >

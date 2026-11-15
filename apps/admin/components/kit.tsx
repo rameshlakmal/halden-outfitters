@@ -10,7 +10,7 @@ const BUTTON = {
 } as const;
 
 const buttonClass = (variant: keyof typeof BUTTON, size: 'md' | 'sm') =>
-  `inline-flex items-center justify-center gap-2 rounded-full font-semibold whitespace-nowrap transition-[background-color,transform] duration-150 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 ${
+  `inline-flex items-center justify-center gap-2 rounded-[var(--radius-field)] font-semibold whitespace-nowrap transition-[background-color,transform] duration-150 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 ${
     size === 'md' ? 'h-10 px-4 text-sm' : 'h-8 px-3 text-[13px]'
   } ${BUTTON[variant]}`;
 
@@ -55,7 +55,7 @@ const TAG = {
 export function Tag({ tone = 'neutral', children }: { tone?: keyof typeof TAG; children: ReactNode }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap ${TAG[tone]}`}
+      className={`inline-flex items-center rounded-[2px] px-2.5 py-0.5 text-xs font-medium whitespace-nowrap ${TAG[tone]}`}
     >
       {children}
     </span>
@@ -63,7 +63,7 @@ export function Tag({ tone = 'neutral', children }: { tone?: keyof typeof TAG; c
 }
 
 export function Skeleton({ className = '' }: { className?: string }) {
-  return <div aria-hidden className={`animate-pulse rounded-[var(--radius-field)] bg-surface-2 ${className}`} />;
+  return <div aria-hidden className={`rounded-[var(--radius-field)] bg-surface-2 ${className}`} />;
 }
 
 export function Empty({ title, children }: { title: string; children?: ReactNode }) {

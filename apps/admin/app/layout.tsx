@@ -1,4 +1,4 @@
-import { JetBrains_Mono, Outfit } from 'next/font/google';
+import { Archivo, JetBrains_Mono } from 'next/font/google';
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import { Providers } from '@/components/providers';
@@ -6,7 +6,7 @@ import { BOOT_SCRIPT } from '@/lib/theme';
 import './globals.css';
 
 // Self-hosted at build time: no request to Google at runtime.
-const outfit = Outfit({ subsets: ['latin'], variable: '--font-outfit', display: 'swap' });
+const archivo = Archivo({ subsets: ['latin'], variable: '--font-archivo', display: 'swap' });
 const jetbrains = JetBrains_Mono({ subsets: ['latin'], variable: '--font-jetbrains', display: 'swap' });
 
 export const metadata: Metadata = {
@@ -24,7 +24,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`${outfit.variable} ${jetbrains.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${archivo.variable} ${jetbrains.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: BOOT_SCRIPT }} />
       </head>

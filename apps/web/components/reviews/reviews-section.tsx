@@ -74,7 +74,7 @@ function Summary({
                   active ? 'bg-ink text-bg' : 'hover:bg-surface-2'
                 }`}
               >
-                <span className="font-bold tracking-[0.06em] uppercase">{n} star</span>
+                <span className="font-semibold">{n} star</span>
                 <span
                   className={`h-2 overflow-hidden rounded-[1px] ${active ? 'bg-bg/25' : 'bg-surface-2'}`}
                   aria-hidden="true"
@@ -92,7 +92,7 @@ function Summary({
       </ul>
       {summary.fit && fitTotal > 0 && (
         <div className="grid gap-2">
-          <h3 className="text-[12px] font-bold tracking-[0.08em] uppercase">How it fits</h3>
+          <h3 className="text-[12px] font-semibold">How it fits</h3>
           <ul className="grid gap-1 text-[13px] text-ink-2">
             {(Object.keys(FIT_LABEL) as Fit[]).map((f) => (
               <li key={f} className="flex justify-between gap-3">

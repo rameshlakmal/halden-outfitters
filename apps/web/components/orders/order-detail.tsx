@@ -18,7 +18,7 @@ import { shortId } from './order-list';
 import { StatusChip, Timeline } from './status';
 import { TotalsTable } from './totals';
 
-const label = 'text-[12px] font-bold tracking-[0.08em] uppercase';
+const label = 'text-[12px] font-semibold';
 
 export function paymentText(p: NonNullable<Order['payment']>): string {
   switch (p.status) {
@@ -94,7 +94,7 @@ export function OrderDetail({ id }: { id: string }) {
       <header className="grid gap-4">
         <Link
           href="/account/orders"
-          className="link inline-flex items-center gap-1.5 justify-self-start text-[12px] font-bold tracking-[0.08em] uppercase"
+          className="link inline-flex items-center gap-1.5 justify-self-start text-[12px] font-semibold"
         >
           <ArrowLeft weight="bold" className="size-4" /> All orders
         </Link>

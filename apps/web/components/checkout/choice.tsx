@@ -45,4 +45,4 @@ export function StepHeading({ title, children }: { title: string; children?: Rea
   );
 }
 
-export const smallLabel = 'text-[12px] font-bold tracking-[0.08em] uppercase';
+export const smallLabel = 'text-[12px] font-semibold';

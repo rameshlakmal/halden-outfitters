@@ -249,7 +249,7 @@ export function StaffReturnDetail({ id }: { id: string }) {
                 ['Points back', String(r.pointsRefund)],
                 [
                   'Refunded',
-                  <span key="t" className="font-bold tabular-nums">
+                  <span key="t" className="font-semibold tabular-nums">
                     {r.refundedAt ? formatAmount(r.refundTotal) : 'Not yet'}
                   </span>,
                 ],

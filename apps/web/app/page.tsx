@@ -43,17 +43,17 @@ export default async function Home() {
             className="rise text-[clamp(56px,11vw,168px)] leading-[0.86] tracking-[-0.01em]"
             style={{ '--i': 0 } as React.CSSProperties}
           >
-            Gear that earns its place.
+            Gear that earns its place
           </h1>
           <div className="rise grid gap-5 md:pb-3" style={{ '--i': 1 } as React.CSSProperties}>
             <p className="max-w-[38ch] text-lg leading-relaxed text-[oklch(0.88_0_0)]">
               Tents, sleeping bags, stoves and packs, picked for long nights out and light enough to carry all day.
             </p>
             <div className="flex flex-wrap gap-3">
-              <LinkButton href="/shop" size="lg" className="uppercase tracking-[0.06em]">
+              <LinkButton href="/shop" size="lg">
                 Shop all gear <ArrowRight className="size-5" />
               </LinkButton>
-              <LinkButton href="/shop?onSale=true" variant="inverse" size="lg" className="tracking-[0.06em] uppercase">
+              <LinkButton href="/shop?onSale=true" variant="inverse" size="lg">
                 On sale
               </LinkButton>
             </div>
@@ -63,12 +63,12 @@ export default async function Home() {
 
       {/* Categories: four tall photo columns, edge to edge, the name set large at the foot of each. */}
       {categories.length > 0 && (
-        <section className="below-fold reveal pt-20" aria-labelledby="cats">
+        <section className="below-fold pt-20" aria-labelledby="cats">
           <div className="mx-auto mb-8 flex max-w-[1400px] items-end justify-between gap-4 px-[var(--gutter)]">
             <h2 id="cats" className="text-5xl sm:text-7xl">
               Shop by kit
             </h2>
-            <Link href="/shop" className="link inline-flex items-center gap-1 text-[13px] tracking-[0.08em] uppercase">
+            <Link href="/shop" className="link inline-flex items-center gap-1 text-[13px]">
               Everything <CaretRight weight="bold" className="size-4" />
             </Link>
           </div>
@@ -90,7 +90,7 @@ export default async function Home() {
                   <h3 className="text-3xl leading-none font-extrabold uppercase [font-stretch:72%] sm:text-5xl">
                     {c.name}
                   </h3>
-                  <span className="mt-2 inline-flex items-center gap-1 text-[13px] font-bold tracking-[0.08em] uppercase transition-colors group-hover:text-accent">
+                  <span className="mt-2 inline-flex items-center gap-1 text-[13px] font-semibold transition-colors group-hover:text-accent">
                     {c.productCount} products{' '}
                     <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
                   </span>
@@ -102,9 +102,9 @@ export default async function Home() {
       )}
 
       {/* Featured: a horizontal, snap-scrolling row of large tiles. */}
-      <section className="below-fold reveal pt-24" aria-labelledby="featured">
+      <section className="below-fold pt-24" aria-labelledby="featured">
         <div className="mx-auto mb-8 flex max-w-[1240px] items-end justify-between gap-4 px-[var(--gutter)]">
-          <h2 id="featured" className="text-3xl font-bold tracking-[-0.03em] sm:text-4xl">
+          <h2 id="featured" className="text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
             Trail favourites
           </h2>
           <Link href="/shop" className="inline-flex items-center gap-1 text-[15px] font-semibold link">
@@ -121,10 +121,10 @@ export default async function Home() {
       </section>
 
       {/* One story: words and photo side by side inside a single tile. */}
-      <section className="below-fold reveal mx-auto max-w-[1240px] px-[var(--gutter)] pt-20 ">
+      <section className="below-fold mx-auto max-w-[1240px] px-[var(--gutter)] pt-20">
         <div className="grid overflow-hidden rounded-[2px] bg-brand text-brand-ink md:grid-cols-2">
           <div className="grid content-center gap-4 p-8 sm:p-12 lg:p-16">
-            <h2 className="text-3xl font-bold tracking-[-0.03em] sm:text-4xl">Hot food, wherever you stop.</h2>
+            <h2 className="text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">Hot food, wherever you stop</h2>
             <p className="max-w-[40ch] text-lg opacity-80">
               A stove that boils a litre in three minutes, a pot it fits inside, and a mug that keeps coffee hot for an
               hour.
@@ -146,7 +146,7 @@ export default async function Home() {
       </section>
 
       {/* Promises: one panel, four short facts. */}
-      <section className="below-fold reveal mx-auto max-w-[1240px] px-[var(--gutter)] pt-20 " aria-label="Buying here">
+      <section className="below-fold mx-auto max-w-[1240px] px-[var(--gutter)] pt-20" aria-label="Buying here">
         <ul className="grid divide-y divide-line rounded-[2px] bg-surface-2 sm:grid-cols-2 sm:divide-y-0 lg:grid-cols-4">
           {PROMISES.map(({ icon: Icon, title, text }) => (
             <li key={title} className="grid content-start justify-items-center gap-2 px-6 py-8 text-center">
@@ -160,9 +160,9 @@ export default async function Home() {
 
       {/* Sale picks: a plain grid. */}
       {sale.items.length > 0 && (
-        <section className="below-fold reveal mx-auto max-w-[1240px] px-[var(--gutter)] pt-24 " aria-labelledby="sale">
+        <section className="below-fold mx-auto max-w-[1240px] px-[var(--gutter)] pt-24" aria-labelledby="sale">
           <div className="mb-8 flex items-end justify-between gap-4">
-            <h2 id="sale" className="text-3xl font-bold tracking-[-0.03em] sm:text-4xl">
+            <h2 id="sale" className="text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
               Marked down
             </h2>
             <Link href="/shop?onSale=true" className="inline-flex items-center gap-1 text-[15px] font-semibold link">

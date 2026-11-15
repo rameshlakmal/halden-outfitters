@@ -39,7 +39,7 @@ export function AccountNav() {
               <Link
                 href={href}
                 aria-current={current ? 'page' : undefined}
-                className={`flex min-h-11 items-center gap-2.5 rounded-[2px] px-4 text-[12px] font-bold tracking-[0.08em] whitespace-nowrap uppercase transition-colors ${
+                className={`flex min-h-11 items-center gap-2.5 rounded-[2px] px-4 text-sm font-semibold whitespace-nowrap transition-colors ${
                   current ? 'bg-ink text-bg' : 'text-ink hover:bg-surface-2 hover:text-accent'
                 }`}
               >

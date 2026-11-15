@@ -5,6 +5,7 @@ import { PAGE_ENTER } from '@/lib/transitions';
 import { LinkButton } from '../ui/button';
 import { ProductGrid } from './product-grid';
 import { ShopToolbar } from './shop-toolbar';
+import { formatAmount } from '@halden/money';
 
 type Search = Record<string, string | string[] | undefined>;
 
@@ -52,7 +53,9 @@ export async function ShopView({
           {blurb && <p className="max-w-[60ch] text-lg text-ink-2">{blurb}</p>}
           <p className="text-sm text-ink-3">
             {page.total} {page.total === 1 ? 'product' : 'products'}
-            {page.priceRange && page.total > 1 && ` from ${page.priceRange.min} to ${page.priceRange.max}`}
+            {page.priceRange &&
+              page.total > 1 &&
+              ` from ${formatAmount(page.priceRange.min)} to ${formatAmount(page.priceRange.max)}`}
           </p>
         </header>
         {!searching && (

@@ -40,7 +40,7 @@ export function CouponField({ cart, onChange }: { cart: Cart; onChange?: () => v
         >
           <span className="flex min-w-0 items-center gap-2">
             <Tag weight="fill" className={`size-4 shrink-0 ${c.applied ? 'text-accent' : 'text-ink-3'}`} />
-            <span className="truncate text-sm font-bold tracking-[0.06em] uppercase">{c.code}</span>
+            <span className="truncate text-sm font-semibold tracking-[0.06em] uppercase">{c.code}</span>
             {c.applied && c.kind !== 'free_shipping' && (
               <span className="text-sm text-accent tabular-nums">-{formatAmount(c.discount)}</span>
             )}
@@ -73,7 +73,7 @@ export function CouponField({ cart, onChange }: { cart: Cart; onChange?: () => v
         if (code.trim()) void run(() => post<Cart>('/cart/coupon', { code: code.trim() }));
       }}
     >
-      <label htmlFor={id} className="text-[12px] font-bold tracking-[0.08em] uppercase">
+      <label htmlFor={id} className="text-[12px] font-semibold">
         Discount code
       </label>
       <div className="flex gap-2">
@@ -90,7 +90,7 @@ export function CouponField({ cart, onChange }: { cart: Cart; onChange?: () => v
         <button
           type="submit"
           disabled={busy || !code.trim()}
-          className="press inline-flex h-11 items-center gap-2 rounded-[2px] border border-line-strong px-4 text-[12px] font-bold tracking-[0.08em] uppercase hover:bg-surface-2 disabled:opacity-50"
+          className="press inline-flex h-11 items-center gap-2 rounded-[2px] border border-line-strong px-4 text-[12px] font-semibold hover:bg-surface-2 disabled:opacity-50"
         >
           {busy && <Spinner />} Apply
         </button>

@@ -141,11 +141,11 @@
   --color-accent-text: var(--accent-text);
   --color-hero-good: var(--hero-good);
   --color-hero-bad: var(--hero-bad);
-  --font-sans: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  /* Shapes: cards 14px, fields 10px, buttons, nav items and tags are pills. */
-  --radius-card: 14px;
-  --radius-field: 10px;
+  /* Shapes, in the shop's family: cards and dialogs 6px, fields, buttons and nav rows 4px, tags 2px. No pills. */
+  --radius-card: 6px;
+  --radius-field: 4px;
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --shadow-pop: 0 2px 4px hsl(var(--shadow) / 0.06), 0 22px 48px -20px hsl(var(--shadow) / 0.32);
 }
@@ -176,7 +176,6 @@
   .tabular {
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
-    letter-spacing: -0.01em;
   }
 }
 

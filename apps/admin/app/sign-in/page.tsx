@@ -39,7 +39,7 @@ export default function SignIn() {
         <Logo />
         <div className="grid gap-1">
           <h1 className="text-2xl font-semibold">Sign in to the admin</h1>
-          <p className="text-sm text-ink-3">For support, warehouse and admin accounts.</p>
+          <p className="text-sm text-ink-3">For support, warehouse and admin accounts</p>
         </div>
         <label className="grid gap-2 text-sm font-medium">
           Email

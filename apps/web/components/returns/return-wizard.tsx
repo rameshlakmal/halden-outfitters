@@ -66,7 +66,7 @@ function Wizard({ order: o }: { order: Order }) {
   const back = (
     <Link
       href={`/account/orders/${o.id}`}
-      className="link inline-flex items-center gap-1.5 justify-self-start text-[12px] font-bold tracking-[0.08em] uppercase"
+      className="link inline-flex items-center gap-1.5 justify-self-start text-[12px] font-semibold"
     >
       <ArrowLeft weight="bold" className="size-4" /> Order {shortId(o.id)}
     </Link>
@@ -345,7 +345,7 @@ function Wizard({ order: o }: { order: Order }) {
                 {shipping > 0 && <Row term="Shipping back">{formatAmount(fromCents(shipping))}</Row>}
                 <div className="mt-2 flex items-baseline justify-between gap-4 border-t border-line pt-3">
                   <dt className="font-semibold">Estimated refund</dt>
-                  <dd className="text-xl font-bold tabular-nums" data-testid="return-estimate">
+                  <dd className="text-xl font-semibold tabular-nums" data-testid="return-estimate">
                     {formatAmount(fromCents(estimate))}
                   </dd>
                 </div>

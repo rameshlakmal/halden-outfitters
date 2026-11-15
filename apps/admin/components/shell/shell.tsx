@@ -93,11 +93,11 @@ export function Shell({ children }: { children: ReactNode }) {
           <button
             type="button"
             onClick={() => palette.setOpen(true)}
-            className="flex h-10 min-w-0 flex-1 items-center gap-3 rounded-full border border-line bg-bg px-4 text-left text-sm text-ink-3 sm:max-w-[520px]"
+            className="flex h-10 min-w-0 flex-1 items-center gap-3 rounded-[var(--radius-field)] border border-line bg-bg px-4 text-left text-sm text-ink-3 sm:max-w-[520px]"
           >
             <MagnifyingGlass className="size-[18px] shrink-0" />
             <span className="truncate">Search sections and orders</span>
-            <kbd className="tabular ml-auto hidden rounded-md border border-line px-1.5 text-[11.5px] text-ink-2 sm:block">
+            <kbd className="tabular ml-auto hidden rounded-[var(--radius-field)] border border-line px-1.5 text-[12px] text-ink-2 sm:block">
               Ctrl K
             </kbd>
           </button>

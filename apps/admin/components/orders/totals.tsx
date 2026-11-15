@@ -28,7 +28,7 @@ export function TotalsTable({
       <Row label={`Tax (${Number(totals.taxRate)}%)`} value={formatAmount(totals.tax)} />
       <div className="mt-2 flex items-baseline justify-between border-t border-line pt-3">
         <dt className="text-[13px] font-medium">Total</dt>
-        <dd className="text-xl font-bold tabular-nums" data-testid={totalTestId}>
+        <dd className="text-xl font-semibold tabular-nums" data-testid={totalTestId}>
           {formatAmount(totals.total)}
         </dd>
       </div>
@@ -37,7 +37,7 @@ export function TotalsTable({
           <Row label="Paid with store credit" value={`-${formatAmount(totals.storeCredit)}`} accent />
           <div className="flex items-baseline justify-between">
             <dt className="text-[13px] font-medium">Charged to card</dt>
-            <dd className="font-bold tabular-nums">{formatAmount(totals.amountDue)}</dd>
+            <dd className="font-semibold tabular-nums">{formatAmount(totals.amountDue)}</dd>
           </div>
         </>
       )}

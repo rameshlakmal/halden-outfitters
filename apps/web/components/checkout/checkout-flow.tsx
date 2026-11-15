@@ -178,7 +178,7 @@ export function CheckoutFlow({ cart }: { cart: Cart }) {
                     }`}
                   >
                     <span
-                      className={`text-[12px] font-bold tracking-[0.08em] uppercase ${current ? 'text-accent' : done ? 'text-ink' : 'text-ink-3'}`}
+                      className={`text-[12px] font-semibold ${current ? 'text-accent' : done ? 'text-ink' : 'text-ink-3'}`}
                     >
                       {name}
                     </span>

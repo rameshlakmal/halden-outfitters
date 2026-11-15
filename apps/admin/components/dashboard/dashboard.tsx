@@ -46,7 +46,7 @@ function Tile({
 }) {
   const body = (
     <>
-      <p className="text-[12.5px] text-ink-3">{label}</p>
+      <p className="text-[13px] text-ink-3">{label}</p>
       <p className="tabular mt-1.5 text-[26px] leading-tight font-semibold">{value}</p>
       <div className="mt-1">{children}</div>
     </>
@@ -83,7 +83,7 @@ function RevenueTile({ d }: { d: DashboardData }) {
   return (
     <div className="grid min-w-0 content-between gap-3 rounded-[var(--radius-card)] bg-hero p-5 text-hero-ink sm:row-span-2">
       <div>
-        <p className="text-[12.5px] opacity-75">Revenue</p>
+        <p className="text-[13px] opacity-75">Revenue</p>
         <p className="tabular mt-1.5 text-[40px] leading-none font-semibold sm:text-[46px]">{money(d.revenue.value)}</p>
       </div>
       <EChart build={spark} height={72} label={`Revenue trend, last ${d.days} days`} />
@@ -231,15 +231,17 @@ export function DashboardView() {
         title="Dashboard"
         subtitle={`Shop time, last ${days} days`}
         actions={
-          <div role="group" aria-label="Range" className="flex rounded-full border border-line bg-surface p-1">
+          <div role="group" aria-label="Range" className="flex rounded-[6px] border border-line bg-surface p-0.5">
             {RANGES.map((r) => (
               <button
                 key={r}
                 type="button"
                 aria-pressed={r === days}
                 onClick={() => setDays(r)}
-                className={`h-8 rounded-full px-3.5 text-[13px] font-medium transition-colors ${
-                  r === days ? 'bg-accent text-accent-ink' : 'text-ink-2 hover:text-ink'
+                className={`h-8 rounded-[var(--radius-field)] px-3.5 text-[13px] font-medium transition-colors ${
+                  r === days
+                    ? 'bg-surface-2 text-ink shadow-[inset_0_0_0_1px_var(--line)]'
+                    : 'text-ink-2 hover:text-ink'
                 }`}
               >
                 {r} days

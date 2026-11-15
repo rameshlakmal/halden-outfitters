@@ -101,7 +101,7 @@ export function Confirmation({ id }: { id: string }) {
 
       <div className="grid gap-8 sm:grid-cols-2">
         <section aria-label="Delivery" className="grid content-start gap-1 text-[15px] leading-relaxed">
-          <h2 className="mb-2 text-[12px] font-bold tracking-[0.08em] uppercase">Delivery</h2>
+          <h2 className="mb-2 text-[12px] font-semibold">Delivery</h2>
           <span className="font-semibold">{s.name}</span>
           <span className="text-ink-2">
             {s.line1}
@@ -114,7 +114,7 @@ export function Confirmation({ id }: { id: string }) {
           <span className="text-ink-3">Placed {formatDateTime(o.placedAt)}</span>
         </section>
         <section aria-label="Totals" className="grid content-start gap-3">
-          <h2 className="text-[12px] font-bold tracking-[0.08em] uppercase">Totals</h2>
+          <h2 className="text-[12px] font-semibold">Totals</h2>
           <TotalsTable totals={o.totals} coupon={o.couponCode} totalTestId="confirmation-total" />
         </section>
       </div>
